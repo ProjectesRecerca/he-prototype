@@ -1,63 +1,152 @@
+
+<!--          data-client_id="871231787095-ug0o6pu89sn0t6i97s0nagakohighot8.apps.googleusercontent.com"
+          -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <title>Horizon Europe – Prototype</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- Google Identity -->
+  <!-- Google Identity Services -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 
-  <style>
-    body {
-      font-family: sans-serif;
-      text-align: center;
-      margin-top: 80px;
-    }
-    #private {
-      display: none;
-    }
-  </style>
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- SheetJS for reading Excel -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.19.2/package/dist/xlsx.full.min.js"></script>
 </head>
-<body>
 
-  <h1>Horizon Europe – Funding Search</h1>
+<body class="min-h-screen flex items-center justify-center bg-gray-100">
 
-  <!-- Login -->
-  <div id="login">
-    <p>Acceso solo para personal institucional</p>
-    <div id="g_id_onload"
-         data-client_id="871231787095-ug0o6pu89sn0t6i97s0nagakohighot8.apps.googleusercontent.com"
-         data-callback="handleLogin">
+  <!-- LOGIN CARD -->
+  <div id="login" class="bg-white shadow-lg rounded-xl p-10 w-full max-w-md text-center">
+
+    <!-- University logo -->
+    <img
+      src="./logo.png"
+      alt="University logo"
+      class="mx-auto mb-6 h-20 object-contain"
+    />
+
+    <!-- Application title -->
+    <h1 class="text-2xl font-bold text-gray-800 mb-2">
+      Horizon Europe Funding Finder
+    </h1>
+
+    <!-- Subtitle / unit name -->
+    <p class="text-sm text-gray-500 mb-8">
+      Servei de Recerca
+    </p>
+
+    <!-- Google login configuration -->
+    <div
+      id="g_id_onload"
+      data-client_id="871231787095-ug0o6pu89sn0t6i97s0nagakohighot8.apps.googleusercontent.com"
+      data-callback="handleCredentialResponse"
+      data-auto_prompt="false">
     </div>
 
-    <div class="g_id_signin" data-theme="outline"></div>
+    <!-- Google login button -->
+    <div class="flex justify-center">
+      <div class="g_id_signin"
+           data-type="standard"
+           data-shape="rectangular"
+           data-theme="outline"
+           data-text="sign_in_with"
+           data-size="large">
+      </div>
+    </div>
+
   </div>
 
-  <!-- Private content -->
-  <div id="private">
-    <h2>Under construction 🚧</h2>
-    <img src="https://webgate.ec.europa.eu/sedia/iop/fileapi/news/30391/v4/reality-check.jpg"
-         alt="Horizon Europe"
-         width="300">
-    <p>Herramienta en desarrollo</p>
+  <!-- PRIVATE CONTENT (hidden until login success) -->
+  <div id="private" class="hidden bg-white shadow-lg rounded-xl p-10 w-full max-w-2xl text-center">
+
+    <h2 class="text-xl font-semibold mb-4">Excel Preview (first 5 rows)</h2>
+    <div class="overflow-x-auto">
+      <table class="table-auto border-collapse border border-gray-300 w-full text-left">
+        <thead>
+          <tr id="preview-header" class="bg-gray-200"></tr>
+        </thead>
+        <tbody id="preview-body"></tbody>
+      </table>
+    </div>
+
   </div>
 
   <script>
-    function handleLogin(response) {
-      const token = response.credential;
-      const payload = JSON.parse(atob(token.split('.')[1]));
+    let excelData = []; // Global variable to store Excel content
+
+    function handleCredentialResponse(response) {
+      // Decode JWT to get email
+      const payload = JSON.parse(atob(response.credential.split('.')[1]));
       const email = payload.email;
 
-      // 🔒 RESTRICCIÓN POR DOMINIO
+      // Restrict access to institutional domain
       if (!email.endsWith("@upf.edu")) {
-        alert("Acceso restringido a personal institucional");
+        alert("Restricted access to institutional personnel");
         return;
       }
 
-      // Mostrar contenido privado
+      console.log("Login successful:", email);
+
+      // Hide login card and show private content
       document.getElementById("login").style.display = "none";
       document.getElementById("private").style.display = "block";
+
+      // Load Excel file from repo
+      loadExcelFromRepo('./horizon_calls.xlsx');
+    }
+
+    async function loadExcelFromRepo(filePath) {
+      try {
+        const response = await fetch(filePath);
+        if (!response.ok) throw new Error("Excel file not found in repo");
+
+        const arrayBuffer = await response.arrayBuffer();
+        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+
+        excelData = XLSX.utils.sheet_to_json(worksheet);
+        console.log("Excel loaded:", excelData);
+
+        showPreview(excelData.slice(0,5)); // preview first 5 rows only
+      } catch (error) {
+        console.error(error);
+        alert("Failed to load Excel from repo. Check file path and repository.");
+      }
+    }
+
+    function showPreview(rows) {
+      if (!rows.length) return;
+
+      const headerRow = document.getElementById('preview-header');
+      const body = document.getElementById('preview-body');
+
+      headerRow.innerHTML = '';
+      body.innerHTML = '';
+
+      // Headers
+      Object.keys(rows[0]).forEach(col => {
+        const th = document.createElement('th');
+        th.textContent = col;
+        th.className = 'border px-2 py-1';
+        headerRow.appendChild(th);
+      });
+
+      // Rows
+      rows.forEach(row => {
+        const tr = document.createElement('tr');
+        Object.values(row).forEach(cell => {
+          const td = document.createElement('td');
+          td.textContent = cell;
+          td.className = 'border px-2 py-1';
+          tr.appendChild(td);
+        });
+        body.appendChild(tr);
+      });
     }
   </script>
 
