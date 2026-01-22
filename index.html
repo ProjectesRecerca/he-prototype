@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Horizon Europe – Prototype</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Google Identity -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      margin-top: 80px;
+    }
+    #private {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Horizon Europe – Funding Search</h1>
+
+  <!-- Login -->
+  <div id="login">
+    <p>Acceso solo para personal institucional</p>
+    <div id="g_id_onload"
+         data-client_id="871231787095-ug0o6pu89sn0t6i97s0nagakohighot8.apps.googleusercontent.com"
+         data-callback="handleLogin">
+    </div>
+
+    <div class="g_id_signin" data-theme="outline"></div>
+  </div>
+
+  <!-- Private content -->
+  <div id="private">
+    <h2>Under construction 🚧</h2>
+    <img src="https://webgate.ec.europa.eu/sedia/iop/fileapi/news/30391/v4/reality-check.jpg"
+         alt="Horizon Europe"
+         width="300">
+    <p>Herramienta en desarrollo</p>
+  </div>
+
+  <script>
+    function handleLogin(response) {
+      const token = response.credential;
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const email = payload.email;
+
+      // 🔒 RESTRICCIÓN POR DOMINIO
+      if (!email.endsWith("@upf.edu")) {
+        alert("Acceso restringido a personal institucional");
+        return;
+      }
+
+      // Mostrar contenido privado
+      document.getElementById("login").style.display = "none";
+      document.getElementById("private").style.display = "block";
+    }
+  </script>
+
+</body>
+</html>
