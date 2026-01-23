@@ -48,14 +48,15 @@
     <p class="text-gray-600">Call Finder</p>
   </div>
 
-  <!-- KEYWORDS (placeholder) -->
+  <!-- KEYWORDS -->
   <div class="bg-white p-4 rounded-lg shadow">
-    <label class="block font-semibold mb-2">Keywords (optional)</label>
+    <label class="block font-semibold mb-2">Keyword search</label>
     <input
+      id="keyword-input"
       type="text"
-      placeholder="Keyword search will be enabled in a later phase"
-      class="w-full p-2 border border-gray-300 rounded bg-gray-50"
-      disabled
+      placeholder="Enter one keyword (exact match)"
+      class="w-full p-2 border border-gray-300 rounded"
+      oninput="updateCalls()"
     />
   </div>
 
@@ -73,7 +74,7 @@
 
   <!-- CALLS -->
   <div class="bg-white p-4 rounded-lg shadow">
-    <h2 class="font-semibold mb-2">Calls</h2>
+    <h2 id="calls-title" class="font-semibold mb-2">Calls (0)</h2>
     <div id="calls-buttons" class="flex flex-col gap-2"></div>
   </div>
 
@@ -87,8 +88,8 @@
 
 <script>
 let excelData = [];
-let selectedDiscipline = null;
-let selectedResearchField = null;
+let selectedDisciplines = [];
+let selectedResearchFields = [];
 
 function handleCredentialResponse(response) {
   const payload = JSON.parse(atob(response.credential.split('.')[1]));
@@ -125,12 +126,9 @@ function initDisciplineButtons() {
   const disciplines = [...new Set(excelData.map(r => r["Cluster"]).filter(Boolean))].sort();
 
   disciplines.forEach(d => {
-    const btn = createTagButton(d, "blue", () => {
-      selectedDiscipline = selectedDiscipline === d ? null : d;
-      selectedResearchField = null;
+    const btn = createToggleButton(d, "blue", selectedDisciplines, () => {
       initResearchFieldButtons();
       updateCalls();
-      highlight(container, selectedDiscipline);
     });
     container.appendChild(btn);
   });
@@ -145,22 +143,16 @@ function initResearchFieldButtons() {
   let fields = new Set();
 
   excelData.forEach(row => {
-    if (!selectedDiscipline || row["Cluster"] === selectedDiscipline) {
-      if (row["Research Fields"]) {
-        row["Research Fields"]
-          .split(";")
-          .map(f => f.trim())
-          .forEach(f => fields.add(f));
-      }
+    if (
+      selectedDisciplines.length === 0 ||
+      selectedDisciplines.includes(row["Cluster"])
+    ) {
+      row["Research Fields"]?.split(";").map(f => f.trim()).forEach(f => fields.add(f));
     }
   });
 
   [...fields].sort().forEach(f => {
-    const btn = createTagButton(f, "green", () => {
-      selectedResearchField = selectedResearchField === f ? null : f;
-      updateCalls();
-      highlight(container, selectedResearchField);
-    });
+    const btn = createToggleButton(f, "green", selectedResearchFields, updateCalls);
     container.appendChild(btn);
   });
 }
@@ -172,15 +164,27 @@ function updateCalls() {
   container.innerHTML = "";
   document.getElementById("summary-content").textContent = "";
 
+  const keyword = document.getElementById("keyword-input").value.trim().toLowerCase();
+
   let filtered = excelData.filter(row => {
-    if (selectedResearchField) {
-      return row["Research Fields"]?.split(";").map(f => f.trim()).includes(selectedResearchField);
+
+    if (selectedDisciplines.length &&
+        !selectedDisciplines.includes(row["Cluster"])) return false;
+
+    if (selectedResearchFields.length) {
+      const fields = row["Research Fields"]?.split(";").map(f => f.trim()) || [];
+      if (!fields.some(f => selectedResearchFields.includes(f))) return false;
     }
-    if (selectedDiscipline) {
-      return row["Cluster"] === selectedDiscipline;
+
+    if (keyword) {
+      const keywords = row["Keywords"]?.toLowerCase().split(/[,;]\s*/);
+      if (!keywords?.includes(keyword)) return false;
     }
-    return false;
+
+    return true;
   });
+
+  document.getElementById("calls-title").textContent = `Calls (${filtered.length})`;
 
   filtered.forEach(row => {
     const btn = document.createElement("button");
@@ -195,18 +199,21 @@ function updateCalls() {
 
 /* ---------------- Utils ---------------- */
 
-function createTagButton(text, color, onClick) {
+function createToggleButton(text, color, stateArray, onChange) {
   const btn = document.createElement("button");
   btn.textContent = text;
   btn.className = `px-3 py-1 bg-${color}-100 hover:bg-${color}-200 rounded`;
-  btn.onclick = onClick;
-  return btn;
-}
 
-function highlight(container, value) {
-  [...container.children].forEach(b => {
-    b.classList.toggle("bg-opacity-80", b.textContent === value);
-  });
+  btn.onclick = () => {
+    const index = stateArray.indexOf(text);
+    if (index >= 0) stateArray.splice(index, 1);
+    else stateArray.push(text);
+
+    btn.classList.toggle(`bg-${color}-300`);
+    onChange();
+  };
+
+  return btn;
 }
 </script>
 
