@@ -69,9 +69,9 @@
         <div id="discipline-buttons" class="flex flex-wrap gap-2"></div>
       </div>
 
-      <!-- Block 2: Research Field -->
+      <!-- Block 2: Research Fields -->
       <div class="bg-white p-4 rounded-lg shadow" id="block-research-field">
-        <h2 class="font-semibold mb-2">Research Field</h2>
+        <h2 class="font-semibold mb-2">Research Fields</h2>
         <div id="research-buttons" class="flex flex-wrap gap-2"></div>
       </div>
 
@@ -162,7 +162,7 @@
     }
 
     // --------------------------
-    // Research Field buttons
+    // Research Fields buttons
     // --------------------------
     function initResearchButtons() {
       const container = document.getElementById("research-buttons");
@@ -171,8 +171,8 @@
       let fieldsSet = new Set();
       excelData.forEach(row => {
         if (!selectedDiscipline || row['Cluster'] === selectedDiscipline) {
-          if (row['Research Field']) {
-            row['Research Field'].split(';').map(f => f.trim()).forEach(f => fieldsSet.add(f));
+          if (row['Research Fieldss']) {
+            row['Research Fieldss'].split(';').map(f => f.trim()).forEach(f => fieldsSet.add(f));
           }
         }
       });
@@ -211,10 +211,10 @@
 
       let filtered = excelData.filter(row => {
         if (selectedResearchField) {
-          if (!row['Research Field']) return false;
-          return row['Research Field'].split(';').map(f => f.trim()).includes(selectedResearchField);
+          if (!row['Research Fields']) return false;
+          return row['Research Fields'].split(';').map(f => f.trim()).includes(selectedResearchField);
         }
-        return true; // show all if no research field selected
+        return true; // show all if no Research Fields selected
       });
 
       const callsSet = new Set(filtered.map(row => row['Call']).filter(Boolean));
@@ -243,3 +243,4 @@
 
 </body>
 </html>
+
