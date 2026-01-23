@@ -5,7 +5,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Horizon Europe WP26-27</title>
+  <title>Horizon Europe WP26-27 – Call Finder</title>
 
   <!-- Google Identity Services -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -19,54 +19,71 @@
 
 <body class="min-h-screen bg-gray-100 p-6">
 
-  <!-- LOGIN -->
-  <div id="login" class="flex items-center justify-center min-h-screen">
-    <div class="bg-white shadow-lg rounded-xl p-10 w-full max-w-md text-center">
-      <img src="./logo.png" class="mx-auto mb-6 h-20 object-contain" />
-      <h1 class="text-2xl font-bold mb-1">Horizon Europe WP26-27</h1>
-      <p class="text-sm text-gray-500 mb-8">Call search</p>
+<!-- LOGIN -->
+<div id="login" class="flex items-center justify-center min-h-screen">
+  <div class="bg-white shadow-lg rounded-xl p-10 w-full max-w-md text-center">
+    <img src="./logo.png" class="mx-auto mb-6 h-20 object-contain" />
+    <h1 class="text-2xl font-bold mb-1">Horizon Europe WP26-27</h1>
+    <p class="text-sm text-gray-500 mb-8">Call Finder</p>
 
-      <div
-        id="g_id_onload"
-        data-client_id="871231787095-ug0o6pu89sn0t6i97s0nagakohighot8.apps.googleusercontent.com"
-        data-callback="handleCredentialResponse"
-        data-auto_prompt="false">
-      </div>
+    <div
+      id="g_id_onload"
+      data-client_id="871231787095-ug0o6pu89sn0t6i97s0nagakohighot8.apps.googleusercontent.com"
+      data-callback="handleCredentialResponse"
+      data-auto_prompt="false">
+    </div>
 
-      <div class="flex justify-center">
-        <div class="g_id_signin"></div>
-      </div>
+    <div class="flex justify-center">
+      <div class="g_id_signin"></div>
     </div>
   </div>
+</div>
 
-  <!-- PRIVATE CONTENT -->
-  <div id="private" class="hidden max-w-6xl mx-auto space-y-6">
+<!-- PRIVATE CONTENT -->
+<div id="private" class="hidden max-w-6xl mx-auto space-y-6">
 
-    <!-- Discipline -->
-    <div class="bg-white p-4 rounded-lg shadow">
-      <h2 class="font-semibold mb-2">Discipline</h2>
-      <div id="discipline-buttons" class="flex flex-wrap gap-2"></div>
-    </div>
-
-    <!-- Research Fields -->
-    <div class="bg-white p-4 rounded-lg shadow">
-      <h2 class="font-semibold mb-2">Research Fields</h2>
-      <div id="research-buttons" class="flex flex-wrap gap-2"></div>
-    </div>
-
-    <!-- Calls -->
-    <div class="bg-white p-4 rounded-lg shadow">
-      <h2 class="font-semibold mb-2">Calls</h2>
-      <div id="calls-buttons" class="flex flex-wrap gap-2"></div>
-    </div>
-
-    <!-- Summary -->
-    <div class="bg-white p-4 rounded-lg shadow">
-      <h2 class="font-semibold mb-2">Summary</h2>
-      <div id="summary-content" class="text-gray-700 whitespace-pre-line"></div>
-    </div>
-
+  <!-- PAGE HEADER -->
+  <div>
+    <h1 class="text-3xl font-bold text-gray-800">Horizon Europe WP26-27</h1>
+    <p class="text-gray-600">Call Finder</p>
   </div>
+
+  <!-- KEYWORDS (placeholder) -->
+  <div class="bg-white p-4 rounded-lg shadow">
+    <label class="block font-semibold mb-2">Keywords (optional)</label>
+    <input
+      type="text"
+      placeholder="Keyword search will be enabled in a later phase"
+      class="w-full p-2 border border-gray-300 rounded bg-gray-50"
+      disabled
+    />
+  </div>
+
+  <!-- DISCIPLINE -->
+  <div class="bg-white p-4 rounded-lg shadow">
+    <h2 class="font-semibold mb-2">Discipline</h2>
+    <div id="discipline-buttons" class="flex flex-wrap gap-2"></div>
+  </div>
+
+  <!-- RESEARCH FIELDS -->
+  <div class="bg-white p-4 rounded-lg shadow">
+    <h2 class="font-semibold mb-2">Research Fields</h2>
+    <div id="research-buttons" class="flex flex-wrap gap-2"></div>
+  </div>
+
+  <!-- CALLS -->
+  <div class="bg-white p-4 rounded-lg shadow">
+    <h2 class="font-semibold mb-2">Calls</h2>
+    <div id="calls-buttons" class="flex flex-col gap-2"></div>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="bg-white p-4 rounded-lg shadow">
+    <h2 class="font-semibold mb-2">Summary</h2>
+    <div id="summary-content" class="text-gray-700 whitespace-pre-line"></div>
+  </div>
+
+</div>
 
 <script>
 let excelData = [];
@@ -108,8 +125,9 @@ function initDisciplineButtons() {
   const disciplines = [...new Set(excelData.map(r => r["Cluster"]).filter(Boolean))].sort();
 
   disciplines.forEach(d => {
-    const btn = createButton(d, "blue", () => {
+    const btn = createTagButton(d, "blue", () => {
       selectedDiscipline = selectedDiscipline === d ? null : d;
+      selectedResearchField = null;
       initResearchFieldButtons();
       updateCalls();
       highlight(container, selectedDiscipline);
@@ -138,7 +156,7 @@ function initResearchFieldButtons() {
   });
 
   [...fields].sort().forEach(f => {
-    const btn = createButton(f, "green", () => {
+    const btn = createTagButton(f, "green", () => {
       selectedResearchField = selectedResearchField === f ? null : f;
       updateCalls();
       highlight(container, selectedResearchField);
@@ -152,34 +170,32 @@ function initResearchFieldButtons() {
 function updateCalls() {
   const container = document.getElementById("calls-buttons");
   container.innerHTML = "";
-  document.getElementById("summary-content").innerHTML = "";
+  document.getElementById("summary-content").textContent = "";
 
   let filtered = excelData.filter(row => {
-    if (!selectedResearchField) return true;
-    if (!row["Research Fields"]) return false;
-    return row["Research Fields"]
-      .split(";")
-      .map(f => f.trim())
-      .includes(selectedResearchField);
+    if (selectedResearchField) {
+      return row["Research Fields"]?.split(";").map(f => f.trim()).includes(selectedResearchField);
+    }
+    if (selectedDiscipline) {
+      return row["Cluster"] === selectedDiscipline;
+    }
+    return false;
   });
 
-  [...new Set(filtered.map(r => r["Call"]).filter(Boolean))].sort()
-    .forEach(call => {
-      const btn = createButton(call, "purple", () => showSummary(call));
-      container.appendChild(btn);
-    });
-}
-
-/* ---------------- Summary ---------------- */
-
-function showSummary(callName) {
-  const row = excelData.find(r => r["Call"] === callName);
-  document.getElementById("summary-content").textContent = row?.["Summary"] || "";
+  filtered.forEach(row => {
+    const btn = document.createElement("button");
+    btn.className = "w-full text-left p-3 border rounded hover:bg-gray-100";
+    btn.textContent = `${row["Call ID"]} : ${row["Call Title"]}`;
+    btn.onclick = () => {
+      document.getElementById("summary-content").textContent = row["Summary"] || "";
+    };
+    container.appendChild(btn);
+  });
 }
 
 /* ---------------- Utils ---------------- */
 
-function createButton(text, color, onClick) {
+function createTagButton(text, color, onClick) {
   const btn = document.createElement("button");
   btn.textContent = text;
   btn.className = `px-3 py-1 bg-${color}-100 hover:bg-${color}-200 rounded`;
