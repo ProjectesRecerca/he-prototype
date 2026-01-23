@@ -5,7 +5,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Horizon Europe – Prototype</title>
+  <title>Horizon Europe WP26-27 – Prototype</title>
 
   <!-- Google Identity Services -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -17,27 +17,19 @@
   <script src="https://cdn.sheetjs.com/xlsx-0.19.2/package/dist/xlsx.full.min.js"></script>
 </head>
 
-<body class="min-h-screen flex items-center justify-center bg-gray-100">
+<body class="min-h-screen flex items-center justify-center bg-gray-100 p-4">
 
   <!-- LOGIN CARD -->
   <div id="login" class="bg-white shadow-lg rounded-xl p-10 w-full max-w-md text-center">
 
     <!-- University logo -->
-    <img
-      src="./logo.png"
-      alt="University logo"
-      class="mx-auto mb-6 h-20 object-contain"
-    />
+    <img src="./logo.png" alt="University logo" class="mx-auto mb-6 h-20 object-contain" />
 
     <!-- Application title -->
-    <h1 class="text-2xl font-bold text-gray-800 mb-2">
-      Horizon Europe Funding Finder
-    </h1>
+    <h1 class="text-2xl font-bold text-gray-800 mb-2">Horizon Europe WP26-27</h1>
 
-    <!-- Subtitle / unit name -->
-    <p class="text-sm text-gray-500 mb-8">
-      Servei de Recerca
-    </p>
+    <!-- Subtitle -->
+    <p class="text-sm text-gray-500 mb-8">Call search</p>
 
     <!-- Google login configuration -->
     <div
@@ -47,7 +39,6 @@
       data-auto_prompt="false">
     </div>
 
-    <!-- Google login button -->
     <div class="flex justify-center">
       <div class="g_id_signin"
            data-type="standard"
@@ -60,42 +51,63 @@
 
   </div>
 
-  <!-- PRIVATE CONTENT (hidden until login success) -->
-  <div id="private" class="hidden bg-white shadow-lg rounded-xl p-10 w-full max-w-2xl text-center">
+  <!-- PRIVATE CONTENT -->
+  <div id="private" class="hidden w-full max-w-4xl">
 
-    <h2 class="text-xl font-semibold mb-4">Excel Preview (first 5 rows)</h2>
-    <div class="overflow-x-auto">
-      <table class="table-auto border-collapse border border-gray-300 w-full text-left">
-        <thead>
-          <tr id="preview-header" class="bg-gray-200"></tr>
-        </thead>
-        <tbody id="preview-body"></tbody>
-      </table>
+    <!-- Keywords input (optional, can leave blank for now) -->
+    <div class="mb-6">
+      <input type="text" id="keywords-input" placeholder="Enter keywords (optional)" 
+             class="w-full p-2 border border-gray-300 rounded" />
+    </div>
+
+    <!-- FILTER BLOCKS -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+      <!-- Block 1: Discipline -->
+      <div class="bg-white p-4 rounded-lg shadow" id="block-discipline">
+        <h2 class="font-semibold mb-2">Discipline</h2>
+        <div id="discipline-buttons" class="flex flex-wrap gap-2"></div>
+      </div>
+
+      <!-- Block 2: Research Field -->
+      <div class="bg-white p-4 rounded-lg shadow" id="block-research-field">
+        <h2 class="font-semibold mb-2">Research Field</h2>
+        <div id="research-buttons" class="flex flex-wrap gap-2"></div>
+      </div>
+
+      <!-- Block 3: Calls -->
+      <div class="bg-white p-4 rounded-lg shadow" id="block-calls">
+        <h2 class="font-semibold mb-2">Calls</h2>
+        <div id="calls-buttons" class="flex flex-wrap gap-2"></div>
+      </div>
+
+      <!-- Block 4: Summary -->
+      <div class="bg-white p-4 rounded-lg shadow" id="block-summary">
+        <h2 class="font-semibold mb-2">Summary</h2>
+        <div id="summary-content" class="text-gray-700"></div>
+      </div>
+
     </div>
 
   </div>
 
   <script>
-    let excelData = []; // Global variable to store Excel content
+    let excelData = [];
+    let selectedDiscipline = null;
+    let selectedResearchField = null;
 
     function handleCredentialResponse(response) {
-      // Decode JWT to get email
       const payload = JSON.parse(atob(response.credential.split('.')[1]));
       const email = payload.email;
 
-      // Restrict access to institutional domain
       if (!email.endsWith("@upf.edu")) {
         alert("Restricted access to institutional personnel");
         return;
       }
 
-      console.log("Login successful:", email);
-
-      // Hide login card and show private content
       document.getElementById("login").style.display = "none";
       document.getElementById("private").style.display = "block";
 
-      // Load Excel file from repo
       loadExcelFromRepo('./horizon_calls.xlsx');
     }
 
@@ -110,44 +122,123 @@
         const worksheet = workbook.Sheets[firstSheetName];
 
         excelData = XLSX.utils.sheet_to_json(worksheet);
-        console.log("Excel loaded:", excelData);
-
-        showPreview(excelData.slice(0,5)); // preview first 5 rows only
+        initDisciplineButtons();
+        initResearchButtons(); // show all initially
       } catch (error) {
         console.error(error);
         alert("Failed to load Excel from repo. Check file path and repository.");
       }
     }
 
-    function showPreview(rows) {
-      if (!rows.length) return;
+    // --------------------------
+    // Discipline buttons
+    // --------------------------
+    function initDisciplineButtons() {
+      const container = document.getElementById("discipline-buttons");
+      container.innerHTML = "";
 
-      const headerRow = document.getElementById('preview-header');
-      const body = document.getElementById('preview-body');
+      const disciplines = Array.from(new Set(excelData.map(row => row['Cluster']).filter(Boolean)));
 
-      headerRow.innerHTML = '';
-      body.innerHTML = '';
-
-      // Headers
-      Object.keys(rows[0]).forEach(col => {
-        const th = document.createElement('th');
-        th.textContent = col;
-        th.className = 'border px-2 py-1';
-        headerRow.appendChild(th);
+      disciplines.forEach(d => {
+        const btn = document.createElement('button');
+        btn.textContent = d;
+        btn.className = 'px-3 py-1 bg-blue-100 hover:bg-blue-200 rounded';
+        btn.onclick = () => {
+          selectedDiscipline = (selectedDiscipline === d ? null : d); // toggle
+          updateResearchFields();
+          updateCalls(); // clear calls if discipline changes
+          updateDisciplineButtons();
+        };
+        container.appendChild(btn);
       });
+      updateDisciplineButtons();
+    }
 
-      // Rows
-      rows.forEach(row => {
-        const tr = document.createElement('tr');
-        Object.values(row).forEach(cell => {
-          const td = document.createElement('td');
-          td.textContent = cell;
-          td.className = 'border px-2 py-1';
-          tr.appendChild(td);
-        });
-        body.appendChild(tr);
+    function updateDisciplineButtons() {
+      const buttons = document.querySelectorAll("#discipline-buttons button");
+      buttons.forEach(btn => {
+        btn.classList.toggle('bg-blue-300', btn.textContent === selectedDiscipline);
       });
     }
+
+    // --------------------------
+    // Research Field buttons
+    // --------------------------
+    function initResearchButtons() {
+      const container = document.getElementById("research-buttons");
+      container.innerHTML = "";
+
+      let fieldsSet = new Set();
+      excelData.forEach(row => {
+        if (!selectedDiscipline || row['Cluster'] === selectedDiscipline) {
+          if (row['Research Field']) {
+            row['Research Field'].split(';').map(f => f.trim()).forEach(f => fieldsSet.add(f));
+          }
+        }
+      });
+
+      fieldsSet.forEach(f => {
+        const btn = document.createElement('button');
+        btn.textContent = f;
+        btn.className = 'px-3 py-1 bg-green-100 hover:bg-green-200 rounded';
+        btn.onclick = () => {
+          selectedResearchField = (selectedResearchField === f ? null : f);
+          updateCalls();
+          updateResearchButtons();
+        };
+        container.appendChild(btn);
+      });
+      updateResearchButtons();
+    }
+
+    function updateResearchFields() {
+      initResearchButtons();
+    }
+
+    function updateResearchButtons() {
+      const buttons = document.querySelectorAll("#research-buttons button");
+      buttons.forEach(btn => {
+        btn.classList.toggle('bg-green-300', btn.textContent === selectedResearchField);
+      });
+    }
+
+    // --------------------------
+    // Calls buttons
+    // --------------------------
+    function updateCalls() {
+      const container = document.getElementById("calls-buttons");
+      container.innerHTML = "";
+
+      let filtered = excelData.filter(row => {
+        if (selectedResearchField) {
+          if (!row['Research Field']) return false;
+          return row['Research Field'].split(';').map(f => f.trim()).includes(selectedResearchField);
+        }
+        return true; // show all if no research field selected
+      });
+
+      const callsSet = new Set(filtered.map(row => row['Call']).filter(Boolean));
+      callsSet.forEach(c => {
+        const btn = document.createElement('button');
+        btn.textContent = c;
+        btn.className = 'px-3 py-1 bg-purple-100 hover:bg-purple-200 rounded';
+        btn.onclick = () => showSummary(c);
+        container.appendChild(btn);
+      });
+
+      document.getElementById("summary-content").innerHTML = ""; // clear summary
+    }
+
+    // --------------------------
+    // Summary
+    // --------------------------
+    function showSummary(callName) {
+      const row = excelData.find(r => r['Call'] === callName);
+      if (row) {
+        document.getElementById("summary-content").textContent = row['Summary'] || '';
+      }
+    }
+
   </script>
 
 </body>
