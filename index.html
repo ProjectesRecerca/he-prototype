@@ -140,7 +140,7 @@ function handleCredentialResponse(response) {
 
 /* EXCEL */
 function loadExcel() {
-  fetch("./calls.xlsx")
+  fetch("./horizon_calls.xlsx")
     .then(r => r.arrayBuffer())
     .then(data => {
       const wb = XLSX.read(data, { type: "array" });
@@ -232,3 +232,4 @@ document.getElementById("calls-title").textContent =
 
 </body>
 </html>
+
