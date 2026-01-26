@@ -65,16 +65,22 @@
     </ul>
   </div>
 
-  <!-- Keyword search (UI only for now) -->
-  <div class="mb-6">
-    <label class="font-semibold">Keyword search</label>
-    <input
-      id="keyword-input"
-      type="text"
-      placeholder="energy electrical; machine learning"
-      class="w-full p-2 border rounded mt-2"
-    />
-  </div>
+  <!-- Keyword search-->
+<div class="flex gap-2 mt-2">
+  <input
+    id="keyword-input"
+    type="text"
+    placeholder='energy; machine learning'
+    class="w-full border rounded px-2 py-1"
+  />
+  <button
+    id="search-btn"
+    class="px-4 py-1 bg-blue-600 text-white rounded"
+    onclick="updateCalls()"
+  >
+    Search
+  </button>
+</div>
 
   <!-- MAIN LAYOUT -->
   <div class="flex gap-6">
@@ -102,6 +108,22 @@
     </div>
 
     <!-- RIGHT COLUMN – CALL DETAIL -->
+     <div id="call-details-panel"
+     class="w-full lg:w-1/3 bg-white border rounded-xl p-4 shadow-sm">
+      <h3 class="text-lg font-semibold mb-2">Call details</h3>
+      <div id="call-details" class="text-sm space-y-1">
+        <div><strong>Call ID:</strong> <em id="detail-id"></em></div>
+        <div><strong>Call Title:</strong> <em id="detail-title"></em></div>
+        <div><strong>Type of Action:</strong> <em id="detail-action"></em></div>
+        <div><strong>Opening Date:</strong> <em id="detail-opening"></em></div>
+        <div><strong>Deadline:</strong> <em id="detail-deadline"></em></div>
+      </div>
+      <div class="mt-4">
+        <strong>Summary</strong>
+        <p id="detail-summary" class="mt-1 text-justify text-sm"></p>
+      </div>
+    </div>
+
     <div class="w-1/4">
       <div class="bg-white rounded-xl shadow p-4 sticky top-6">
         <h3 class="font-bold mb-2">Call details</h3>
@@ -121,6 +143,17 @@
 let excelData = [];
 let selectedDisciplines = new Set();
 let selectedResearchFields = new Set();
+
+function excelDateToString(value) {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+
+  const date = new Date(Math.round((value - 25569) * 86400 * 1000));
+  const d = String(date.getDate()).padStart(2, "0");
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const y = date.getFullYear();
+  return `${d}/${m}/${y}`;
+}
 
 /* LOGIN */
 function handleCredentialResponse(response) {
@@ -220,11 +253,14 @@ document.getElementById("calls-title").textContent =
     b.textContent = `${r["Call ID"]}: ${r["Call Title"]}`;
     b.onclick = () => {
       document.getElementById("detail-id").textContent = r["Call ID"];
-      document.getElementById("detail-title").textContent = r["Call Title"];
-      document.getElementById("detail-summary").textContent = r.Summary || "";
-      document.getElementById("detail-deadline").textContent = r["Deadline(s)"] || "";
-      document.getElementById("calls-block").scrollIntoView({ behavior: "smooth" });
-    };
+    document.getElementById("detail-title").textContent = r["Call Title"];
+    document.getElementById("detail-action").textContent = r["Type of Action"] || "";
+    document.getElementById("detail-opening").textContent = excelDateToString(r["Opening Date"]);
+    document.getElementById("detail-deadline").textContent = excelDateToString(r["Deadline(s)"]);
+    document.getElementById("detail-summary").textContent = r["Summary"] || "";
+    document.getElementById("calls-block")
+      .scrollIntoView({ behavior: "smooth" });
+  };
     c.appendChild(b);
   });
 }
@@ -232,4 +268,3 @@ document.getElementById("calls-title").textContent =
 
 </body>
 </html>
-
