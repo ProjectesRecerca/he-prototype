@@ -134,6 +134,8 @@
 let excelData = [];
 let selectedDisciplines = new Set();
 let selectedResearchFields = new Set();
+let selectedCallButton = null;
+
 
 function excelDateToString(value) {
   if (!value) return "";
@@ -223,38 +225,106 @@ function renderResearchFields() {
 
 /* CALLS */
 function updateCalls() {
-  const c = document.getElementById("calls-container");
-  c.innerHTML = "";
+  const container = document.getElementById("calls-block");
+  container.innerHTML = "";
 
-  const filtered = excelData.filter(r => {
-    if (selectedDisciplines.size && !selectedDisciplines.has(r.Cluster)) return false;
-    if (selectedResearchFields.size) {
-      const f = r["Research Fields"].split(";").map(x => x.trim());
-      if (!f.some(x => selectedResearchFields.has(x))) return false;
+  // Reset selected call when filters change
+  selectedCallButton = null;
+  document.getElementById("detail-id").textContent = "";
+  document.getElementById("detail-title").textContent = "";
+  document.getElementById("detail-action").textContent = "";
+  document.getElementById("detail-opening").textContent = "";
+  document.getElementById("detail-deadline").textContent = "";
+  document.getElementById("detail-summary").textContent = "";
+
+  const keywordInput = document
+    .getElementById("keyword-input")
+    .value
+    .toLowerCase()
+    .trim();
+
+  const keywordBlocks = keywordInput
+    ? keywordInput.split(";").map(k => k.trim()).filter(Boolean)
+    : [];
+
+  const results = excelData.filter(r => {
+    /* ---------- Discipline filter ---------- */
+    if (
+      selectedDisciplines.size > 0 &&
+      !selectedDisciplines.has(r["Discipline"])
+    ) {
+      return false;
     }
+
+    /* ---------- Research Field filter ---------- */
+    const fields = r["Research Fields"]
+      ? r["Research Fields"].split(";").map(f => f.trim())
+      : [];
+
+    if (
+      selectedResearchFields.size > 0 &&
+      !fields.some(f => selectedResearchFields.has(f))
+    ) {
+      return false;
+    }
+
+    /* ---------- Keyword filter ---------- */
+    if (keywordBlocks.length > 0) {
+      const keywordsCell = (r["Keywords"] || "").toLowerCase();
+      if (!keywordBlocks.some(k => keywordsCell.includes(k))) {
+        return false;
+      }
+    }
+
     return true;
   });
 
-document.getElementById("calls-title").textContent =
-  `Calls (${filtered.length})`;
+  /* ---------- Counter ---------- */
+  document.getElementById("calls-count").textContent = results.length;
 
-  filtered.forEach(r => {
-    const b = document.createElement("button");
-    b.className = "w-full text-left p-2 border rounded hover:bg-gray-100";
-    b.textContent = `${r["Call ID"]}: ${r["Call Title"]}`;
-    b.onclick = () => {
+  /* ---------- Render Calls ---------- */
+  results.forEach(r => {
+    const btn = document.createElement("button");
+    btn.className =
+      "w-full text-left px-3 py-2 border rounded hover:bg-blue-50 transition";
+
+    btn.textContent = `${r["Call ID"]}: ${r["Call Title"]}`;
+
+    btn.onclick = () => {
+      // Clear previous selection
+      if (selectedCallButton) {
+        selectedCallButton.classList.remove("bg-blue-600", "text-white");
+      }
+
+      // Mark selected call
+      btn.classList.add("bg-blue-600", "text-white");
+      selectedCallButton = btn;
+
+      // Populate Call Details panel
       document.getElementById("detail-id").textContent = r["Call ID"];
-    document.getElementById("detail-title").textContent = r["Call Title"];
-    document.getElementById("detail-action").textContent = r["Type of Action"] || "";
-    document.getElementById("detail-opening").textContent = excelDateToString(r["Opening Date"]);
-    document.getElementById("detail-deadline").textContent = excelDateToString(r["Deadline(s)"]);
-    document.getElementById("detail-summary").textContent = r["Summary"] || "";
-    document.getElementById("calls-block")
-      .scrollIntoView({ behavior: "smooth" });
-  };
-    c.appendChild(b);
+      document.getElementById("detail-title").textContent = r["Call Title"];
+      document.getElementById("detail-action").textContent =
+        r["Type of Action"] || "";
+
+      document.getElementById("detail-opening").textContent =
+        excelDateToString(r["Opening Date"]);
+
+      document.getElementById("detail-deadline").textContent =
+        excelDateToString(r["Deadline(s)"]);
+
+      document.getElementById("detail-summary").textContent =
+        r["Summary"] || "";
+
+      // Scroll to Calls block so details are visible
+      document
+        .getElementById("calls-block")
+        .scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+
+    container.appendChild(btn);
   });
 }
+
 </script>
 
 </body>
