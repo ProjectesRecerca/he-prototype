@@ -5,12 +5,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Horizon Europe WP26-27</title>
+  <title>Horizon Europe WP26-27 – Call Finder</title>
 
-  <!-- Google Identity Services -->
+  <!-- Google Identity -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 
-  <!-- Tailwind CSS -->
+  <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
 
   <!-- SheetJS -->
@@ -23,14 +23,9 @@
 
 <div id="login" class="min-h-screen flex items-center justify-center">
   <div class="bg-white p-10 rounded-xl shadow-lg text-center w-full max-w-md">
-    <img
-      src="./logo.png"
-      alt="University logo"
-      class="mx-auto mb-6 h-20 object-contain"
-    />
-
+    <img src="./logo.png" class="mx-auto mb-6 h-20" />
     <h1 class="text-2xl font-bold mb-2">Horizon Europe WP26-27</h1>
-    <p class="text-sm text-gray-500 mb-6">Servei de Recerca</p>
+    <p class="text-sm text-gray-500 mb-6">Servei de Recerca – UPF</p>
 
     <div
       id="g_id_onload"
@@ -47,13 +42,30 @@
 
 <!-- ================= PRIVATE APP ================= -->
 
-<div id="private" class="hidden p-8 max-w-6xl mx-auto">
+<div id="private" class="hidden max-w-7xl mx-auto p-6">
 
   <!-- Header -->
-  <h1 class="text-3xl font-bold mb-1">Horizon Europe WP26-27</h1>
-  <h2 class="text-lg text-gray-600 mb-6">Call Finder</h2>
+  <div class="flex items-center gap-4 mb-6">
+    <img src="./logo.png" class="h-12" />
+    <div>
+      <h1 class="text-3xl font-bold">Horizon Europe WP26-27</h1>
+      <h2 class="text-gray-600">Call Finder</h2>
+    </div>
+  </div>
 
-  <!-- Keyword search -->
+  <!-- Description -->
+  <div class="bg-white rounded-xl shadow p-4 mb-6 text-sm text-gray-700">
+    <p class="mb-2">
+      This tool helps UPF researchers identify relevant Horizon Europe calls.
+    </p>
+    <ul class="list-disc ml-5 space-y-1">
+      <li>Select one or more <b>Disciplines</b> and/or <b>Research Fields</b></li>
+      <li>Optionally introduce keywords separated by <code>;</code></li>
+      <li>Click on a call to view its details on the right panel</li>
+    </ul>
+  </div>
+
+  <!-- Keyword search (UI only for now) -->
   <div class="mb-6">
     <label class="font-semibold">Keyword search</label>
     <input
@@ -62,198 +74,153 @@
       placeholder="energy electrical; machine learning"
       class="w-full p-2 border rounded mt-2"
     />
-    <button
-      onclick="updateCalls()"
-      class="mt-3 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-      Search
-    </button>
   </div>
 
-  <!-- Discipline -->
-  <div class="bg-white rounded-xl shadow p-4 mb-6">
-    <h3 class="font-bold mb-3">Discipline</h3>
-    <div id="discipline-container" class="flex flex-wrap gap-2"></div>
-  </div>
+  <!-- MAIN LAYOUT -->
+  <div class="flex gap-6">
 
-  <!-- Research Fields -->
-  <div class="bg-white rounded-xl shadow p-4 mb-6">
-    <h3 class="font-bold mb-3">Research Fields</h3>
-    <div id="field-container" class="flex flex-wrap gap-2"></div>
-  </div>
+    <!-- LEFT COLUMN -->
+    <div class="w-3/4">
 
-  <!-- Calls -->
-  <div class="bg-white rounded-xl shadow p-4 mb-6">
-    <h3 id="calls-title" class="font-bold mb-3">Calls (0)</h3>
-    <div id="calls-container" class="flex flex-col gap-2"></div>
-  </div>
+      <!-- Discipline -->
+      <div class="bg-white rounded-xl shadow p-4 mb-6">
+        <h3 class="font-bold mb-3">Discipline</h3>
+        <div id="discipline-container" class="flex flex-wrap gap-2"></div>
+      </div>
 
-  <!-- Summary -->
-  <div class="bg-white rounded-xl shadow p-4">
-    <h3 class="font-bold mb-3">Summary</h3>
-    <p id="summary-content" class="text-gray-700 whitespace-pre-line"></p>
-  </div>
+      <!-- Research Fields -->
+      <div class="bg-white rounded-xl shadow p-4 mb-6">
+        <h3 class="font-bold mb-3">Research Fields</h3>
+        <div id="field-container" class="flex flex-wrap gap-2"></div>
+      </div>
 
+      <!-- Calls -->
+      <div id="calls-block" class="bg-white rounded-xl shadow p-4 mb-6">
+        <h3 id="calls-title" class="font-bold mb-3">Calls (0)</h3>
+        <div id="calls-container" class="flex flex-col gap-2"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN – CALL DETAIL -->
+    <div class="w-1/4">
+      <div class="bg-white rounded-xl shadow p-4 sticky top-6">
+        <h3 class="font-bold mb-2">Call details</h3>
+        <p id="detail-id" class="text-sm font-semibold"></p>
+        <p id="detail-title" class="text-sm mb-2"></p>
+        <p id="detail-deadline" class="text-sm text-red-600 mb-3"></p>
+        <p id="detail-summary" class="text-sm text-gray-700">
+          Select a call to see its details.
+        </p>
+      </div>
+    </div>
+
+  </div>
 </div>
 
 <script>
-/* ================= GLOBAL STATE ================= */
-
 let excelData = [];
 let selectedDisciplines = new Set();
 let selectedResearchFields = new Set();
 
-/* ================= LOGIN ================= */
-
+/* LOGIN */
 function handleCredentialResponse(response) {
   const payload = JSON.parse(atob(response.credential.split(".")[1]));
-  const email = payload.email;
-
-  if (!email.endsWith("@upf.edu")) {
-    alert("Restricted access to institutional personnel");
+  if (!payload.email.endsWith("@upf.edu")) {
+    alert("Restricted access");
     return;
   }
-
-  document.getElementById("login").style.display = "none";
-  document.getElementById("private").style.display = "block";
-
+  login.style.display = "none";
+  private.style.display = "block";
   loadExcel();
 }
 
-/* ================= EXCEL ================= */
-
+/* EXCEL */
 function loadExcel() {
-  fetch("./horizon_calls.xlsx")
-    .then(res => res.arrayBuffer())
+  fetch("./calls.xlsx")
+    .then(r => r.arrayBuffer())
     .then(data => {
-      const workbook = XLSX.read(data, { type: "array" });
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      excelData = XLSX.utils.sheet_to_json(sheet);
+      const wb = XLSX.read(data, { type: "array" });
+      excelData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
       renderDisciplines();
       renderResearchFields();
       updateCalls();
     });
 }
 
-/* ================= HELPERS ================= */
-
-function keywordMatchesMulti(cellValue, userInput) {
-  if (!cellValue || !userInput) return true;
-
-  const phrases = userInput
-    .split(";")
-    .map(p => p.trim().toLowerCase())
-    .filter(p => p.length > 0);
-
-  if (phrases.length === 0) return true;
-
-  const excelKeywords = cellValue.toLowerCase().split(";");
-
-  return phrases.some(phrase =>
-    excelKeywords.some(k => k.includes(phrase))
-  );
-}
-
-/* ================= RENDERING ================= */
-
+/* RENDER DISCIPLINES */
 function renderDisciplines() {
-  const container = document.getElementById("discipline-container");
-  container.innerHTML = "";
-
-  const disciplines = [...new Set(excelData.map(r => r.Cluster))].sort();
-
-  disciplines.forEach(d => {
-    const btn = document.createElement("button");
-    btn.textContent = d;
-    btn.className = "px-3 py-1 rounded border";
-    btn.onclick = () => {
-      selectedDisciplines.has(d)
-        ? selectedDisciplines.delete(d)
-        : selectedDisciplines.add(d);
+  const c = document.getElementById("discipline-container");
+  c.innerHTML = "";
+  [...new Set(excelData.map(r => r.Cluster))].sort().forEach(d => {
+    const b = document.createElement("button");
+    b.textContent = d;
+    b.className = "px-3 py-1 border rounded";
+    b.onclick = () => {
+      selectedDisciplines.has(d) ? selectedDisciplines.delete(d) : selectedDisciplines.add(d);
+      b.classList.toggle("bg-blue-600");
+      b.classList.toggle("text-white");
       renderResearchFields();
       updateCalls();
-      btn.classList.toggle("bg-blue-600");
-      btn.classList.toggle("text-white");
     };
-    container.appendChild(btn);
+    c.appendChild(b);
   });
 }
 
+/* RENDER FIELDS */
 function renderResearchFields() {
-  const container = document.getElementById("field-container");
-  container.innerHTML = "";
-
-  let rows = excelData;
-  if (selectedDisciplines.size > 0) {
-    rows = rows.filter(r => selectedDisciplines.has(r.Cluster));
-  }
+  const c = document.getElementById("field-container");
+  c.innerHTML = "";
+  let rows = selectedDisciplines.size
+    ? excelData.filter(r => selectedDisciplines.has(r.Cluster))
+    : excelData;
 
   const fields = new Set();
-  rows.forEach(r => {
-    r["Research Fields"]
-      .split(";")
-      .map(f => f.trim())
-      .forEach(f => fields.add(f));
-  });
+  rows.forEach(r =>
+    r["Research Fields"].split(";").map(f => f.trim()).forEach(f => fields.add(f))
+  );
 
   [...fields].sort().forEach(f => {
-    const btn = document.createElement("button");
-    btn.textContent = f;
-    btn.className = "px-3 py-1 rounded border";
-    btn.onclick = () => {
-      selectedResearchFields.has(f)
-        ? selectedResearchFields.delete(f)
-        : selectedResearchFields.add(f);
+    const b = document.createElement("button");
+    b.textContent = f;
+    b.className = "px-3 py-1 border rounded";
+    b.onclick = () => {
+      selectedResearchFields.has(f) ? selectedResearchFields.delete(f) : selectedResearchFields.add(f);
+      b.classList.toggle("bg-green-600");
+      b.classList.toggle("text-white");
       updateCalls();
-      btn.classList.toggle("bg-green-600");
-      btn.classList.toggle("text-white");
     };
-    container.appendChild(btn);
+    c.appendChild(b);
   });
 }
 
+/* CALLS */
 function updateCalls() {
-  const container = document.getElementById("calls-container");
-  container.innerHTML = "";
-
-  const keywordInput =
-    document.getElementById("keyword-input").value.trim();
+  const c = document.getElementById("calls-container");
+  c.innerHTML = "";
 
   const filtered = excelData.filter(r => {
-
-    if (
-      selectedDisciplines.size > 0 &&
-      !selectedDisciplines.has(r.Cluster)
-    ) return false;
-
-    if (selectedResearchFields.size > 0) {
-      const fields = r["Research Fields"]
-        .split(";")
-        .map(f => f.trim());
-      if (!fields.some(f => selectedResearchFields.has(f))) {
-        return false;
-      }
+    if (selectedDisciplines.size && !selectedDisciplines.has(r.Cluster)) return false;
+    if (selectedResearchFields.size) {
+      const f = r["Research Fields"].split(";").map(x => x.trim());
+      if (!f.some(x => selectedResearchFields.has(x))) return false;
     }
-
-    if (keywordInput) {
-      return keywordMatchesMulti(r.Keywords, keywordInput);
-    }
-
     return true;
   });
 
-  document.getElementById("calls-title").textContent =
-    `Calls (${filtered.length})`;
+  calls-title.textContent = `Calls (${filtered.length})`;
 
   filtered.forEach(r => {
-    const btn = document.createElement("button");
-    btn.className =
-      "w-full text-left p-2 border rounded hover:bg-gray-100";
-    btn.textContent = `${r["Call ID"]}: ${r["Call Title"]}`;
-    btn.onclick = () => {
-      document.getElementById("summary-content").textContent =
-        r.Summary || "";
+    const b = document.createElement("button");
+    b.className = "w-full text-left p-2 border rounded hover:bg-gray-100";
+    b.textContent = `${r["Call ID"]}: ${r["Call Title"]}`;
+    b.onclick = () => {
+      document.getElementById("detail-id").textContent = r["Call ID"];
+      document.getElementById("detail-title").textContent = r["Call Title"];
+      document.getElementById("detail-summary").textContent = r.Summary || "";
+      document.getElementById("detail-deadline").textContent = r["Deadline(s)"] || "";
+      document.getElementById("calls-block").scrollIntoView({ behavior: "smooth" });
     };
-    container.appendChild(btn);
+    c.appendChild(b);
   });
 }
 </script>
