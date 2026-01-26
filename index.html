@@ -124,13 +124,22 @@ let selectedResearchFields = new Set();
 
 /* LOGIN */
 function handleCredentialResponse(response) {
-  const payload = JSON.parse(atob(response.credential.split(".")[1]));
-  if (!payload.email.endsWith("@upf.edu")) {
-    alert("Restricted access");
+  const payload = JSON.parse(
+    atob(response.credential.split(".")[1])
+  );
+
+  const allowedDomains = [
+    "@upf.edu",
+  ];
+
+  if (!allowedDomains.some(d => payload.email.endsWith(d))) {
+    alert("Restricted access to UPF institutional users");
     return;
   }
-  login.style.display = "none";
-  private.style.display = "block";
+
+  document.getElementById("login").style.display = "none";
+  document.getElementById("private").style.display = "block";
+
   loadExcel();
 }
 
