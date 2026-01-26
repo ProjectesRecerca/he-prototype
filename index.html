@@ -211,8 +211,9 @@ function updateCalls() {
     return true;
   });
 
-  calls-title.textContent = `Calls (${filtered.length})`;
-
+document.getElementById("calls-title").textContent =
+  `Calls (${filtered.length})`;
+  
   filtered.forEach(r => {
     const b = document.createElement("button");
     b.className = "w-full text-left p-2 border rounded hover:bg-gray-100";
