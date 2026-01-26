@@ -124,16 +124,11 @@ let selectedResearchFields = new Set();
 
 /* LOGIN */
 function handleCredentialResponse(response) {
-  const payload = JSON.parse(
-    atob(response.credential.split(".")[1])
-  );
+  const payload = JSON.parse(atob(response.credential.split(".")[1]));
+  const email = payload.email;
 
-  const allowedDomains = [
-    "@upf.edu",
-  ];
-
-  if (!allowedDomains.some(d => payload.email.endsWith(d))) {
-    alert("Restricted access to UPF institutional users");
+  if (!email.endsWith("@universidad.es")) {
+    alert("Restricted access to institutional personnel");
     return;
   }
 
