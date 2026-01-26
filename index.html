@@ -127,7 +127,7 @@ function handleCredentialResponse(response) {
   const payload = JSON.parse(atob(response.credential.split(".")[1]));
   const email = payload.email;
 
-  if (!email.endsWith("@universidad.es")) {
+  if (!email.endsWith("@upf.edu")) {
     alert("Restricted access to institutional personnel");
     return;
   }
@@ -213,7 +213,7 @@ function updateCalls() {
 
 document.getElementById("calls-title").textContent =
   `Calls (${filtered.length})`;
-  
+
   filtered.forEach(r => {
     const b = document.createElement("button");
     b.className = "w-full text-left p-2 border rounded hover:bg-gray-100";
