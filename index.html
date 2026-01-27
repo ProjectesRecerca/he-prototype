@@ -223,6 +223,26 @@ function renderResearchFields() {
   });
 }
 
+function showCallDetails(r, buttonElement) {
+
+  // Quitar selección anterior
+  if (selectedCallButton) {
+    selectedCallButton.classList.remove("bg-blue-100", "border-blue-500");
+  }
+
+  // Guardar nuevo botón seleccionado
+  selectedCallButton = buttonElement;
+  selectedCallButton.classList.add("bg-blue-100", "border-blue-500");
+
+  // Rellenar panel derecho
+  document.getElementById("detail-id").textContent = r["Call ID"] || "";
+  document.getElementById("detail-title").textContent = r["Call Title"] || "";
+  document.getElementById("detail-action").textContent = r["Type of Action"] || "";
+  document.getElementById("detail-opening").textContent = excelDateToString(r["Opening Date"]);
+  document.getElementById("detail-deadline").textContent = excelDateToString(r["Deadline Date"]);
+  document.getElementById("detail-summary").textContent = r["Summary"] || "";
+}
+
 /* CALLS */
 function updateCalls() {
   const container = document.getElementById("calls-container");
@@ -262,10 +282,7 @@ function updateCalls() {
     btn.className =
       "w-full text-left p-2 border rounded hover:bg-gray-100";
     btn.textContent = `${r["Call ID"]}: ${r["Call Title"]}`;
-    btn.onclick = () => {
-      document.getElementById("summary-content").textContent =
-        r.Summary || "";
-    };
+    btn.onclick = () => showCallDetails(r, btn);
     container.appendChild(btn);
   });
 }
