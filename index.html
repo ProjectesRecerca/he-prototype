@@ -122,8 +122,15 @@
       <div class="mt-4">
         <strong>Summary</strong>
         <p id="detail-summary" class="mt-1 text-justify text-sm"></p>
-          Select a call to see its details.
         </p>
+      </div>
+      <div class="mt-4 flex justify-center">
+        <button
+          id="clear-btn"
+          class="px-4 py-1 bg-gray-300 text-gray-800 rounded hover:bg-gray-400"
+        >
+          Clear
+        </button>
       </div>
     </div>
 
@@ -224,14 +231,29 @@ function renderResearchFields() {
 }
 
 function showCallDetails(r, buttonElement) {
+  // Si hacemos click en la call ya seleccionada → deseleccionamos
+  if (selectedCallButton === buttonElement) {
+    buttonElement.classList.remove("bg-red-100", "border-red-500");
+    selectedCallButton = null;
 
-  // Quitar selección anterior
-  if (selectedCallButton) {
-    selectedCallButton.classList.remove("bg-blue-100", "border-blue-500");
+    // Limpiar panel
+    document.getElementById("detail-id").textContent = "";
+    document.getElementById("detail-title").textContent = "";
+    document.getElementById("detail-action").textContent = "";
+    document.getElementById("detail-opening").textContent = "";
+    document.getElementById("detail-deadline").textContent = "";
+    document.getElementById("detail-summary").textContent = "Select a call to see its details.";
+    return;
   }
-  // Guardar nuevo botón seleccionado
+
+  // Quitar selección anterior si existe
+  if (selectedCallButton) {
+    selectedCallButton.classList.remove("bg-red-100", "border-red-500");
+  }
+
+  // Marcar la nueva call
   selectedCallButton = buttonElement;
-  selectedCallButton.classList.add("bg-blue-100", "border-blue-500");
+  selectedCallButton.classList.add("bg-red-100", "border-red-500");
 
   // Rellenar panel derecho
   document.getElementById("detail-id").textContent = r["Call ID"] || "";
