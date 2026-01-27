@@ -225,39 +225,50 @@ function renderResearchFields() {
 
 /* CALLS */
 function updateCalls() {
-  const c = document.getElementById("calls-container");
-  c.innerHTML = "";
+  const container = document.getElementById("calls-container");
+  container.innerHTML = "";
+
+  const keywordInput =
+    document.getElementById("keyword-input").value.trim();
 
   const filtered = excelData.filter(r => {
-    if (selectedDisciplines.size && !selectedDisciplines.has(r.Cluster)) return false;
-    if (selectedResearchFields.size) {
-      const f = r["Research Fields"].split(";").map(x => x.trim());
-      if (!f.some(x => selectedResearchFields.has(x))) return false;
+
+    if (
+      selectedDisciplines.size > 0 &&
+      !selectedDisciplines.has(r.Cluster)
+    ) return false;
+
+    if (selectedResearchFields.size > 0) {
+      const fields = r["Research Fields"]
+        .split(";")
+        .map(f => f.trim());
+      if (!fields.some(f => selectedResearchFields.has(f))) {
+        return false;
+      }
     }
+
+    if (keywordInput) {
+      return keywordMatchesMulti(r.Keywords, keywordInput);
+    }
+
     return true;
   });
 
-document.getElementById("calls-title").textContent =
-  `Calls (${filtered.length})`;
+  document.getElementById("calls-title").textContent =
+    `Calls (${filtered.length})`;
 
   filtered.forEach(r => {
-    const b = document.createElement("button");
-    b.className = "w-full text-left p-2 border rounded hover:bg-gray-100";
-    b.textContent = `${r["Call ID"]}: ${r["Call Title"]}`;
-    b.onclick = () => {
-      document.getElementById("detail-id").textContent = r["Call ID"];
-    document.getElementById("detail-title").textContent = r["Call Title"];
-    document.getElementById("detail-action").textContent = r["Type of Action"] || "";
-    document.getElementById("detail-opening").textContent = excelDateToString(r["Opening Date"]);
-    document.getElementById("detail-deadline").textContent = excelDateToString(r["Deadline(s)"]);
-    document.getElementById("detail-summary").textContent = r["Summary"] || "";
-    document.getElementById("calls-block")
-      .scrollIntoView({ behavior: "smooth" });
-  };
-    c.appendChild(b);
+    const btn = document.createElement("button");
+    btn.className =
+      "w-full text-left p-2 border rounded hover:bg-gray-100";
+    btn.textContent = `${r["Call ID"]}: ${r["Call Title"]}`;
+    btn.onclick = () => {
+      document.getElementById("summary-content").textContent =
+        r.Summary || "";
+    };
+    container.appendChild(btn);
   });
 }
-
 </script>
 
 </body>
