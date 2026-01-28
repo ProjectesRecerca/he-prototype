@@ -108,7 +108,7 @@
       </div>
 
       <!-- Calls -->
-      <div id="calls-block" class="bg-white rounded-xl shadow p-4 mb-6">
+      <div id="calls-section" class="bg-white rounded-xl shadow p-4 mb-6">
         <h3 id="calls-title" class="font-bold mb-3">Calls (0)</h3>
         <div id="calls-container" class="flex flex-col gap-2"></div>
       </div>
@@ -247,10 +247,16 @@ function renderResearchFields() {
 }
 
 /* ================= KEYWORD SEARCH ================= */
-function keywordMatchesMulti(excelKeywords, userInput) {
-  if (!excelKeywords) return false;
+function keywordMatchesMulti(call, userInput) {
+  if (!userInput) return true;
 
-  const text = excelKeywords.toLowerCase();
+  const haystack = [
+    call.Keywords || "",
+    call["Call Title"] || "",
+    call.Summary || ""
+  ]
+    .join(" ")
+    .toLowerCase();
 
   const searches = userInput
     .toLowerCase()
@@ -258,7 +264,7 @@ function keywordMatchesMulti(excelKeywords, userInput) {
     .map(s => s.trim())
     .filter(Boolean);
 
-  return searches.some(term => text.includes(term));
+  return searches.some(term => haystack.includes(term));
 }
 
 document.getElementById("search-btn").addEventListener("click", () => {
@@ -273,6 +279,13 @@ document
       updateCalls();
     }
   });
+
+function scrollToCalls() {
+  const callsBlock = document.getElementById("calls-section");
+  if (callsBlock) {
+    callsBlock.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
 
 /* ================= SHOW CALL DETAILS ================= */
 function resetDetailsPanel(message = "Select a call to see its details.") {
@@ -330,7 +343,7 @@ function updateCalls() {
     }
 
     if (keywordInput) {
-      return keywordMatchesMulti(r["Keywords"] || "", keywordInput);
+      return keywordMatchesMulti(r, keywordInput);
     }
 
     return true;
@@ -345,6 +358,14 @@ function updateCalls() {
     btn.onclick = () => showCallDetails(r, btn);
     container.appendChild(btn);
   });
+
+  if (filtered.length === 0) {
+  container.innerHTML =
+    "<p class='text-gray-500 italic'>No calls match your search criteria.</p>";
+  }
+
+  scrollToCalls();
+  
 }
 
 /* ================= CLEAR BUTTON ================= */
