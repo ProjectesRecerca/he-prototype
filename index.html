@@ -323,6 +323,9 @@ function showCallDetails(r, buttonElement) {
   document.getElementById("detail-deadline").textContent = excelDateToString(r["Deadline(s)"]);
   document.getElementById("detail-summary").textContent = r["Summary"] || "";
   document.getElementById("more-info-btn").classList.remove("hidden");
+  document
+    .getElementById("more-info-btn")
+    .onclick = () => openMoreInfoEmail(r["Call ID"]);
 
 }
 
@@ -371,18 +374,69 @@ function updateCalls() {
 /* ================= CLEAR BUTTON ================= */
 window.addEventListener("DOMContentLoaded", () => {
   const clearBtn = document.getElementById("clear-btn");
-  if (clearBtn) {
-    clearBtn.addEventListener("click", () => {
-      if (selectedCallButton) {
-        selectedCallButton.classList.remove("bg-blue-100", "border-blue-500", "text-blue-800");
-        selectedCallButton = null;
-      }
-      resetDetailsPanel();
-    });
-  }
+
+  if (!clearBtn) return;
+
+  clearBtn.addEventListener("click", () => {
+    // 1. Reset estados
+    selectedDisciplines.clear();
+    selectedResearchFields.clear();
+    selectedCallButton = null;
+
+    // 2. Limpiar input keywords
+    // const keywordInput = document.getElementById("keyword-input");
+    //if (keywordInput) keywordInput.value = "";
+
+    // 3. Reset estilos visuales
+    document
+      .querySelectorAll("#discipline-container button, #field-container button")
+      .forEach(btn => {
+        btn.classList.remove(
+          "bg-blue-600",
+          "bg-green-600",
+          "text-white"
+        );
+      });
+
+    // 4. Reset panel detalles
+    resetDetailsPanel();
+
+    // 5. Re-render
+    renderResearchFields();
+    updateCalls();
+    document.getElementById("more-info-btn").classList.add("hidden");
+
+  });
 });
 
-window.addEventListener("DOMContentLoaded", () => {
+
+
+function openMoreInfoEmail(callId) {
+  const accepted = confirm(
+    "Email will be sent from your active Gmail account.\n\nDo you want to continue?"
+  );
+
+  if (!accepted) return;
+
+  const to = "projectes.recerca@upf.edu"; // ← indícalo aquí
+  const subject = `[${callId}] Request for more information`;
+  const body =
+    "Dear Research Service,\n\n" +
+    "I would like to request more information about the following Horizon Europe call:\n\n" +
+    `Call ID: ${callId}\n\n` +
+    "Thank you very much.\n\n" +
+    "Best regards,";
+
+  const mailtoLink =
+    `https://mail.google.com/mail/?view=cm&fs=1` +
+    `&to=${encodeURIComponent(to)}` +
+    `&su=${encodeURIComponent(subject)}` +
+    `&body=${encodeURIComponent(body)}`;
+
+  window.open(mailtoLink, "_blank");
+}
+
+/* window.addEventListener("DOMContentLoaded", () => {
   const moreInfoBtn = document.getElementById("more-info-btn");
 
   moreInfoBtn.addEventListener("click", () => {
@@ -411,5 +465,5 @@ window.addEventListener("DOMContentLoaded", () => {
 
     window.open(gmailURL, "_blank");
   });
-});
+}); */
 </script>
