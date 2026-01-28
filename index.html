@@ -269,6 +269,7 @@ function keywordMatchesMulti(call, userInput) {
 
 document.getElementById("search-btn").addEventListener("click", () => {
   updateCalls();
+  scrollToCalls();
 });
 
 document
@@ -277,6 +278,7 @@ document
     if (e.key === "Enter") {
       e.preventDefault();
       updateCalls();
+      scrollToCalls();
     }
   });
 
@@ -363,8 +365,6 @@ function updateCalls() {
   container.innerHTML =
     "<p class='text-gray-500 italic'>No calls match your search criteria.</p>";
   }
-
-  scrollToCalls();
   
 }
 
