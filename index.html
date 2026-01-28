@@ -140,6 +140,15 @@
       </div>
     </div>
 
+    <div class="mt-3 flex justify-center">
+      <button
+        id="more-info-btn"
+        class="hidden px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+      >
+        More information
+      </button>
+    </div>
+
   </div>
 </div>
 
@@ -261,6 +270,7 @@ function resetDetailsPanel(message = "Select a call to see its details.") {
   document.getElementById("detail-opening").textContent = "";
   document.getElementById("detail-deadline").textContent = "";
   document.getElementById("detail-summary").textContent = message;
+  document.getElementById("more-info-btn").classList.add("hidden");
 }
 
 function showCallDetails(r, buttonElement) {
@@ -273,6 +283,7 @@ function showCallDetails(r, buttonElement) {
 
   if (selectedCallButton) {
     selectedCallButton.classList.remove("bg-blue-100", "border-blue-500", "text-blue-800");
+    document.getElementById("more-info-btn").classList.add("hidden");
   }
 
   selectedCallButton = buttonElement;
@@ -284,6 +295,8 @@ function showCallDetails(r, buttonElement) {
   document.getElementById("detail-opening").textContent = excelDateToString(r["Opening date"]);
   document.getElementById("detail-deadline").textContent = excelDateToString(r["Deadline(s)"]);
   document.getElementById("detail-summary").textContent = r["Summary"] || "";
+  document.getElementById("more-info-btn").classList.remove("hidden");
+
 }
 
 /* ================= UPDATE CALLS ================= */
@@ -334,5 +347,36 @@ window.addEventListener("DOMContentLoaded", () => {
       resetDetailsPanel();
     });
   }
+});
+
+window.addEventListener("DOMContentLoaded", () => {
+  const moreInfoBtn = document.getElementById("more-info-btn");
+
+  moreInfoBtn.addEventListener("click", () => {
+    if (!selectedCallButton) return;
+
+    const callId = document.getElementById("detail-id").textContent;
+    const callTitle = document.getElementById("detail-title").textContent;
+
+    const toEmail = "projectes.recerca@upf.edu"; // 
+
+    const subject = encodeURIComponent(`[${callId}] Request for more information`);
+    const body = encodeURIComponent(
+        `Dear Research Support Office,
+
+        I am interested in the following Horizon Europe call:
+
+        Call ID: ${callId}
+        Title: ${callTitle}
+
+        I would appreciate more information and guidance on this opportunity.
+
+        Best regards,`
+    );
+
+    const gmailURL = `https://mail.google.com/mail/?view=cm&fs=1&to=${toEmail}&su=${subject}&body=${body}`;
+
+    window.open(gmailURL, "_blank");
+  });
 });
 </script>
