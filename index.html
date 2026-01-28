@@ -72,20 +72,22 @@
   </div>
 
   <!-- Keyword search-->
-<div class="flex gap-2 mt-2 mb-6">
-  <input
-    id="keyword-input"
-    type="text"
-    placeholder='energy; machine learning'
-    class="w-full border rounded px-2 py-1"
-  />
-  <button
-    id="search-btn"
-    class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-  >
-    Search
-  </button>
-</div>
+  <div class="flex gap-2 mt-2 mb-6">
+    <input
+      id="keyword-input"
+      type="text"
+      placeholder='Keywords (separated by ;)'
+      class="w-full border rounded px-2 py-1"
+    />
+    <button
+      id="search-btn"
+      class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+    >
+      Search
+    </button>
+  </div>
+
+
 
   <!-- MAIN LAYOUT -->
   <div class="flex gap-6">
@@ -262,6 +264,15 @@ function keywordMatchesMulti(excelKeywords, userInput) {
 document.getElementById("search-btn").addEventListener("click", () => {
   updateCalls();
 });
+
+document
+  .getElementById("keyword-input")
+  .addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      updateCalls();
+    }
+  });
 
 /* ================= SHOW CALL DETAILS ================= */
 function resetDetailsPanel(message = "Select a call to see its details.") {
