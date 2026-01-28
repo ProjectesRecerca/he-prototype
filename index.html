@@ -72,7 +72,7 @@
   </div>
 
   <!-- Keyword search-->
-<div class="flex gap-2 mt-6">
+<div class="flex gap-2 mt-2 mb-6">
   <input
     id="keyword-input"
     type="text"
@@ -130,24 +130,22 @@
         <p id="detail-summary" class="mt-1 text-justify text-sm"></p>
         </p>
       </div>
-      <div class="mt-4 flex justify-center">
-        <button
-          id="clear-btn"
-          class="px-4 py-1 bg-gray-300 text-gray-800 rounded hover:bg-gray-400"
-        >
-          Clear
-        </button>
-      </div>
-    </div>
-
-    <div class="mt-3 flex justify-center">
+      <div class="flex flex-col gap-2 pt-2">
       <button
         id="more-info-btn"
         class="hidden px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
       >
         More information
       </button>
+
+      <button
+        id="clear-btn"
+        class="px-4 py-1 bg-gray-300 text-gray-800 rounded hover:bg-gray-400"
+      >
+        Clear
+      </button>
     </div>
+
 
   </div>
 </div>
@@ -362,7 +360,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
     const subject = encodeURIComponent(`[${callId}] Request for more information`);
     const body = encodeURIComponent(
-        `Dear Research Support Office,
+        `Dear Research Service,
 
         I am interested in the following Horizon Europe call:
 
