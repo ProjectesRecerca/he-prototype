@@ -375,30 +375,29 @@ function keywordMatchesMulti(call, userInput) {
   return searches.some(term => haystack.includes(term));
 }
 
-function highlightKeywords(text, keywordInput) {
-  if (!keywordInput || !text) return text;
-
-  const terms = keywordInput
-    .split(";")
-    .map(t => t.trim())
-    .filter(Boolean)
-    .sort((a, b) => b.length - a.length); // evita solapes
+function highlightKeywords(text, userInput) {
+  if (!text || !userInput) return text || "";
 
   let result = text;
+  const terms = userInput
+    .toLowerCase()
+    .split(";")
+    .map(t => t.trim())
+    .filter(Boolean);
 
   terms.forEach(term => {
-    const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const regex = new RegExp(`(${escaped})`, "gi");
+    // Escapar caracteres regex
+    const safeTerm = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
+    const regex = new RegExp(`(${safeTerm})`, "gi");
     result = result.replace(
       regex,
-      `<span class="bg-yellow-200 font-semibold rounded px-0.5">$1</span>`
+      `<mark class="bg-yellow-200 px-1 rounded">$1</mark>`
     );
   });
 
   return result;
 }
-
 
 
 function countKeywordMatches(call, userInput) {
