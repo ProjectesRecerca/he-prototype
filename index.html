@@ -417,6 +417,13 @@ function updateCalls() {
     return true;
   });
 
+  filtered.sort((a, b) => {
+  const scoreA = countKeywordMatches(a, keywordInput);
+  const scoreB = countKeywordMatches(b, keywordInput);
+  return scoreB - scoreA;
+  });
+
+
   document.getElementById("calls-title").textContent = `Calls (${filtered.length})`;
 
   filtered.forEach(r => {
@@ -430,9 +437,13 @@ function updateCalls() {
       <span>${r["Call ID"] || ""}: ${r["Call Title"] || ""}</span>
       ${
         keywordInput
-          ? `<span class="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
+          ? `<span
+            title="Number of times your keyword(s) appear in this call"
+            class="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full cursor-help"
+            >
               ${score}
-            </span>`
+            
+              </span>`
           : ""
       }
     `;
