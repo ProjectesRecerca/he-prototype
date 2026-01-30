@@ -326,6 +326,30 @@ function keywordMatchesMulti(call, userInput) {
   return searches.some(term => haystack.includes(term));
 }
 
+function highlightKeywords(text, keywordInput) {
+  if (!keywordInput || !text) return text;
+
+  const terms = keywordInput
+    .toLowerCase()
+    .split(";")
+    .map(t => t.trim())
+    .filter(Boolean);
+
+  let highlighted = text;
+
+  terms.forEach(term => {
+    // Crear regex global y case-insensitive
+    const regex = new RegExp(`(${term})`, "gi");
+    highlighted = highlighted.replace(
+      regex,
+      `<span class="bg-yellow-200 font-semibold">$1</span>`
+    );
+  });
+
+  return highlighted;
+}
+
+
 function countKeywordMatches(call, userInput) {
   if (!userInput) return 0;
 
@@ -410,9 +434,13 @@ function showCallDetails(r, buttonElement) {
   document.getElementById("detail-opening").textContent = excelDateToString(r["Opening date"]);
   document.getElementById("detail-deadline").textContent = excelDateToString(r["Deadline(s)"]);
   document.getElementById("detail-summary").textContent = r["Summary"] || "";
+
+  const keywordInput = document.getElementById("keyword-input").value.trim();
+  document.getElementById("detail-title").innerHTML = highlightKeywords(r["Call Title"] || "", keywordInput);
+  document.getElementById("detail-summary").innerHTML =  highlightKeywords(r["Summary"] || "", keywordInput);
+
   const moreInfoBtn = document.getElementById("more-info-btn");
   moreInfoBtn.classList.remove("hidden");
-
   moreInfoBtn.onclick = () => openMoreInfoModal(r);
 }
 
@@ -434,6 +462,19 @@ function openMoreInfoModal(call) {
     modal.classList.add("hidden");
     openMoreInfoEmail(call["Call ID"]);
   };
+
+  const keywordInput = document.getElementById("keyword-input").value.trim();
+  document.getElementById("modal-expected-outcomes").innerHTML =
+    highlightKeywords(
+      getColumnValue(call, "Expected Outcomes") || "Not available",
+      keywordInput
+    );
+
+  document.getElementById("modal-scope").innerHTML =
+    highlightKeywords(
+      getColumnValue(call, "Scope") || "Not available",
+      keywordInput
+    );
 }
 
 function showNoCallsPopup() {
@@ -555,7 +596,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
 function openMoreInfoEmail(callId) {
   const accepted = confirm(
-    "A new window will open to compose an email from your Gmail account.\n\n" +
+    "A new window will open to compose an email from your active Gmail account.\n\n" +
     "Do you want to continue?\n\n" +
     "If you prefer, you can contact the Research Service directly at projectes.recerca@upf.edu for further information."
   );
