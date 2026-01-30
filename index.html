@@ -232,8 +232,8 @@
 
 <script>
 let excelData = [];
-let selectedDisciplines = new Set();
-let selectedResearchFields = new Set();
+const  selectedDisciplines = new Set();
+const  selectedResearchFields = new Set();
 let selectedCallButton = null;
 
 /* ================= DATE FORMAT ================= */
@@ -281,20 +281,35 @@ function renderDisciplines() {
   const c = document.getElementById("discipline-container");
   c.innerHTML = "";
 
-  [...new Set(excelData.map(r => r.Cluster).filter(Boolean))].sort().forEach(d => {
-    const b = document.createElement("button");
-    b.textContent = d;
-    b.className = "px-3 py-1 border rounded";
-    b.onclick = () => {
-      selectedDisciplines.has(d) ? selectedDisciplines.delete(d) : selectedDisciplines.add(d);
-      b.classList.toggle("bg-blue-600");
-      b.classList.toggle("text-white");
-      renderResearchFields();
-      updateCalls();
-    };
-    c.appendChild(b);
-  });
+  [...new Set(excelData.map(r => r.Cluster).filter(Boolean))]
+    .sort()
+    .forEach(d => {
+      const b = document.createElement("button");
+      b.textContent = d;
+      b.className = "px-3 py-1 border rounded";
+
+      // restaurar estado visual
+      if (selectedDisciplines.has(d)) {
+        b.classList.add("bg-blue-600", "text-white");
+      }
+
+      b.onclick = () => {
+        if (selectedDisciplines.has(d)) {
+          selectedDisciplines.delete(d);
+          b.classList.remove("bg-blue-600", "text-white");
+        } else {
+          selectedDisciplines.add(d);
+          b.classList.add("bg-blue-600", "text-white");
+        }
+
+        renderResearchFields();
+        updateCalls();
+      };
+
+      c.appendChild(b);
+    });
 }
+
 
 /* ================= RESEARCH FIELDS ================= */
 function renderResearchFields() {
@@ -315,15 +330,28 @@ function renderResearchFields() {
     const b = document.createElement("button");
     b.textContent = f;
     b.className = "px-3 py-1 border rounded";
+
+    // restaurar estado visual
+    if (selectedResearchFields.has(f)) {
+      b.classList.add("bg-green-600", "text-white");
+    }
+
     b.onclick = () => {
-      selectedResearchFields.has(f) ? selectedResearchFields.delete(f) : selectedResearchFields.add(f);
-      b.classList.toggle("bg-green-600");
-      b.classList.toggle("text-white");
+      if (selectedResearchFields.has(f)) {
+        selectedResearchFields.delete(f);
+        b.classList.remove("bg-green-600", "text-white");
+      } else {
+        selectedResearchFields.add(f);
+        b.classList.add("bg-green-600", "text-white");
+      }
+
       updateCalls();
     };
+
     c.appendChild(b);
   });
 }
+
 
 /* ================= KEYWORD SEARCH ================= */
 function keywordMatchesMulti(call, userInput) {
