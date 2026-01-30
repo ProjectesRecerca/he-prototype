@@ -274,12 +274,13 @@ function keywordMatchesMulti(call, userInput) {
   if (!userInput) return true;
 
   const haystack = [
-    call.Keywords || "",
-    call["Call Title"] || "",
-    call.Summary || ""
+    call["Keywords"] || "",
+    call["Summary"] || "",
+    call["Expected Outcomes"] || "",
+    call["Scope"] || ""
   ]
-    .join(" ")
-    .toLowerCase();
+  .join(" ")
+  .toLowerCase();
 
   const searches = userInput
     .toLowerCase()
