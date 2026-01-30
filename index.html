@@ -16,54 +16,41 @@
   <!-- SheetJS -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 </head>
-
 <!-- More info modal -->
-<div class="bg-white rounded-xl shadow-lg max-w-2xl w-full max-h-[80vh] p-6 relative flex flex-col">
-  <h3 class="text-lg font-bold mb-4">Call information</h3>
+<div
+  id="more-info-modal"
+  class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center"
+>
+  <div class="bg-white rounded-xl shadow-lg max-w-2xl w-full p-6 relative">
+    <h3 class="text-lg font-bold mb-4">Call information</h3>
 
-  <!-- Scrollable content -->
-  <div class="overflow-y-auto pr-2 space-y-6">
-
-    <div>
-      <h4 class="font-semibold text-base mb-1">
-        Expected Outcomes
-      </h4>
-      <p
-        id="modal-expected-outcomes"
-        class="text-sm text-gray-700 leading-relaxed text-justify"
-      ></p>
+    <div class="mb-4">
+      <h4 class="font-semibold">Expected Outcomes</h4>
+      <p id="modal-expected-outcomes" class="text-sm text-gray-700 mt-1"></p>
     </div>
 
-    <div>
-      <h4 class="font-semibold text-base mb-1">
-        Scope
-      </h4>
-      <p
-        id="modal-scope"
-        class="text-sm text-gray-700 leading-relaxed text-justify"
-      ></p>
+    <div class="mb-6">
+      <h4 class="font-semibold">Scope</h4>
+      <p id="modal-scope" class="text-sm text-gray-700 mt-1"></p>
     </div>
 
-  </div>
+    <div class="flex justify-between items-center">
+      <button
+        id="close-modal-btn"
+        class="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400"
+      >
+        Close
+      </button>
 
-  <!-- Footer -->
-  <div class="flex justify-between items-center pt-4 border-t mt-4">
-    <button
-      id="close-modal-btn"
-      class="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400"
-    >
-      Close
-    </button>
-
-    <button
-      id="contact-us-btn"
-      class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-    >
-      Contact us
-    </button>
+      <button
+        id="contact-us-btn"
+        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+      >
+        Contact us
+      </button>
+    </div>
   </div>
 </div>
-
 
 <body class="bg-gray-100 min-h-screen">
 
@@ -423,25 +410,18 @@ function showCallDetails(r, buttonElement) {
   document.getElementById("detail-opening").textContent = excelDateToString(r["Opening date"]);
   document.getElementById("detail-deadline").textContent = excelDateToString(r["Deadline(s)"]);
   document.getElementById("detail-summary").textContent = r["Summary"] || "";
-  document.getElementById("more-info-btn").classList.remove("hidden");
-  document
-    .getElementById("more-info-btn")
-    .onclick = () => openMoreInfoModal(r["Call ID"]);
-}
+  const moreInfoBtn = document.getElementById("more-info-btn");
+  moreInfoBtn.classList.remove("hidden");
 
-function getColumnValue(call, columnName) {
-  const key = Object.keys(call).find(k =>
-    k.trim().toLowerCase() === columnName.toLowerCase()
-  );
-  return key ? call[key] : "";
+  moreInfoBtn.onclick = () => openMoreInfoModal(r);
 }
 
 function openMoreInfoModal(call) {
   document.getElementById("modal-expected-outcomes").textContent =
-    getColumnValue(call, "Expected Outcomes") || "Not available";
+    call["Expected Outcomes"] || "Not available";
 
   document.getElementById("modal-scope").textContent =
-    getColumnValue(call, "Scope") || "Not available";
+    call["Scope"] || "Not available";
 
   const modal = document.getElementById("more-info-modal");
   modal.classList.remove("hidden");
@@ -455,7 +435,6 @@ function openMoreInfoModal(call) {
     openMoreInfoEmail(call["Call ID"]);
   };
 }
-
 
 function showNoCallsPopup() {
   const popup = document.getElementById("no-calls-popup");
