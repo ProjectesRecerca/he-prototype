@@ -351,24 +351,26 @@ function highlightKeywords(text, keywordInput) {
   if (!keywordInput || !text) return text;
 
   const terms = keywordInput
-    .toLowerCase()
     .split(";")
     .map(t => t.trim())
-    .filter(Boolean);
+    .filter(Boolean)
+    .sort((a, b) => b.length - a.length); // evita solapes
 
-  let highlighted = text;
+  let result = text;
 
   terms.forEach(term => {
-    // Crear regex global y case-insensitive
-    const regex = new RegExp(`(${term})`, "gi");
-    highlighted = highlighted.replace(
+    const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(`(${escaped})`, "gi");
+
+    result = result.replace(
       regex,
-      `<span class="bg-yellow-200 font-semibold">$1</span>`
+      `<span class="bg-yellow-200 font-semibold rounded px-0.5">$1</span>`
     );
   });
 
-  return highlighted;
+  return result;
 }
+
 
 
 function countKeywordMatches(call, userInput) {
@@ -485,17 +487,18 @@ function openMoreInfoModal(call) {
   };
 
   const keywordInput = document.getElementById("keyword-input").value.trim();
+
   document.getElementById("modal-expected-outcomes").innerHTML =
     highlightKeywords(
-      getColumnValue(call, "Expected Outcomes") || "Not available",
+      getColumnValue(call, "Expected Outcomes"),
       keywordInput
-    );
+    ) || "Not available";
 
   document.getElementById("modal-scope").innerHTML =
     highlightKeywords(
-      getColumnValue(call, "Scope") || "Not available",
+      getColumnValue(call, "Scope"),
       keywordInput
-    );
+    ) || "Not available";
 }
 
 function showNoCallsPopup() {
@@ -519,20 +522,33 @@ function updateCalls() {
   const keywordInput = document.getElementById("keyword-input").value.trim();
 
   const filtered = excelData.filter(r => {
-    if (selectedDisciplines.size && !selectedDisciplines.has(r.Cluster)) return false;
 
-    if (selectedResearchFields.size) {
-      if (!r["Research Fields"]) return false;
-      const fields = r["Research Fields"].split(";").map(f => f.trim());
-      if (!fields.some(f => selectedResearchFields.has(f))) return false;
+    // Discipline
+    if (selectedDisciplines.size && !selectedDisciplines.has(r.Cluster)) {
+      return false;
     }
 
-    if (keywordInput) {
-      return keywordMatchesMulti(r, keywordInput);
+    // Research Fields
+    if (selectedResearchFields.size) {
+      if (!r["Research Fields"]) return false;
+
+      const fields = r["Research Fields"]
+        .split(";")
+        .map(f => f.trim());
+
+      if (!fields.some(f => selectedResearchFields.has(f))) {
+        return false;
+      }
+    }
+
+    // Keywords
+    if (keywordInput && !keywordMatchesMulti(r, keywordInput)) {
+      return false;
     }
 
     return true;
   });
+
 
   filtered.sort((a, b) => {
   const scoreA = countKeywordMatches(a, keywordInput);
