@@ -406,6 +406,7 @@ function countKeywordMatches(call, userInput) {
 
   const haystack = [
     call["Keywords"] || "",
+    call["SSH Keywords"] || "",
     call["Summary"] || "",
     call["Expected Outcomes"] || "",
     call["Scope"] || ""
