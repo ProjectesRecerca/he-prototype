@@ -584,14 +584,10 @@ function updateCalls() {
   return scoreB - scoreA;
   });
 
-  const filteredWithScore = filtered.filter(r =>
-  countKeywordMatches(r, keywordInput) > 0
-  );
 
-  document.getElementById("calls-title").textContent =
-   `Calls (${filteredWithScore.length})`;
+  document.getElementById("calls-title").textContent = `Calls (${filtered.length})`;
 
-  filteredWithScore.forEach(r => {
+  filtered.forEach(r => {
     const score = countKeywordMatches(r, keywordInput);
 
     const btn = document.createElement("button");
@@ -617,7 +613,7 @@ function updateCalls() {
     container.appendChild(btn);
   });
  
-  if (filteredWithScore.length === 0) {
+  if (filtered.length === 0) {
   showNoCallsPopup();
   }
 }
