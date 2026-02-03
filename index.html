@@ -192,6 +192,7 @@
         <strong>Summary</strong>
         <p id="detail-summary" class="mt-1 text-justify text-sm"></p>
         </p>
+      <p id="detail-ssh-keywords" class="mt-2 text-justify text-xs italic text-gray-500"></p>
       </div>
       <div class="flex flex-col gap-2 pt-2">
       <button
@@ -461,6 +462,7 @@ function resetDetailsPanel(message = "Select a call to see its details.") {
   document.getElementById("detail-opening").textContent = "";
   document.getElementById("detail-deadline").textContent = "";
   document.getElementById("detail-summary").textContent = message;
+  document.getElementById("detail-ssh-keywords").textContent = "";
   document.getElementById("more-info-btn").classList.add("hidden");
 }
 
@@ -491,43 +493,48 @@ function showCallDetails(r, buttonElement) {
   document.getElementById("detail-title").innerHTML = highlightKeywords(r["Call Title"] || "", keywordInput);
   document.getElementById("detail-summary").innerHTML =  highlightKeywords(r["Summary"] || "", keywordInput);
 
+  // Get SSH Keywords and format them
+  const sshRaw = r["SSH Keywords"] || ""; 
+  // Only display if data exists
+  const sshText = sshRaw ? `SSH Keywords: ${sshRaw}` : "";
+  
+  // Apply highlighting (reuses your existing keyword highlighter)
+  document.getElementById("detail-ssh-keywords").innerHTML = highlightKeywords(sshText, keywordInput);
+
   const moreInfoBtn = document.getElementById("more-info-btn");
   moreInfoBtn.classList.remove("hidden");
   moreInfoBtn.onclick = () => openMoreInfoModal(r);
 }
 
 function openMoreInfoModal(call) {
-  document.getElementById("modal-expected-outcomes").textContent =
-    call["Expected Outcomes"] || "Not available";
-
-  document.getElementById("modal-scope").textContent =
-    call["Scope"] || "Not available";
-
+  // 1. Show the modal
   const modal = document.getElementById("more-info-modal");
   modal.classList.remove("hidden");
 
+  // 2. Setup Close button
   document.getElementById("close-modal-btn").onclick = () => {
     modal.classList.add("hidden");
   };
 
+  // 3. Setup Contact button
   document.getElementById("contact-us-btn").onclick = () => {
     modal.classList.add("hidden");
     openMoreInfoEmail(call["Call ID"]);
   };
 
+  // 4. Get the current search keywords
   const keywordInput = document.getElementById("keyword-input").value.trim();
 
+  // 5. Render "Expected Outcomes" with highlighting
+  // We handle the text directly and pass it to your existing highlightKeywords function
+  const outcomesText = call["Expected Outcomes"] || "";
   document.getElementById("modal-expected-outcomes").innerHTML =
-    highlightKeywords(
-      getColumnValue(call, "Expected Outcomes"),
-      keywordInput
-    ) || "Not available";
+    highlightKeywords(outcomesText, keywordInput) || "Not available";
 
+  // 6. Render "Scope" with highlighting
+  const scopeText = call["Scope"] || "";
   document.getElementById("modal-scope").innerHTML =
-    highlightKeywords(
-      getColumnValue(call, "Scope"),
-      keywordInput
-    ) || "Not available";
+    highlightKeywords(scopeText, keywordInput) || "Not available";
 }
 
 function showNoCallsPopup() {
