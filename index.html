@@ -454,6 +454,13 @@ function scrollToCalls() {
   }
 }
 
+// Helper to remove references like [1], [1,2], [10, 15]
+function cleanText(text) {
+  if (!text) return "";
+  // Regex looks for brackets containing numbers and commas
+  return text.replace(/\[\s*\d+(?:,\s*\d+)*\s*\]/g, "");
+}
+
 /* ================= SHOW CALL DETAILS ================= */
 function resetDetailsPanel(message = "Select a call to see its details.") {
   document.getElementById("detail-id").textContent = "";
@@ -507,34 +514,32 @@ function showCallDetails(r, buttonElement) {
 }
 
 function openMoreInfoModal(call) {
-  // 1. Show the modal
   const modal = document.getElementById("more-info-modal");
   modal.classList.remove("hidden");
 
-  // 2. Setup Close button
   document.getElementById("close-modal-btn").onclick = () => {
     modal.classList.add("hidden");
   };
 
-  // 3. Setup Contact button
   document.getElementById("contact-us-btn").onclick = () => {
     modal.classList.add("hidden");
     openMoreInfoEmail(call["Call ID"]);
   };
 
-  // 4. Get the current search keywords
   const keywordInput = document.getElementById("keyword-input").value.trim();
 
-  // 5. Render "Expected Outcomes" with highlighting
-  // We handle the text directly and pass it to your existing highlightKeywords function
-  const outcomesText = call["Expected Outcomes"] || "";
-  document.getElementById("modal-expected-outcomes").innerHTML =
-    highlightKeywords(outcomesText, keywordInput) || "Not available";
+  // --- UPDATED LINES BELOW ---
 
-  // 6. Render "Scope" with highlighting
-  const scopeText = call["Scope"] || "";
+  // 1. Clean the text (remove [1] refs)
+  const rawOutcomes = cleanText(call["Expected Outcomes"] || "");
+  const rawScope = cleanText(call["Scope"] || "");
+
+  // 2. Highlight keywords in the clean text
+  document.getElementById("modal-expected-outcomes").innerHTML =
+    highlightKeywords(rawOutcomes, keywordInput) || "Not available";
+
   document.getElementById("modal-scope").innerHTML =
-    highlightKeywords(scopeText, keywordInput) || "Not available";
+    highlightKeywords(rawScope, keywordInput) || "Not available";
 }
 
 function showNoCallsPopup() {
