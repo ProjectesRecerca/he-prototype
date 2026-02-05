@@ -50,7 +50,8 @@
         class="text-sm text-gray-700 leading-relaxed text-justify"
       ></p>
     </div>
-    <div id="modal-keywords" class="text-gray-500 italic mt-2 mb-4"></div>
+
+    <div id="modal-keywords" class="text-gray-400 italic mt-2 mb-4"></div>
 
 
   </div>
@@ -529,8 +530,6 @@ function openMoreInfoModal(call) {
   };
 
   const keywordInput = document.getElementById("keyword-input").value.trim();
-
-  // --- UPDATED LINES BELOW ---
 
   // 1. Clean the text (remove [1] refs)
   const rawOutcomes = cleanText(call["Expected Outcomes"] || "");
