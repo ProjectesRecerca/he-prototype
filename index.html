@@ -50,6 +50,8 @@
         class="text-sm text-gray-700 leading-relaxed text-justify"
       ></p>
     </div>
+    <div id="modal-keywords" class="text-gray-500 italic mt-2 mb-4"></div>
+
 
   </div>
 
@@ -540,6 +542,11 @@ function openMoreInfoModal(call) {
 
   document.getElementById("modal-scope").innerHTML =
     highlightKeywords(rawScope, keywordInput) || "Not available";
+
+  document.getElementById("modal-keywords").innerHTML = highlightKeywords(
+    call["Keywords"] || "No keywords available",
+    keywordInput
+  );
 }
 
 function showNoCallsPopup() {
