@@ -320,13 +320,13 @@ function renderResearchFields() {
   c.innerHTML = "";
 
   let rows = selectedDisciplines.size
-    ? excelData.filter(r => selectedDisciplines.has(r.Cluster))
+    ? excelData.filter(r => selectedDisciplines.has(r.Field))
     : excelData;
 
   const fields = new Set();
   rows.forEach(r => {
-    if (!r["Research Fields"]) return;
-    r["Research Fields"].split(";").map(f => f.trim()).forEach(f => fields.add(f));
+    if (!r["Specific Research Fields"]) return;
+    r["Specific Research Fields"].split(";").map(f => f.trim()).forEach(f => fields.add(f));
   });
 
   [...fields].sort().forEach(f => {
@@ -571,15 +571,15 @@ function updateCalls() {
   const filtered = excelData.filter(r => {
 
     // Discipline
-    if (selectedDisciplines.size && !selectedDisciplines.has(r.Cluster)) {
+    if (selectedDisciplines.size && !selectedDisciplines.has(r.Field)) {
       return false;
     }
 
     // Research Fields
     if (selectedResearchFields.size) {
-      if (!r["Research Fields"]) return false;
+      if (!r["Specific Research Fields"]) return false;
 
-      const fields = r["Research Fields"]
+      const fields = r["Specific Research Fields"]
         .split(";")
         .map(f => f.trim());
 
