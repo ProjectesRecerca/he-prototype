@@ -1,0 +1,36 @@
+name: Multi-Branch Deployment
+
+on:
+  push:
+    branches:
+      - main
+      - expanded-prototype
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout 
+        uses: actions/checkout@v4
+
+      # Logic for the Production Branch
+      - name: Deploy Production (Main) 
+        if: github.ref == 'refs/heads/main'
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: . # Deploy everything in the root
+          branch: gh-pages # The destination branch
+          clean: false # Important: Don't delete other folders!
+
+      # Logic for the Prototype Branch
+      - name: Deploy Prototype 
+        if: github.ref == 'refs/heads/expanded-prototype'
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: . # Deploy the prototype code
+          target-folder: expanded-prototype # Place it in this subfolder
+          branch: gh-pages
+          clean: false # Keeps the main site intact
