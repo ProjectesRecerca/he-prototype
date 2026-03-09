@@ -160,7 +160,7 @@
 
       <!-- Research Fields -->
       <div class="bg-white rounded-xl shadow p-4 mb-6">
-        <h3 class="font-bold mb-3">Research Fields</h3>
+        <h3 class="font-bold mb-3">Specific Research Fields</h3>
         <div id="field-container" class="flex flex-wrap gap-2"></div>
       </div>
 
@@ -284,7 +284,7 @@ function renderDisciplines() {
   const c = document.getElementById("discipline-container");
   c.innerHTML = "";
 
-  [...new Set(excelData.map(r => r.Cluster).filter(Boolean))]
+  [...new Set(excelData.map(r => r.Field).filter(Boolean))]
     .sort()
     .forEach(d => {
       const b = document.createElement("button");
