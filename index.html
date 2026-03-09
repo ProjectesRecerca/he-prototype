@@ -106,7 +106,7 @@
   <div class="flex items-center gap-4 mb-6">
     <img src="./logo.png" class="h-12" />
     <div>
-      <h1 class="text-3xl font-bold">Horizon Europe WP26-27 Call Finder</h1>
+      <h1 class="text-3xl font-bold">Funding Call Finder</h1>
       <h2 class="text-gray-600">Servei de Recerca </h2>
     </div>
   </div>
@@ -114,10 +114,10 @@
   <!-- Description -->
   <div class="bg-white rounded-xl shadow p-4 mb-6 text-sm text-gray-700">
     <p class="mb-2">
-      <b>Welcome to the Horizon Europe Call Finder</b>
+      <b>Welcome to the Funding Call Finder</b>
     </p>
     <p class="mb-2">
-      This tool helps you identify Horizon Europe calls that match your research interests.
+      This tool helps you identify European and International funding calls that match your research interests.
     </p>
     <ul class="list-disc ml-5 space-y-1 mb-2">
       <li>Select one or more <b>Disciplines</b> and/or <b>Research Fields</b></li>
@@ -267,7 +267,7 @@ function handleCredentialResponse(response) {
 
 /* ================= LOAD EXCEL ================= */
 function loadExcel() {
-  fetch("./horizon_calls.xlsx")
+  fetch("./Calls_v2.0.xlsx")
     .then(r => r.arrayBuffer())
     .then(data => {
       const wb = XLSX.read(data, { type: "array" });
