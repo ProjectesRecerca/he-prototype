@@ -55,6 +55,9 @@
 
   </div>
 
+  <a id="modal-website-btn" target="_blank" class="hidden px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700">
+  Visit Official Call
+  </a>
   <!-- Footer fijo -->
   <div class="px-6 py-4 border-t flex justify-between items-center bg-white">
     <button
@@ -81,7 +84,7 @@
 
 <div id="login" class="min-h-screen flex items-center justify-center">
   <div class="bg-white p-10 rounded-xl shadow-lg text-center w-full max-w-md">
-    <img src="./logo.png" class="mx-auto mb-6 h-20" />
+    <img src="./logoFullGrantRadar.png" class="mx-auto mb-6 h-32" />
    <!-- <h1 class="text-2xl font-bold mb-2">UPF GrantRadar</h1>-->
     <p class="text-sm text-gray-500 mb-6">Servei de Recerca</p>
 
@@ -104,7 +107,7 @@
 
   <!-- Header -->
   <div class="flex items-center gap-4 mb-6">
-    <img src="./logo.png" class="h-20" />
+    <img src="./logoUPF.png" class="h-32" />
     <div>
       <h1 class="text-3xl font-bold">UPF GrantRadar </h1>
       <h2 class="text-gray-600">Servei de Recerca </h2>
@@ -117,7 +120,7 @@
       <b>Welcome to the UPF GrantRadar </b>
     </p>
     <p class="mb-2">
-      Discover european and internattional research funding opportunities that match your research..
+      Discover european and international research funding opportunities that match your research.
     </p>
     <ul class="list-disc ml-5 space-y-1 mb-2">
       <li>Select one or more <b>Disciplines</b> and/or <b>Research Fields</b></li>
@@ -184,11 +187,7 @@
       <div class="bg-white rounded-xl shadow p-4 sticky top-6">
         <h3 class="text-lg font-semibold mb-2">Call details</h3>
       <div id="call-details" class="text-sm space-y-1">
-        <div><strong>Call ID:</strong> <em id="detail-id"></em></div>
-        <div><strong>Call Title:</strong> <em id="detail-title"></em></div>
-        <div><strong>Type of Action:</strong> <em id="detail-action"></em></div>
-        <div><strong>Opening Date:</strong> <em id="detail-opening"></em></div>
-        <div><strong>Deadline:</strong> <em id="detail-deadline"></em></div>
+        <div id="dynamic-details-container" class="space-y-1"></div>
       </div>
       <div class="mt-4">
         <strong>Summary</strong>
@@ -490,15 +489,35 @@ function showCallDetails(r, buttonElement) {
 
   selectedCallButton = buttonElement;
   selectedCallButton.classList.add("bg-blue-100", "border-blue-500", "text-blue-800");
+  
+  const container = document.getElementById("dynamic-details-container");
+  container.innerHTML = ""; // Clear panel
 
-  document.getElementById("detail-id").textContent = r["Call ID"] || "";
-  document.getElementById("detail-title").textContent = r["Call Title"] || "";
-  document.getElementById("detail-action").textContent = r["Type of Action"] || "";
-  document.getElementById("detail-opening").textContent = excelDateToString(r["Opening date"]);
-  document.getElementById("detail-deadline").textContent = excelDateToString(r["Deadline(s)"]);
-  document.getElementById("detail-summary").textContent = r["Summary"] || "";
-
+  // Define fields to show 
+  const fields = [
+    { label: "Call ID", val: r["Call ID"] },
+    { label: "Call Title", val: r["Call Title"] },
+    { label: "Funding Body", val: r["Funding Body"] },
+    { label: "Programme", val: r["Programme"] },
+    { label: "Subprogramme", val: r["Subprogramme"] },
+    { label: "Type of Action", val: r["Type of Action"] },
+    { label: "Type of Grant", val: r["Type of Grant"] },
+    { label: "Opening Date", val: excelDateToString(r["Opening date"]) },
+    { label: "Deadline", val: excelDateToString(r["Deadline(s)"]) }
+  ];  
   const keywordInput = document.getElementById("keyword-input").value.trim();
+
+  fields.forEach(field => {
+    // Check if info is available (Point 3)
+    if (field.val && String(field.val).trim() !== "" && field.val !== "undefined") {
+      const div = document.createElement("div");
+      const highlightedVal = highlightKeywords(String(field.val), keywordInput);
+      div.innerHTML = `<strong>${field.label}:</strong> <em>${highlightedVal}</em>`;
+      container.appendChild(div);
+    }
+  });
+
+
   document.getElementById("detail-title").innerHTML = highlightKeywords(r["Call Title"] || "", keywordInput);
   document.getElementById("detail-summary").innerHTML =  highlightKeywords(r["Summary"] || "", keywordInput);
 
@@ -517,17 +536,30 @@ function showCallDetails(r, buttonElement) {
 
 function openMoreInfoModal(call) {
   const modal = document.getElementById("more-info-modal");
+  const webBtn = document.getElementById("modal-website-btn"); // Get the button reference
   modal.classList.remove("hidden");
 
+  // 1. Hide it when the Close button is clicked
   document.getElementById("close-modal-btn").onclick = () => {
     modal.classList.add("hidden");
+    webBtn.classList.add("hidden"); 
   };
 
+  // 2. Hide it when the Contact Us button is clicked
   document.getElementById("contact-us-btn").onclick = () => {
     modal.classList.add("hidden");
+    webBtn.classList.add("hidden");
     openMoreInfoEmail(call["Call ID"]);
   };
 
+  // 3. Logic to show it only if the URL exists
+  const url = call["Call Website"];
+  if (url && String(url).startsWith("http")) {
+    webBtn.href = url;
+    webBtn.classList.remove("hidden");
+  } else {
+    webBtn.classList.add("hidden");
+  }
   const keywordInput = document.getElementById("keyword-input").value.trim();
 
   // 1. Clean the text (remove [1] refs)
@@ -614,7 +646,7 @@ function updateCalls() {
       "w-full text-left p-2 border rounded hover:bg-gray-100 flex justify-between items-center";
 
     btn.innerHTML = `
-      <span>${r["Call ID"] || ""}: ${r["Call Title"] || ""}</span>
+      <span>${r["Call ID"] || ""} ${r["Call Title"] || ""}</span>
       ${
         keywordInput
           ? `<span
