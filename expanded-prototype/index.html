@@ -571,7 +571,7 @@ function updateCalls() {
   const filtered = excelData.filter(r => {
 
     // Discipline
-    if (selectedDisciplines.size && !selectedDisciplines.has(r.Field)) {
+    if (selectedDisciplines.size && !selectedDisciplines.has(r.Discipline)) {
       return false;
     }
 
