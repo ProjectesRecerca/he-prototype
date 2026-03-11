@@ -54,10 +54,7 @@
     <div id="modal-keywords" class="text-gray-500 italic text-xs mt-2 mb-4"></div>
 
   </div>
-  
-  <a id="modal-website-btn" target="_blank" class="hidden px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700">
-  Visit Official Call
-</a>
+
   <!-- Footer fijo -->
   <div class="px-6 py-4 border-t flex justify-between items-center bg-white">
     <button
@@ -489,35 +486,15 @@ function showCallDetails(r, buttonElement) {
 
   selectedCallButton = buttonElement;
   selectedCallButton.classList.add("bg-blue-100", "border-blue-500", "text-blue-800");
-  
-  const container = document.getElementById("dynamic-details-container");
-  container.innerHTML = ""; // Clear panel
 
-  // Define fields to show 
-  const fields = [
-    { label: "Call ID", val: r["Call ID"] },
-    { label: "Call Title", val: r["Call Title"] },
-    { label: "Funding Body", val: r["Funding Body"] },
-    { label: "Programme", val: r["Programme"] },
-    { label: "Subprogramme", val: r["Subprogramme"] },
-    { label: "Type of Action", val: r["Type of Action"] },
-    { label: "Type of Grant", val: r["Type of Grant"] },
-    { label: "Opening Date", val: excelDateToString(r["Opening date"]) },
-    { label: "Deadline", val: excelDateToString(r["Deadline(s)"]) }
-  ];  
+  document.getElementById("detail-id").textContent = r["Call ID"] || "";
+  document.getElementById("detail-title").textContent = r["Call Title"] || "";
+  document.getElementById("detail-action").textContent = r["Type of Action"] || "";
+  document.getElementById("detail-opening").textContent = excelDateToString(r["Opening date"]);
+  document.getElementById("detail-deadline").textContent = excelDateToString(r["Deadline(s)"]);
+  document.getElementById("detail-summary").textContent = r["Summary"] || "";
+
   const keywordInput = document.getElementById("keyword-input").value.trim();
-
-  fields.forEach(field => {
-    // Check if info is available (Point 3)
-    if (field.val && String(field.val).trim() !== "" && field.val !== "undefined") {
-      const div = document.createElement("div");
-      const highlightedVal = highlightKeywords(String(field.val), keywordInput);
-      div.innerHTML = `<strong>${field.label}:</strong> <em>${highlightedVal}</em>`;
-      container.appendChild(div);
-    }
-  });
-
-
   document.getElementById("detail-title").innerHTML = highlightKeywords(r["Call Title"] || "", keywordInput);
   document.getElementById("detail-summary").innerHTML =  highlightKeywords(r["Summary"] || "", keywordInput);
 
