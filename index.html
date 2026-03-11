@@ -5,7 +5,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title> Call Finder</title>
+  <title> GrantRadar</title>
 
   <!-- Google Identity -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -25,7 +25,7 @@
 
   <!-- Header fijo -->
   <div class="px-6 py-4 border-b">
-    <h3 class="text-lg font-bold">Call information</h3>
+    <h3 class="text-lg font-bold"> Call information</h3>
   </div>
 
   <!-- Contenido scrolleable -->
@@ -82,8 +82,8 @@
 <div id="login" class="min-h-screen flex items-center justify-center">
   <div class="bg-white p-10 rounded-xl shadow-lg text-center w-full max-w-md">
     <img src="./logo.png" class="mx-auto mb-6 h-20" />
-    <h1 class="text-2xl font-bold mb-2">Call Finder</h1>
-    <p class="text-sm text-gray-500 mb-6">Servei de Recerca – UPF</p>
+    <h1 class="text-2xl font-bold mb-2">UPF GrantRadar</h1>
+    <p class="text-sm text-gray-500 mb-6">Servei de Recerca</p>
 
     <div
       id="g_id_onload"
@@ -106,7 +106,7 @@
   <div class="flex items-center gap-4 mb-6">
     <img src="./logo.png" class="h-12" />
     <div>
-      <h1 class="text-3xl font-bold">Funding Call Finder</h1>
+      <h1 class="text-3xl font-bold">UPF GrantRadar </h1>
       <h2 class="text-gray-600">Servei de Recerca </h2>
     </div>
   </div>
@@ -114,10 +114,10 @@
   <!-- Description -->
   <div class="bg-white rounded-xl shadow p-4 mb-6 text-sm text-gray-700">
     <p class="mb-2">
-      <b>Welcome to the Funding Call Finder</b>
+      <b>Welcome to the UPF GrantRadar </b>
     </p>
     <p class="mb-2">
-      This tool helps you identify European and International funding calls that match your research interests.
+      Discover european and internattional research funding opportunities that match your research..
     </p>
     <ul class="list-disc ml-5 space-y-1 mb-2">
       <li>Select one or more <b>Disciplines</b> and/or <b>Research Fields</b></li>
@@ -125,7 +125,7 @@
       <li>Click on a call to view its details on the right panel</li>
     </ul>
     <p class="mb-2">
-      If a call matches your interests, click on <b>“More information”</b> to send us an email directly — we will be happy to support you.
+      If a call matches your interests, click on <b>“More information”</b> and <b>“Contact us</b> to send us an email directly — we will be happy to support you.
     </p>
   </div>
 
@@ -160,7 +160,7 @@
 
       <!-- Research Fields -->
       <div class="bg-white rounded-xl shadow p-4 mb-6">
-        <h3 class="font-bold mb-3">Specific Research Fields</h3>
+        <h3 class="font-bold mb-3">Research Fields</h3>
         <div id="field-container" class="flex flex-wrap gap-2"></div>
       </div>
 
@@ -284,7 +284,7 @@ function renderDisciplines() {
   const c = document.getElementById("discipline-container");
   c.innerHTML = "";
 
-  [...new Set(excelData.map(r => r.Field).filter(Boolean))]
+  [...new Set(excelData.map(r => r.Discipline).filter(Boolean))]
     .sort()
     .forEach(d => {
       const b = document.createElement("button");
@@ -320,13 +320,13 @@ function renderResearchFields() {
   c.innerHTML = "";
 
   let rows = selectedDisciplines.size
-    ? excelData.filter(r => selectedDisciplines.has(r.Field))
+    ? excelData.filter(r => selectedDisciplines.has(r.Discipline))
     : excelData;
 
   const fields = new Set();
   rows.forEach(r => {
-    if (!r["Specific Research Fields"]) return;
-    r["Specific Research Fields"].split(";").map(f => f.trim()).forEach(f => fields.add(f));
+    if (!r["Research Fields"]) return;
+    r["Research Fields"].split(";").map(f => f.trim()).forEach(f => fields.add(f));
   });
 
   [...fields].sort().forEach(f => {
@@ -577,9 +577,9 @@ function updateCalls() {
 
     // Research Fields
     if (selectedResearchFields.size) {
-      if (!r["Specific Research Fields"]) return false;
+      if (!r["Research Fields"]) return false;
 
-      const fields = r["Specific Research Fields"]
+      const fields = r["Research Fields"]
         .split(";")
         .map(f => f.trim());
 
