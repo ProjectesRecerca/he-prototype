@@ -81,7 +81,7 @@
 
 <div id="login" class="min-h-screen flex items-center justify-center">
   <div class="bg-white p-10 rounded-xl shadow-lg text-center w-full max-w-md">
-    <img src="./logo.png" class="mx-auto mb-6 h-40" />
+    <img src="./logo.png" class="mx-auto mb-6 h-60" />
    <!-- <h1 class="text-2xl font-bold mb-2">UPF GrantRadar</h1>-->
     <p class="text-sm text-gray-500 mb-6">Servei de Recerca</p>
 
@@ -180,43 +180,28 @@
     </div>
 
     <!-- RIGHT COLUMN – CALL DETAIL -->
-     <div id="call-details-panel"
-     class="w-1/4">
-      <div class="bg-white rounded-xl shadow p-4 sticky top-6">
-        <h3 class="text-lg font-semibold mb-2">Call details</h3>
-      <div id="call-details" class="text-sm space-y-1">
-         <!--  <div><strong>Call ID:</strong> <em id="detail-id"></em></div>
-        <div><strong>Call Title:</strong> <em id="detail-title"></em></div>
-        <div><strong>Type of Action:</strong> <em id="detail-action"></em></div>
-        <div><strong>Opening Date:</strong> <em id="detail-opening"></em></div>
-        <div><strong>Deadline:</strong> <em id="detail-deadline"></em></div>-->
-        <div id="dynamic-details-container" class="space-y-1"></div> <!-- NEW INCLUDED -->
-      </div>
-      <div class="mt-4">
-        <strong>Summary</strong>
-        <p id="detail-summary" class="mt-1 text-justify text-sm"></p>
-        </p>
-      <p id="detail-ssh-keywords" class="mt-2 text-justify text-xs italic text-gray-500"></p>
-      </div>
-      <div class="flex flex-col gap-2 pt-2">
-      <button
-        id="more-info-btn"
-        class="hidden px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-      >
-        More information
-      </button>
+  <div id="call-details-panel" class="w-1/4">
+    <div class="bg-white rounded-xl shadow p-4 sticky top-6">
+      <h3 class="text-lg font-semibold mb-2">Call details</h3>
+      
+      <div id="dynamic-details-container" class="text-sm space-y-1 mb-4"></div>
 
-      <button
-        id="clear-btn"
-        class="px-4 py-1 bg-gray-300 text-gray-800 rounded hover:bg-gray-400"
-      >
-        Clear
-      </button>
+      <div id="summary-section" class="mt-4 border-t pt-2">
+        <strong class="text-sm">Summary</strong>
+        <p id="detail-summary" class="mt-1 text-justify text-sm text-gray-700"></p>
+        <p id="detail-ssh-keywords" class="mt-2 text-justify text-xs italic text-gray-500"></p>
+      </div>
+
+      <div class="flex flex-col gap-2 pt-4">
+        <button id="more-info-btn" class="hidden px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+          More information
+        </button>
+        <button id="clear-btn" class="px-4 py-1 bg-gray-300 text-gray-800 rounded hover:bg-gray-400">
+          Clear
+        </button>
+      </div>
     </div>
-
-
   </div>
-</div>
 
 <!-- Pop-up message -->
 <div
@@ -496,17 +481,10 @@ function showCallDetails(r, buttonElement) {
 
   selectedCallButton = buttonElement;
   selectedCallButton.classList.add("bg-blue-100", "border-blue-500", "text-blue-800");
-
-  // document.getElementById("detail-id").textContent = r["Call ID"] || "";
-  // document.getElementById("detail-title").textContent = r["Call Title"] || "";
-  // document.getElementById("detail-action").textContent = r["Type of Action"] || "";
-  // document.getElementById("detail-opening").textContent = excelDateToString(r["Opening date"]);
-  // document.getElementById("detail-deadline").textContent = excelDateToString(r["Deadline(s)"]);
-  // document.getElementById("detail-summary").textContent = r["Summary"] || "";
   const container = document.getElementById("dynamic-details-container");
   container.innerHTML = ""; // Clear panel
 
-  // Define fields to show (Points 2 & 3)
+  // Define fields to show 
   const fields = [
     { label: "Call ID", val: r["Call ID"] },
     { label: "Call Title", val: r["Call Title"] },
@@ -531,15 +509,15 @@ function showCallDetails(r, buttonElement) {
     }
   });
 
-// Keep the summary highlighting
-  document.getElementById("detail-title").innerHTML = highlightKeywords(r["Call Title"] || "", keywordInput);
-  document.getElementById("detail-summary").innerHTML =  highlightKeywords(r["Summary"] || "", keywordInput);
+  const summaryElem = document.getElementById("detail-summary");
+  const sshElem = document.getElementById("detail-ssh-keywords");
+
+  summaryElem.innerHTML = r["Summary"] ? highlightKeywords(r["Summary"], keywordInput) : "No summary available.";
 
   // Get SSH Keywords and format them
   const sshRaw = r["SSH Keywords"] || ""; 
   // Only display if data exists
   const sshText = sshRaw ? `SSH Keywords: ${sshRaw}` : "";
-  
   // Apply highlighting (reuses your existing keyword highlighter)
   document.getElementById("detail-ssh-keywords").innerHTML = highlightKeywords(sshText, keywordInput);
 
@@ -647,7 +625,7 @@ function updateCalls() {
       "w-full text-left p-2 border rounded hover:bg-gray-100 flex justify-between items-center";
 
     btn.innerHTML = `
-      <span>${r["Call ID"] || ""}: ${r["Call Title"] || ""}</span>
+      <span>${r["Call ID"] || ""} ${r["Call Title"] || ""}</span>
       ${
         keywordInput
           ? `<span
