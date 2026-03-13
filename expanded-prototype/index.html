@@ -115,12 +115,12 @@
   <!-- Header -->
   <div class="flex items-center justify-between mb-8 border-b pb-4">
     <div class="flex items-center">
-      <img src="./logoGrantRadar.png" class="h-28 object-contain" alt="Grant Radar Logo" />
+      <img src="./LogoGrantRadar.png" class="h-28 object-contain" alt="Grant Radar Logo" />
     </div>
 
     <div class="flex flex-col items-end text-right">
       <img src="./logoUPF.png" class="h-20 object-contain mb-1" alt="UPF Logo" />
-      <h2 class="text-gray-500 font-medium tracking-wide text-sm uppercase">
+      <h2 class="text-gray-500 font-small tracking-wide text-sm uppercase">
         Servei de Recerca
       </h2>
     </div>
@@ -539,6 +539,50 @@ function showCallDetails(r, buttonElement) {
 
 function openMoreInfoModal(call) {
   const modal = document.getElementById("more-info-modal");
+  const webBtn = document.getElementById("modal-website-btn");
+  modal.classList.remove("hidden");
+
+  // Logic to hide the modal and the website button (cleanup)
+  const hideModal = () => {
+    modal.classList.add("hidden");
+    webBtn.classList.add("hidden");
+  };
+
+  document.getElementById("close-modal-btn").onclick = hideModal;
+
+  document.getElementById("contact-us-btn").onclick = () => {
+    hideModal();
+    openMoreInfoEmail(call["Call ID"]);
+  };
+
+  // Point 4: Show the button JUST when the link is available
+  const url = call["Call Website"];
+  if (url && String(url).trim().startsWith("http")) {
+    webBtn.href = url;
+    webBtn.classList.remove("hidden");
+  } else {
+    webBtn.classList.add("hidden");
+  }
+
+  const keywordInput = document.getElementById("keyword-input").value.trim();
+
+  // 1. Clean the text (remove [1] refs)
+  const rawOutcomes = cleanText(call["Expected Outcomes"] || "");
+  const rawScope = cleanText(call["Scope"] || "");
+
+  // 2. Highlight keywords in the clean text
+  document.getElementById("modal-expected-outcomes").innerHTML =
+    highlightKeywords(rawOutcomes, keywordInput) || "Not available";
+
+  document.getElementById("modal-scope").innerHTML =
+    highlightKeywords(rawScope, keywordInput) || "Not available";
+
+  document.getElementById("modal-keywords").innerHTML =
+    `<strong>Call Keywords:</strong> ` + highlightKeywords(
+      call["Keywords"] || "No keywords available",
+      keywordInput
+    );
+}  const modal = document.getElementById("more-info-modal");
   modal.classList.remove("hidden");
 
   document.getElementById("close-modal-btn").onclick = () => {
