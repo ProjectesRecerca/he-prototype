@@ -93,7 +93,7 @@
   <div class="bg-white p-10 rounded-xl shadow-lg text-center w-full max-w-md">
     <img src="./logo.png" class="mx-auto mb-6 h-60" />
    <!-- <h1 class="text-2xl font-bold mb-2">UPF GrantRadar</h1>-->
-    <p class="text-sm text-gray-500 mb-6">Servei de Recerca</p>
+    <p class="text-sm text-gray-400 mb-6">Developed by the Research Service </p>
 
     <div
       id="g_id_onload"
@@ -582,36 +582,6 @@ function openMoreInfoModal(call) {
       call["Keywords"] || "No keywords available",
       keywordInput
     );
-}  const modal = document.getElementById("more-info-modal");
-  modal.classList.remove("hidden");
-
-  document.getElementById("close-modal-btn").onclick = () => {
-    modal.classList.add("hidden");
-  };
-
-  document.getElementById("contact-us-btn").onclick = () => {
-    modal.classList.add("hidden");
-    openMoreInfoEmail(call["Call ID"]);
-  };
-
-  const keywordInput = document.getElementById("keyword-input").value.trim();
-
-  // 1. Clean the text (remove [1] refs)
-  const rawOutcomes = cleanText(call["Expected Outcomes"] || "");
-  const rawScope = cleanText(call["Scope"] || "");
-
-  // 2. Highlight keywords in the clean text
-  document.getElementById("modal-expected-outcomes").innerHTML =
-    highlightKeywords(rawOutcomes, keywordInput) || "Not available";
-
-  document.getElementById("modal-scope").innerHTML =
-    highlightKeywords(rawScope, keywordInput) || "Not available";
-
-  document.getElementById("modal-keywords").innerHTML =
-  `<strong>Call Keywords:</strong> ` + highlightKeywords(
-    call["Keywords"] || "No keywords available",
-    keywordInput
-  );
 }
 
 function showNoCallsPopup() {
