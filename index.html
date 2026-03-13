@@ -81,7 +81,7 @@
 
 <div id="login" class="min-h-screen flex items-center justify-center">
   <div class="bg-white p-10 rounded-xl shadow-lg text-center w-full max-w-md">
-    <img src="./logo.png" class="mx-auto mb-6 h-20" />
+    <img src="./logo.png" class="mx-auto mb-6 h-40" />
    <!-- <h1 class="text-2xl font-bold mb-2">UPF GrantRadar</h1>-->
     <p class="text-sm text-gray-500 mb-6">Servei de Recerca</p>
 
@@ -467,14 +467,18 @@ function cleanText(text) {
 
 /* ================= SHOW CALL DETAILS ================= */
 function resetDetailsPanel(message = "Select a call to see its details.") {
-  document.getElementById("detail-id").textContent = "";
-  document.getElementById("detail-title").textContent = "";
-  document.getElementById("detail-action").textContent = "";
-  document.getElementById("detail-opening").textContent = "";
-  document.getElementById("detail-deadline").textContent = "";
-  document.getElementById("detail-summary").textContent = message;
-  document.getElementById("detail-ssh-keywords").textContent = "";
-  document.getElementById("more-info-btn").classList.add("hidden");
+  // Use optional chaining (?.) or check if exists to prevent crashes
+  const container = document.getElementById("dynamic-details-container");
+  if (container) container.innerHTML = ""; 
+
+  const summary = document.getElementById("detail-summary");
+  if (summary) summary.textContent = message;
+
+  const ssh = document.getElementById("detail-ssh-keywords");
+  if (ssh) ssh.textContent = "";
+
+  const infoBtn = document.getElementById("more-info-btn");
+  if (infoBtn) infoBtn.classList.add("hidden");
 }
 
 function showCallDetails(r, buttonElement) {
@@ -527,7 +531,7 @@ function showCallDetails(r, buttonElement) {
     }
   });
 
-
+// Keep the summary highlighting
   document.getElementById("detail-title").innerHTML = highlightKeywords(r["Call Title"] || "", keywordInput);
   document.getElementById("detail-summary").innerHTML =  highlightKeywords(r["Summary"] || "", keywordInput);
 
