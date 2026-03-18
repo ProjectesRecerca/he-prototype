@@ -188,6 +188,11 @@
           &#8679;
         </button>
       </div>
+
+      <div id="expired-calls-section" class="bg-gray-200 rounded-xl shadow p-4 mb-6 opacity-75">
+        <h3 id="expired-calls-title" class="font-bold mb-3 text-gray-600">Expired Calls (0)</h3>
+        <div id="expired-calls-container" class="flex flex-col gap-2"></div>
+      </div>
     </div>
 
     <!-- RIGHT COLUMN – CALL DETAIL -->
@@ -366,7 +371,7 @@ function keywordMatchesMulti(call, userInput) {
     call["Scope"] || "",
     call["Funding Body"] || "",    
     call["Programme"] || "",       
-    call["Subprogramme"] || ""     // Added
+    call["Subprogramme"] || ""    
   ]
   .join(" ")
   .toLowerCase();
@@ -642,38 +647,59 @@ function updateCalls() {
   return scoreB - scoreA;
   });
 
+const today = new Date();
+  today.setHours(0, 0, 0, 0); // Reset time for accurate date comparison
 
-  document.getElementById("calls-title").textContent = `Calls (${filtered.length})`;
+  const activeCalls = [];
+  const expiredCalls = [];
 
   filtered.forEach(r => {
-    const score = countKeywordMatches(r, keywordInput);
+    const deadlineStr = excelDateToString(r["Deadline(s)"]);
+    // Simple date parsing (DD/MM/YYYY)
+    const parts = deadlineStr.split('/');
+    const deadlineDate = parts.length === 3 
+      ? new Date(parts[2], parts[1] - 1, parts[0]) 
+      : null;
 
+    if (deadlineDate && deadlineDate < today) {
+      expiredCalls.push(r);
+    } else {
+      activeCalls.push(r);
+    }
+  });
+
+  // Update Titles
+  document.getElementById("calls-title").textContent = `Active Calls (${activeCalls.length})`;
+  document.getElementById("expired-calls-title").textContent = `Expired Calls (${expiredCalls.length})`;
+
+  const activeContainer = document.getElementById("calls-container");
+  const expiredContainer = document.getElementById("expired-calls-container");
+  
+  activeContainer.innerHTML = "";
+  expiredContainer.innerHTML = "";
+
+  // Helper to render buttons
+  const renderCall = (r, targetContainer, isExpired) => {
+    const score = countKeywordMatches(r, keywordInput);
     const btn = document.createElement("button");
-    btn.className =
-      "w-full text-left p-2 border rounded hover:bg-gray-100 flex justify-between items-center";
+    btn.className = `w-full text-left p-2 border rounded hover:bg-gray-100 flex justify-between items-center ${isExpired ? 'bg-gray-50 text-gray-500' : ''}`;
 
     btn.innerHTML = `
-      <span>${r["Call ID"] || ""} ${r["Call Title"] || ""}</span>
-      ${
-        keywordInput
-          ? `<span
-            title="Number of times your keyword(s) appear in this call"
-            class="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full cursor-help"
-            >
-              ${score}
-            
-              </span>`
-          : ""
-      }
+      <span>${r["Call ID"] || ""}: ${r["Call Title"] || ""}</span>
+      ${keywordInput ? `<span class="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">${score}</span>` : ""}
     `;
 
     btn.onclick = () => showCallDetails(r, btn);
-    container.appendChild(btn);
-  });
- 
-  if (filtered.length === 0) {
-  showNoCallsPopup();
+    targetContainer.appendChild(btn);
+  };
+
+  activeCalls.forEach(r => renderCall(r, activeContainer, false));
+  expiredCalls.forEach(r => renderCall(r, expiredContainer, true));
+
+  if (activeCalls.length === 0 && expiredCalls.length === 0) {
+    showNoCallsPopup();
   }
+
 }
 
 
