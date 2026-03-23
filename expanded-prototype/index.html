@@ -208,7 +208,7 @@
     <!-- RIGHT COLUMN – CALL DETAIL -->
   <div id="call-details-panel" class="w-1/4">
     <div class="bg-white rounded-xl shadow p-4 sticky top-6">
-      <h3 class="text-lg font-semibold mb-2">Call details</h3>
+      <h3 id="calls-title" class="text-lg font-bold text-gray-800 mb-3">Active Calls (0)</h3>
       
       <div id="dynamic-details-container" class="text-sm space-y-1 mb-4"></div>
 
@@ -327,7 +327,6 @@ function renderDisciplines() {
 }
 
 
-/* ================= RESEARCH FIELDS ================= */
 /* ================= RESEARCH FIELDS (CATEGORIZED) ================= */
 function renderResearchFields() {
   const container = document.getElementById("field-container");
@@ -337,7 +336,7 @@ function renderResearchFields() {
   const categories = [
     { label: "Physical Sciences & Engineering", prefix: "PE", color: "blue" },
     { label: "Life Sciences", prefix: "LS", color: "green" },
-    { label: "Social Sciences & Humanities", prefix: "SH", color: "indigo" }
+    { label: "Social Sciences & Humanities", prefix: "SH", color: "orange" }
   ];
 
   let rows = selectedDisciplines.size
@@ -732,9 +731,10 @@ const today = new Date();
   });
 
   // Update Titles
+// Inside updateCalls()
   document.getElementById("calls-title").textContent = `Active Calls (${activeCalls.length})`;
   document.getElementById("expired-calls-title").textContent = `Expired Calls (${expiredCalls.length})`;
-
+  
   const activeContainer = document.getElementById("calls-container");
   const expiredContainer = document.getElementById("expired-calls-container");
   
