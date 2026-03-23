@@ -162,72 +162,66 @@
 
 
   <!-- MAIN LAYOUT -->
-  <div class="flex gap-6">
+  <div class="max-w-7xl mx-auto px-4 py-6">
+  <div class="flex flex-col md:flex-row gap-6 items-start">
 
-    <!-- LEFT COLUMN -->
-    <div class="w-3/4">
-
-      <!-- Discipline -->
-      <div class="bg-white rounded-xl shadow p-4 mb-6">
-        <h3 class="text-lg font-bold text-gray-800">Discipline</h3>
+    <div class="w-full md:w-3/4 space-y-6">
+      
+      <div class="bg-white rounded-xl shadow p-4">
+        <h3 class="text-lg font-bold text-gray-800 tracking-tight mb-1">Discipline</h3>
         <p class="text-xs text-gray-500 mb-3">Filter calls by broad scientific domains.</p>
         <div id="discipline-container" class="flex flex-wrap gap-2"></div>
       </div>
 
-      <!-- Research Fields -->
-      <div class="bg-white rounded-xl shadow p-4 mb-6">
-        <h3 class="text-lg font-bold text-gray-800">Research Fields</h3>
+      <div class="bg-white rounded-xl shadow p-4">
+        <h3 class="text-lg font-bold text-gray-800 tracking-tight mb-1">Research Fields</h3>
         <p class="text-xs text-gray-500 mb-3">Select specific domains.</p>
-        <div id="field-container" class="space-y-6"></div> </div>
-
-      <!-- Calls -->
-      <div id="calls-section" class="bg-white rounded-xl shadow p-4 mb-6 transition-all">
-        <div class="border-b pb-2 mb-4">
-          <h3 id="calls-title" class="text-lg font-bold text-gray-800 tracking-tight">Active Calls (0)</h3>
-          <p class="text-xs text-gray-500">Browse available funding opportunities matching your current filters.</p>
-        </div>
-        <div id="calls-container" class="flex flex-col gap-2"></div>
-        
-        <button
-          id="scroll-top-btn"
-          class="hidden fixed bottom-8 right-8 w-12 h-12 bg-blue-600 text-white rounded-full shadow-2xl flex items-center justify-center hover:bg-blue-700 hover:scale-110 transition-all z-50"
-          title="Scroll to top"
-        >
-          <span class="text-xl">&#8679;</span>
-        </button>
+        <div id="field-container" class="space-y-6"></div>
       </div>
 
-      <div id="expired-calls-section" class="bg-gray-50 border border-gray-200 rounded-xl shadow-sm p-4 mb-6 opacity-80">
-        <div class="border-b border-gray-200 pb-2 mb-4">
-          <h3 id="expired-calls-title" class="text-lg font-bold text-gray-500 tracking-tight">Expired Calls (0)</h3>
-          <p class="text-xs text-gray-400">Past opportunities for reference purposes only.</p>
-        </div>
+      <div id="calls-section" class="bg-white rounded-xl shadow p-4">
+        <h3 id="calls-title" class="text-lg font-bold text-gray-800 tracking-tight mb-1">Active Calls (0)</h3>
+        <p class="text-xs text-gray-500 mb-4">Available funding opportunities matching your filters.</p>
+        <div id="calls-container" class="flex flex-col gap-2"></div>
+      </div>
+
+      <div id="expired-calls-section" class="bg-gray-50 border border-gray-200 rounded-xl shadow-sm p-4 opacity-80">
+        <h3 id="expired-calls-title" class="text-lg font-bold text-gray-500 tracking-tight mb-1">Expired Calls (0)</h3>
+        <p class="text-xs text-gray-400 mb-4">Past opportunities for reference only.</p>
         <div id="expired-calls-container" class="flex flex-col gap-2 italic"></div>
       </div>
+    </div>
 
-    <!-- RIGHT COLUMN – CALL DETAIL -->
-  <div id="call-details-panel" class="w-1/4">
-    <div class="bg-white rounded-xl shadow p-4 sticky top-6">
-      <h3 id="calls-title" class="text-lg font-bold text-gray-800 mb-3">Active Calls (0)</h3>
-      
-      <div id="dynamic-details-container" class="text-sm space-y-1 mb-4"></div>
+    <div id="call-details-panel" class="w-full md:w-1/4 sticky top-6">
+      <div class="bg-white rounded-xl shadow p-4 border-t-4 border-blue-600">
+        <h3 class="text-lg font-bold text-gray-800 tracking-tight mb-3 border-b pb-2">Call Details</h3>
+        
+        <div id="dynamic-details-container" class="text-sm space-y-4">
+          <div id="detail-info" class="space-y-2">
+            <p id="detail-id" class="font-mono text-xs font-bold text-blue-600"></p>
+            <p id="detail-title" class="font-bold text-gray-800"></p>
+          </div>
 
-      <div id="summary-section" class="mt-4 border-t pt-2">
-        <strong class="text-sm">Summary</strong>
-        <p id="detail-summary" class="mt-1 text-justify text-sm text-gray-700"></p>
-        <p id="detail-ssh-keywords" class="mt-2 text-justify text-xs italic text-gray-500"></p>
-      </div>
+          <div id="summary-section" class="mt-4 border-t pt-2">
+            <strong class="text-sm text-gray-800">Summary</strong>
+            <p id="detail-summary" class="mt-1 text-justify text-sm text-gray-700 leading-relaxed"></p>
+            <p id="detail-ssh-keywords" class="mt-2 text-justify text-xs italic text-gray-500"></p>
+          </div>
 
-      <div class="flex flex-col gap-2 pt-4">
-        <button id="more-info-btn" class="hidden px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-          More information
-        </button>
-        <button id="clear-btn" class="px-4 py-1 bg-gray-300 text-gray-800 rounded hover:bg-gray-400">
-          Clear
-        </button>
+          <div class="flex flex-col gap-2 pt-4">
+            <button id="more-info-btn" class="hidden w-full px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
+              More information
+            </button>
+            <button id="clear-btn" class="w-full px-4 py-2 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition-colors">
+              Clear Filters
+            </button>
+          </div>
+        </div>
       </div>
     </div>
+
   </div>
+</div>
 
 <!-- Pop-up message -->
 <div
@@ -361,7 +355,7 @@ function renderResearchFields() {
       headerFlex.className = "flex justify-between items-center mb-3";
       
       const title = document.createElement("h4");
-      title.className = `font-semibold text-${cat.color}-700 text-sm uppercase tracking-wider`;
+      title.className = `font-semibold text-${cat.color}-700 text-base`;
       title.textContent = cat.label;
 
       const selectAllBtn = document.createElement("button");
@@ -731,9 +725,13 @@ const today = new Date();
   });
 
   // Update Titles
-// Inside updateCalls()
-  document.getElementById("calls-title").textContent = `Active Calls (${activeCalls.length})`;
-  document.getElementById("expired-calls-title").textContent = `Expired Calls (${expiredCalls.length})`;
+  const activeTitle = document.getElementById("calls-title");
+  activeTitle.className = "text-lg font-bold text-gray-800 tracking-tight mb-1"; 
+  activeTitle.textContent = `Active Calls (${activeCalls.length})`;
+
+  const expiredTitle = document.getElementById("expired-calls-title");
+  expiredTitle.className = "text-lg font-bold text-gray-500 tracking-tight mb-1";
+  expiredTitle.textContent = `Expired Calls (${expiredCalls.length})`;
   
   const activeContainer = document.getElementById("calls-container");
   const expiredContainer = document.getElementById("expired-calls-container");
