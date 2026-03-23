@@ -5,7 +5,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Horizon Europe WP26-27 – Call Finder</title>
+  <title> GrantRadar</title>
 
   <!-- Google Identity -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -25,7 +25,7 @@
 
   <!-- Header fijo -->
   <div class="px-6 py-4 border-b">
-    <h3 class="text-lg font-bold">Call information</h3>
+    <h3 class="text-lg font-bold"> Call information</h3>
   </div>
 
   <!-- Contenido scrolleable -->
@@ -56,7 +56,7 @@
   </div>
 
   <!-- Footer fijo -->
-  <div class="px-6 py-4 border-t flex justify-between items-center bg-white">
+    <div class="px-6 py-4 border-t flex flex-wrap gap-2 justify-between items-center bg-white">
     <button
       id="close-modal-btn"
       class="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400"
@@ -64,12 +64,22 @@
       Close
     </button>
 
-    <button
-      id="contact-us-btn"
-      class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-    >
-      Contact us
-    </button>
+    <div class="flex gap-2">
+      <a
+        id="modal-website-btn"
+        target="_blank"
+        class="hidden px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 transition"
+      >
+        Visit Official Website Call
+      </a>
+
+      <button
+        id="contact-us-btn"
+        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+      >
+        Contact us
+      </button>
+    </div>
   </div>
 
   </div>
@@ -81,9 +91,9 @@
 
 <div id="login" class="min-h-screen flex items-center justify-center">
   <div class="bg-white p-10 rounded-xl shadow-lg text-center w-full max-w-md">
-    <img src="./logo.png" class="mx-auto mb-6 h-20" />
-    <h1 class="text-2xl font-bold mb-2">Horizon Europe WP26-27</h1>
-    <p class="text-sm text-gray-500 mb-6">Servei de Recerca – UPF</p>
+    <img src="./logo.png" class="mx-auto mb-6 h-60" />
+   <!-- <h1 class="text-2xl font-bold mb-2">UPF GrantRadar</h1>-->
+    <p class="text-sm text-gray-400 mb-6">Developed by the Research Service </p>
 
     <div
       id="g_id_onload"
@@ -103,21 +113,26 @@
 <div id="private" class="hidden max-w-7xl mx-auto p-6">
 
   <!-- Header -->
-  <div class="flex items-center gap-4 mb-6">
-    <img src="./logo.png" class="h-12" />
-    <div>
-      <h1 class="text-3xl font-bold">Horizon Europe WP26-27 Call Finder</h1>
-      <h2 class="text-gray-600">Servei de Recerca </h2>
+  <div class="flex items-center justify-between mb-8 border-b pb-4">
+    <div class="flex items-center">
+      <img src="./LogoGrantRadar.png" class="h-28 object-contain" alt="Grant Radar Logo" />
+    </div>
+
+    <div class="flex flex-col items-end text-right">
+      <img src="./logoUPF.png" class="h-20 object-contain mb-1" alt="UPF Logo" />
+      <h2 class="text-gray-500 font-small tracking-wide text-[10px] uppercase">
+        Research Service
+      </h2>
     </div>
   </div>
 
   <!-- Description -->
   <div class="bg-white rounded-xl shadow p-4 mb-6 text-sm text-gray-700">
     <p class="mb-2">
-      <b>Welcome to the Horizon Europe Call Finder</b>
+      <b>Welcome to GrantRadar </b>
+      <p class="mb-2">
+      The online tool of the Research Service to discover European and Internacional funding opportunities.
     </p>
-    <p class="mb-2">
-      This tool helps you identify Horizon Europe calls that match your research interests.
     </p>
     <ul class="list-disc ml-5 space-y-1 mb-2">
       <li>Select one or more <b>Disciplines</b> and/or <b>Research Fields</b></li>
@@ -125,7 +140,7 @@
       <li>Click on a call to view its details on the right panel</li>
     </ul>
     <p class="mb-2">
-      If a call matches your interests, click on <b>“More information”</b> to send us an email directly — we will be happy to support you.
+      If a call matches your interests, click on <b>“More information”</b> and <b>“Contact us</b> to send us an email directly — we will be happy to support you.
     </p>
   </div>
 
@@ -176,45 +191,36 @@
           &#8679;
         </button>
       </div>
+
+      <div id="expired-calls-section" class="bg-gray-200 rounded-xl shadow p-4 mb-6 opacity-75">
+        <h3 id="expired-calls-title" class="font-bold mb-3 text-gray-600">Expired Calls (0)</h3>
+        <div id="expired-calls-container" class="flex flex-col gap-2"></div>
+      </div>
     </div>
 
     <!-- RIGHT COLUMN – CALL DETAIL -->
-     <div id="call-details-panel"
-     class="w-1/4">
-      <div class="bg-white rounded-xl shadow p-4 sticky top-6">
-        <h3 class="text-lg font-semibold mb-2">Call details</h3>
-      <div id="call-details" class="text-sm space-y-1">
-        <div><strong>Call ID:</strong> <em id="detail-id"></em></div>
-        <div><strong>Call Title:</strong> <em id="detail-title"></em></div>
-        <div><strong>Type of Action:</strong> <em id="detail-action"></em></div>
-        <div><strong>Opening Date:</strong> <em id="detail-opening"></em></div>
-        <div><strong>Deadline:</strong> <em id="detail-deadline"></em></div>
-      </div>
-      <div class="mt-4">
-        <strong>Summary</strong>
-        <p id="detail-summary" class="mt-1 text-justify text-sm"></p>
-        </p>
-      <p id="detail-ssh-keywords" class="mt-2 text-justify text-xs italic text-gray-500"></p>
-      </div>
-      <div class="flex flex-col gap-2 pt-2">
-      <button
-        id="more-info-btn"
-        class="hidden px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-      >
-        More information
-      </button>
+  <div id="call-details-panel" class="w-1/4">
+    <div class="bg-white rounded-xl shadow p-4 sticky top-6">
+      <h3 class="text-lg font-semibold mb-2">Call details</h3>
+      
+      <div id="dynamic-details-container" class="text-sm space-y-1 mb-4"></div>
 
-      <button
-        id="clear-btn"
-        class="px-4 py-1 bg-gray-300 text-gray-800 rounded hover:bg-gray-400"
-      >
-        Clear
-      </button>
+      <div id="summary-section" class="mt-4 border-t pt-2">
+        <strong class="text-sm">Summary</strong>
+        <p id="detail-summary" class="mt-1 text-justify text-sm text-gray-700"></p>
+        <p id="detail-ssh-keywords" class="mt-2 text-justify text-xs italic text-gray-500"></p>
+      </div>
+
+      <div class="flex flex-col gap-2 pt-4">
+        <button id="more-info-btn" class="hidden px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+          More information
+        </button>
+        <button id="clear-btn" class="px-4 py-1 bg-gray-300 text-gray-800 rounded hover:bg-gray-400">
+          Clear
+        </button>
+      </div>
     </div>
-
-
   </div>
-</div>
 
 <!-- Pop-up message -->
 <div
@@ -267,7 +273,7 @@ function handleCredentialResponse(response) {
 
 /* ================= LOAD EXCEL ================= */
 function loadExcel() {
-  fetch("./horizon_calls.xlsx")
+  fetch("./Calls_v2.0.xlsx")
     .then(r => r.arrayBuffer())
     .then(data => {
       const wb = XLSX.read(data, { type: "array" });
@@ -284,7 +290,7 @@ function renderDisciplines() {
   const c = document.getElementById("discipline-container");
   c.innerHTML = "";
 
-  [...new Set(excelData.map(r => r.Cluster).filter(Boolean))]
+  [...new Set(excelData.map(r => r.Discipline).filter(Boolean))]
     .sort()
     .forEach(d => {
       const b = document.createElement("button");
@@ -320,7 +326,7 @@ function renderResearchFields() {
   c.innerHTML = "";
 
   let rows = selectedDisciplines.size
-    ? excelData.filter(r => selectedDisciplines.has(r.Cluster))
+    ? excelData.filter(r => selectedDisciplines.has(r.Discipline))
     : excelData;
 
   const fields = new Set();
@@ -365,7 +371,10 @@ function keywordMatchesMulti(call, userInput) {
     call["SSH Keywords"] || "",
     call["Summary"] || "",
     call["Expected Outcomes"] || "",
-    call["Scope"] || ""
+    call["Scope"] || "",
+    call["Funding Body"] || "",    
+    call["Programme"] || "",       
+    call["Subprogramme"] || ""    
   ]
   .join(" ")
   .toLowerCase();
@@ -465,14 +474,18 @@ function cleanText(text) {
 
 /* ================= SHOW CALL DETAILS ================= */
 function resetDetailsPanel(message = "Select a call to see its details.") {
-  document.getElementById("detail-id").textContent = "";
-  document.getElementById("detail-title").textContent = "";
-  document.getElementById("detail-action").textContent = "";
-  document.getElementById("detail-opening").textContent = "";
-  document.getElementById("detail-deadline").textContent = "";
-  document.getElementById("detail-summary").textContent = message;
-  document.getElementById("detail-ssh-keywords").textContent = "";
-  document.getElementById("more-info-btn").classList.add("hidden");
+  // Use optional chaining (?.) or check if exists to prevent crashes
+  const container = document.getElementById("dynamic-details-container");
+  if (container) container.innerHTML = ""; 
+
+  const summary = document.getElementById("detail-summary");
+  if (summary) summary.textContent = message;
+
+  const ssh = document.getElementById("detail-ssh-keywords");
+  if (ssh) ssh.textContent = "";
+
+  const infoBtn = document.getElementById("more-info-btn");
+  if (infoBtn) infoBtn.classList.add("hidden");
 }
 
 function showCallDetails(r, buttonElement) {
@@ -490,23 +503,43 @@ function showCallDetails(r, buttonElement) {
 
   selectedCallButton = buttonElement;
   selectedCallButton.classList.add("bg-blue-100", "border-blue-500", "text-blue-800");
+  const container = document.getElementById("dynamic-details-container");
+  container.innerHTML = ""; // Clear panel
 
-  document.getElementById("detail-id").textContent = r["Call ID"] || "";
-  document.getElementById("detail-title").textContent = r["Call Title"] || "";
-  document.getElementById("detail-action").textContent = r["Type of Action"] || "";
-  document.getElementById("detail-opening").textContent = excelDateToString(r["Opening date"]);
-  document.getElementById("detail-deadline").textContent = excelDateToString(r["Deadline(s)"]);
-  document.getElementById("detail-summary").textContent = r["Summary"] || "";
+  // Define fields to show 
+  const fields = [
+    { label: "Call ID", val: r["Call ID"] },
+    { label: "Call Title", val: r["Call Title"] },
+    { label: "Funding Body", val: r["Funding Body"] },
+    { label: "Programme", val: r["Programme"] },
+    { label: "Subprogramme", val: r["Subprogramme"] },
+    { label: "Type of Action", val: r["Type of Action"] },
+    { label: "Type of Grant", val: r["Type of Grant"] },
+    { label: "Opening Date", val: excelDateToString(r["Opening date"]) },
+    { label: "Deadline", val: excelDateToString(r["Deadline(s)"]) }
+  ];
 
   const keywordInput = document.getElementById("keyword-input").value.trim();
-  document.getElementById("detail-title").innerHTML = highlightKeywords(r["Call Title"] || "", keywordInput);
-  document.getElementById("detail-summary").innerHTML =  highlightKeywords(r["Summary"] || "", keywordInput);
+
+  fields.forEach(field => {
+    // Check if info is available (Point 3)
+    if (field.val && String(field.val).trim() !== "" && field.val !== "undefined") {
+      const div = document.createElement("div");
+      const highlightedVal = highlightKeywords(String(field.val), keywordInput);
+      div.innerHTML = `<strong>${field.label}:</strong> <em>${highlightedVal}</em>`;
+      container.appendChild(div);
+    }
+  });
+
+  const summaryElem = document.getElementById("detail-summary");
+  const sshElem = document.getElementById("detail-ssh-keywords");
+
+  summaryElem.innerHTML = r["Summary"] ? highlightKeywords(r["Summary"], keywordInput) : "No summary available.";
 
   // Get SSH Keywords and format them
   const sshRaw = r["SSH Keywords"] || ""; 
   // Only display if data exists
   const sshText = sshRaw ? `SSH Keywords: ${sshRaw}` : "";
-  
   // Apply highlighting (reuses your existing keyword highlighter)
   document.getElementById("detail-ssh-keywords").innerHTML = highlightKeywords(sshText, keywordInput);
 
@@ -517,16 +550,30 @@ function showCallDetails(r, buttonElement) {
 
 function openMoreInfoModal(call) {
   const modal = document.getElementById("more-info-modal");
+  const webBtn = document.getElementById("modal-website-btn");
   modal.classList.remove("hidden");
 
-  document.getElementById("close-modal-btn").onclick = () => {
+  // Logic to hide the modal and the website button (cleanup)
+  const hideModal = () => {
     modal.classList.add("hidden");
+    webBtn.classList.add("hidden");
   };
 
+  document.getElementById("close-modal-btn").onclick = hideModal;
+
   document.getElementById("contact-us-btn").onclick = () => {
-    modal.classList.add("hidden");
+    hideModal();
     openMoreInfoEmail(call["Call ID"]);
   };
+
+  // Point 4: Show the button JUST when the link is available
+  const url = call["Call Website"];
+  if (url && String(url).trim().startsWith("http")) {
+    webBtn.href = url;
+    webBtn.classList.remove("hidden");
+  } else {
+    webBtn.classList.add("hidden");
+  }
 
   const keywordInput = document.getElementById("keyword-input").value.trim();
 
@@ -542,10 +589,10 @@ function openMoreInfoModal(call) {
     highlightKeywords(rawScope, keywordInput) || "Not available";
 
   document.getElementById("modal-keywords").innerHTML =
-  `<strong>Call Keywords:</strong> ` + highlightKeywords(
-    call["Keywords"] || "No keywords available",
-    keywordInput
-  );
+    `<strong>Call Keywords:</strong> ` + highlightKeywords(
+      call["Keywords"] || "No keywords available",
+      keywordInput
+    );
 }
 
 function showNoCallsPopup() {
@@ -571,7 +618,7 @@ function updateCalls() {
   const filtered = excelData.filter(r => {
 
     // Discipline
-    if (selectedDisciplines.size && !selectedDisciplines.has(r.Cluster)) {
+    if (selectedDisciplines.size && !selectedDisciplines.has(r.Discipline)) {
       return false;
     }
 
@@ -603,38 +650,60 @@ function updateCalls() {
   return scoreB - scoreA;
   });
 
+const today = new Date();
+  today.setHours(0, 0, 0, 0); // Reset time for accurate date comparison
 
-  document.getElementById("calls-title").textContent = `Calls (${filtered.length})`;
+  const activeCalls = [];
+  const expiredCalls = [];
 
   filtered.forEach(r => {
+    const deadlineStr = excelDateToString(r["Deadline(s)"]);
+    // Simple date parsing (DD/MM/YYYY)
+    const parts = deadlineStr.split('/');
+    const deadlineDate = parts.length === 3 
+      ? new Date(parts[2], parts[1] - 1, parts[0]) 
+      : null;
+
+    if (deadlineDate && deadlineDate < today) {
+      expiredCalls.push(r);
+    } else {
+      activeCalls.push(r);
+    }
+  });
+
+  // Update Titles
+  document.getElementById("calls-title").textContent = `Active Calls (${activeCalls.length})`;
+  document.getElementById("expired-calls-title").textContent = `Expired Calls (${expiredCalls.length})`;
+
+  const activeContainer = document.getElementById("calls-container");
+  const expiredContainer = document.getElementById("expired-calls-container");
+  
+  activeContainer.innerHTML = "";
+  expiredContainer.innerHTML = "";
+
+  // Helper to render buttons
+  const renderCall = (r, targetContainer, isExpired) => {
     const score = countKeywordMatches(r, keywordInput);
-
     const btn = document.createElement("button");
-    btn.className =
-      "w-full text-left p-2 border rounded hover:bg-gray-100 flex justify-between items-center";
+    btn.className = `w-full text-left p-2 border rounded hover:bg-gray-100 flex justify-between items-center ${isExpired ? 'bg-gray-50 text-gray-500' : ''}`;
 
+    const callId = r["Call ID"] ? `${r["Call ID"]}: ` : ""; // Only add colon if ID exists
     btn.innerHTML = `
-      <span>${r["Call ID"] || ""}: ${r["Call Title"] || ""}</span>
-      ${
-        keywordInput
-          ? `<span
-            title="Number of times your keyword(s) appear in this call"
-            class="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full cursor-help"
-            >
-              ${score}
-            
-              </span>`
-          : ""
-      }
+      <span>${callId}${r["Call Title"] || ""}</span>
+      ${keywordInput ? `<span class="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">${score}</span>` : ""}
     `;
 
     btn.onclick = () => showCallDetails(r, btn);
-    container.appendChild(btn);
-  });
- 
-  if (filtered.length === 0) {
-  showNoCallsPopup();
+    targetContainer.appendChild(btn);
+  };
+
+  activeCalls.forEach(r => renderCall(r, activeContainer, false));
+  expiredCalls.forEach(r => renderCall(r, expiredContainer, true));
+
+  if (activeCalls.length === 0 && expiredCalls.length === 0) {
+    showNoCallsPopup();
   }
+
 }
 
 
