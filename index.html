@@ -169,34 +169,41 @@
 
       <!-- Discipline -->
       <div class="bg-white rounded-xl shadow p-4 mb-6">
-        <h3 class="font-bold mb-3">Discipline</h3>
+        <h3 class="text-lg font-bold text-gray-800">Discipline</h3>
+        <p class="text-xs text-gray-500 mb-3">Filter calls by broad scientific domains.</p>
         <div id="discipline-container" class="flex flex-wrap gap-2"></div>
       </div>
 
       <!-- Research Fields -->
       <div class="bg-white rounded-xl shadow p-4 mb-6">
-        <h3 class="font-bold mb-3">Research Fields</h3>
-        <div id="field-container" class="flex flex-wrap gap-2"></div>
-      </div>
+        <h3 class="text-lg font-bold text-gray-800">Research Fields</h3>
+        <p class="text-xs text-gray-500 mb-3">Select specific domains.</p>
+        <div id="field-container" class="space-y-6"></div> </div>
 
       <!-- Calls -->
-      <div id="calls-section" class="bg-white rounded-xl shadow p-4 mb-6">
-        <h3 id="calls-title" class="font-bold mb-3">Calls (0)</h3>
+      <div id="calls-section" class="bg-white rounded-xl shadow p-4 mb-6 transition-all">
+        <div class="border-b pb-2 mb-4">
+          <h3 id="calls-title" class="text-lg font-bold text-gray-800 tracking-tight">Active Calls (0)</h3>
+          <p class="text-xs text-gray-500">Browse available funding opportunities matching your current filters.</p>
+        </div>
         <div id="calls-container" class="flex flex-col gap-2"></div>
+        
         <button
           id="scroll-top-btn"
-          class="hidden fixed bottom-8 right-8 w-10 h-10 bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-700 transition"
+          class="hidden fixed bottom-8 right-8 w-12 h-12 bg-blue-600 text-white rounded-full shadow-2xl flex items-center justify-center hover:bg-blue-700 hover:scale-110 transition-all z-50"
           title="Scroll to top"
         >
-          &#8679;
+          <span class="text-xl">&#8679;</span>
         </button>
       </div>
 
-      <div id="expired-calls-section" class="bg-gray-200 rounded-xl shadow p-4 mb-6 opacity-75">
-        <h3 id="expired-calls-title" class="font-bold mb-3 text-gray-600">Expired Calls (0)</h3>
-        <div id="expired-calls-container" class="flex flex-col gap-2"></div>
+      <div id="expired-calls-section" class="bg-gray-50 border border-gray-200 rounded-xl shadow-sm p-4 mb-6 opacity-80">
+        <div class="border-b border-gray-200 pb-2 mb-4">
+          <h3 id="expired-calls-title" class="text-lg font-bold text-gray-500 tracking-tight">Expired Calls (0)</h3>
+          <p class="text-xs text-gray-400">Past opportunities for reference purposes only.</p>
+        </div>
+        <div id="expired-calls-container" class="flex flex-col gap-2 italic"></div>
       </div>
-    </div>
 
     <!-- RIGHT COLUMN – CALL DETAIL -->
   <div id="call-details-panel" class="w-1/4">
@@ -325,8 +332,8 @@ function renderDisciplines() {
 function renderResearchFields() {
   const container = document.getElementById("field-container");
   container.innerHTML = "";
-  
-  // 1. Define the Mapping
+
+  // 1. Define the ERC Categories based on the provided document 
   const categories = [
     { label: "Physical Sciences & Engineering", prefix: "PE", color: "blue" },
     { label: "Life Sciences", prefix: "LS", color: "green" },
@@ -343,20 +350,39 @@ function renderResearchFields() {
     r["Research Fields"].split(";").map(f => f.trim()).forEach(f => allFields.add(f));
   });
 
-  // 2. Create Sections for each Category
   categories.forEach(cat => {
-    // Filter fields belonging to this category based on the prefix (PE, LS, SH)
     const catFields = [...allFields].filter(f => f.startsWith(cat.prefix)).sort();
 
     if (catFields.length > 0) {
-      // Create Category Header
       const section = document.createElement("div");
-      section.className = "w-full mb-4";
+      section.className = "border-t pt-4";
+
+      // Header with Select All Toggle
+      const headerFlex = document.createElement("div");
+      headerFlex.className = "flex justify-between items-center mb-3";
       
-      const header = document.createElement("h4");
-      header.className = `text-sm font-semibold mb-2 border-b pb-1 text-${cat.color}-700`;
-      header.textContent = cat.label;
-      section.appendChild(header);
+      const title = document.createElement("h4");
+      title.className = `font-semibold text-${cat.color}-700 text-sm uppercase tracking-wider`;
+      title.textContent = cat.label;
+
+      const selectAllBtn = document.createElement("button");
+      const isAllSelected = catFields.every(f => selectedResearchFields.has(f));
+      selectAllBtn.textContent = isAllSelected ? "Unselect All" : "Select All";
+      selectAllBtn.className = "text-xs text-gray-500 hover:underline cursor-pointer";
+      
+      selectAllBtn.onclick = () => {
+        if (isAllSelected) {
+          catFields.forEach(f => selectedResearchFields.delete(f));
+        } else {
+          catFields.forEach(f => selectedResearchFields.add(f));
+        }
+        renderResearchFields(); // Re-render to update UI and Toggle text
+        updateCalls();
+      };
+
+      headerFlex.appendChild(title);
+      headerFlex.appendChild(selectAllBtn);
+      section.appendChild(headerFlex);
 
       const buttonWrapper = document.createElement("div");
       buttonWrapper.className = "flex flex-wrap gap-2";
@@ -364,25 +390,25 @@ function renderResearchFields() {
       catFields.forEach(f => {
         const b = document.createElement("button");
         
-        // 3. Remove the Code (e.g., "PE1 ") using Regex
+        // Remove Nomenclature (e.g., "LS1 ", "PE10 ") [cite: 52, 64, 67]
         const cleanLabel = f.replace(/^[A-Z]{2,3}\d+\s*/, ""); 
         
         b.textContent = cleanLabel;
-        b.className = `px-3 py-1 border rounded text-xs transition-colors hover:bg-${cat.color}-50`;
+        b.className = "px-3 py-1 border rounded text-sm transition-all";
 
-        // Maintain selection state
         if (selectedResearchFields.has(f)) {
           b.classList.add(`bg-${cat.color}-600`, "text-white", `border-${cat.color}-600`);
+        } else {
+          b.classList.add("bg-white", "text-gray-700", "hover:bg-gray-50");
         }
 
         b.onclick = () => {
           if (selectedResearchFields.has(f)) {
             selectedResearchFields.delete(f);
-            b.classList.remove(`bg-${cat.color}-600`, "text-white");
           } else {
             selectedResearchFields.add(f);
-            b.classList.add(`bg-${cat.color}-600`, "text-white");
           }
+          renderResearchFields(); // Re-render to keep "Select All" text in sync
           updateCalls();
         };
 
