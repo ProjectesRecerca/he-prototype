@@ -162,66 +162,65 @@
 
 
   <!-- MAIN LAYOUT -->
-  <div class="max-w-7xl mx-auto px-4 py-6">
-  <div class="flex flex-col md:flex-row gap-6 items-start">
+  <div class="flex gap-6">
 
-    <div class="w-full md:w-3/4 space-y-6">
-      
-      <div class="bg-white rounded-xl shadow p-4">
-        <h3 class="text-lg font-bold text-gray-800 tracking-tight mb-1">Discipline</h3>
-        <p class="text-xs text-gray-500 mb-3">Filter calls by broad scientific domains.</p>
+    <!-- LEFT COLUMN -->
+    <div class="w-3/4">
+
+      <!-- Discipline -->
+      <div class="bg-white rounded-xl shadow p-4 mb-6">
+        <h3 class="font-bold mb-3">Discipline</h3>
         <div id="discipline-container" class="flex flex-wrap gap-2"></div>
       </div>
 
-      <div class="bg-white rounded-xl shadow p-4">
-        <h3 class="text-lg font-bold text-gray-800 tracking-tight mb-1">Research Fields</h3>
-        <p class="text-xs text-gray-500 mb-3">Select specific domains.</p>
-        <div id="field-container" class="space-y-6"></div>
+      <!-- Research Fields -->
+      <div class="bg-white rounded-xl shadow p-4 mb-6">
+        <h3 class="font-bold mb-3">Research Fields</h3>
+        <div id="field-container" class="flex flex-wrap gap-2"></div>
       </div>
 
-      <div id="calls-section" class="bg-white rounded-xl shadow p-4">
-        <h3 id="calls-title" class="text-lg font-bold text-gray-800 tracking-tight mb-1">Active Calls (0)</h3>
-        <p class="text-xs text-gray-500 mb-4">Available funding opportunities matching your filters.</p>
+      <!-- Calls -->
+      <div id="calls-section" class="bg-white rounded-xl shadow p-4 mb-6">
+        <h3 id="calls-title" class="font-bold mb-3">Calls (0)</h3>
         <div id="calls-container" class="flex flex-col gap-2"></div>
+        <button
+          id="scroll-top-btn"
+          class="hidden fixed bottom-8 right-8 w-10 h-10 bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-700 transition"
+          title="Scroll to top"
+        >
+          &#8679;
+        </button>
       </div>
 
-      <div id="expired-calls-section" class="bg-gray-50 border border-gray-200 rounded-xl shadow-sm p-4 opacity-80">
-        <h3 id="expired-calls-title" class="text-lg font-bold text-gray-500 tracking-tight mb-1">Expired Calls (0)</h3>
-        <p class="text-xs text-gray-400 mb-4">Past opportunities for reference only.</p>
-        <div id="expired-calls-container" class="flex flex-col gap-2 italic"></div>
-      </div>
-    </div>
-
-    <div id="call-details-panel" class="w-full md:w-1/4 sticky top-6">
-      <div class="bg-white rounded-xl shadow p-4 border-t-4 border-blue-600">
-        <h3 class="text-lg font-bold text-gray-800 tracking-tight mb-3 border-b pb-2">Call Details</h3>
-        
-        <div id="dynamic-details-container" class="text-sm space-y-4">
-          <div id="detail-info" class="space-y-2">
-            <p id="detail-id" class="font-mono text-xs font-bold text-blue-600"></p>
-            <p id="detail-title" class="font-bold text-gray-800"></p>
-          </div>
-
-          <div id="summary-section" class="mt-4 border-t pt-2">
-            <strong class="text-sm text-gray-800">Summary</strong>
-            <p id="detail-summary" class="mt-1 text-justify text-sm text-gray-700 leading-relaxed"></p>
-            <p id="detail-ssh-keywords" class="mt-2 text-justify text-xs italic text-gray-500"></p>
-          </div>
-
-          <div class="flex flex-col gap-2 pt-4">
-            <button id="more-info-btn" class="hidden w-full px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
-              More information
-            </button>
-            <button id="clear-btn" class="w-full px-4 py-2 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition-colors">
-              Clear Filters
-            </button>
-          </div>
-        </div>
+      <div id="expired-calls-section" class="bg-gray-200 rounded-xl shadow p-4 mb-6 opacity-75">
+        <h3 id="expired-calls-title" class="font-bold mb-3 text-gray-600">Expired Calls (0)</h3>
+        <div id="expired-calls-container" class="flex flex-col gap-2"></div>
       </div>
     </div>
 
+    <!-- RIGHT COLUMN – CALL DETAIL -->
+  <div id="call-details-panel" class="w-1/4">
+    <div class="bg-white rounded-xl shadow p-4 sticky top-6">
+      <h3 class="text-lg font-semibold mb-2">Call details</h3>
+      
+      <div id="dynamic-details-container" class="text-sm space-y-1 mb-4"></div>
+
+      <div id="summary-section" class="mt-4 border-t pt-2">
+        <strong class="text-sm">Summary</strong>
+        <p id="detail-summary" class="mt-1 text-justify text-sm text-gray-700"></p>
+        <p id="detail-ssh-keywords" class="mt-2 text-justify text-xs italic text-gray-500"></p>
+      </div>
+
+      <div class="flex flex-col gap-2 pt-4">
+        <button id="more-info-btn" class="hidden px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+          More information
+        </button>
+        <button id="clear-btn" class="px-4 py-1 bg-gray-300 text-gray-800 rounded hover:bg-gray-400">
+          Clear
+        </button>
+      </div>
+    </div>
   </div>
-</div>
 
 <!-- Pop-up message -->
 <div
@@ -321,16 +320,19 @@ function renderDisciplines() {
 }
 
 
+/* ================= RESEARCH FIELDS ================= */
 /* ================= RESEARCH FIELDS (CATEGORIZED) ================= */
 function renderResearchFields() {
   const container = document.getElementById("field-container");
   container.innerHTML = "";
+  
+  // Ensure the container itself allows vertical stacking of categories
+  container.className = "flex flex-col gap-6";
 
-  // 1. Define the ERC Categories based on the provided document 
   const categories = [
     { label: "Physical Sciences & Engineering", prefix: "PE", color: "blue" },
     { label: "Life Sciences", prefix: "LS", color: "green" },
-    { label: "Social Sciences & Humanities", prefix: "SH", color: "orange" }
+    { label: "Social Sciences & Humanities", prefix: "SH", color: "indigo" }
   ];
 
   let rows = selectedDisciplines.size
@@ -344,38 +346,20 @@ function renderResearchFields() {
   });
 
   categories.forEach(cat => {
-    const catFields = [...allFields].filter(f => f.startsWith(cat.prefix)).sort();
+    // Filter fields starting with the prefix (e.g., PE1, LS3)
+    const catFields = [...allFields]
+      .filter(f => f.startsWith(cat.prefix))
+      .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
 
     if (catFields.length > 0) {
       const section = document.createElement("div");
-      section.className = "border-t pt-4";
-
-      // Header with Select All Toggle
-      const headerFlex = document.createElement("div");
-      headerFlex.className = "flex justify-between items-center mb-3";
+      section.className = "w-full";
       
-      const title = document.createElement("h4");
-      title.className = `font-semibold text-${cat.color}-700 text-base`;
-      title.textContent = cat.label;
-
-      const selectAllBtn = document.createElement("button");
-      const isAllSelected = catFields.every(f => selectedResearchFields.has(f));
-      selectAllBtn.textContent = isAllSelected ? "Unselect All" : "Select All";
-      selectAllBtn.className = "text-xs text-gray-500 hover:underline cursor-pointer";
-      
-      selectAllBtn.onclick = () => {
-        if (isAllSelected) {
-          catFields.forEach(f => selectedResearchFields.delete(f));
-        } else {
-          catFields.forEach(f => selectedResearchFields.add(f));
-        }
-        renderResearchFields(); // Re-render to update UI and Toggle text
-        updateCalls();
-      };
-
-      headerFlex.appendChild(title);
-      headerFlex.appendChild(selectAllBtn);
-      section.appendChild(headerFlex);
+      const header = document.createElement("h4");
+      // Use standard hex or specific Tailwind colors to ensure they render
+      header.className = `text-xs font-bold uppercase tracking-wider mb-3 pb-1 border-b border-${cat.color}-200 text-${cat.color}-700`;
+      header.textContent = cat.label;
+      section.appendChild(header);
 
       const buttonWrapper = document.createElement("div");
       buttonWrapper.className = "flex flex-wrap gap-2";
@@ -383,25 +367,37 @@ function renderResearchFields() {
       catFields.forEach(f => {
         const b = document.createElement("button");
         
-        // Remove Nomenclature (e.g., "LS1 ", "PE10 ") [cite: 52, 64, 67]
+        // Clean the label (Removes "PE1 ", "SH4 ", etc.)
         const cleanLabel = f.replace(/^[A-Z]{2,3}\d+\s*/, ""); 
         
         b.textContent = cleanLabel;
-        b.className = "px-3 py-1 border rounded text-sm transition-all";
+        b.className = `px-3 py-1 border rounded text-xs transition-all duration-200 hover:shadow-sm`;
+
+        // Apply dynamic colors based on selection and category
+        const activeClass = `bg-${cat.color}-600`;
+        const activeText = `text-white`;
+        const activeBorder = `border-${cat.color}-600`;
+        const inactiveBorder = `border-gray-200`;
+        const hoverBg = `hover:bg-${cat.color}-50`;
 
         if (selectedResearchFields.has(f)) {
-          b.classList.add(`bg-${cat.color}-600`, "text-white", `border-${cat.color}-600`);
+          b.classList.add(activeClass, activeText, activeBorder);
         } else {
-          b.classList.add("bg-white", "text-gray-700", "hover:bg-gray-50");
+          b.classList.add("bg-white", "text-gray-700", inactiveBorder, hoverBg);
         }
 
         b.onclick = () => {
           if (selectedResearchFields.has(f)) {
             selectedResearchFields.delete(f);
+            b.classList.replace(activeClass, "bg-white");
+            b.classList.replace(activeText, "text-gray-700");
+            b.classList.replace(activeBorder, inactiveBorder);
           } else {
             selectedResearchFields.add(f);
+            b.classList.replace("bg-white", activeClass);
+            b.classList.replace("text-gray-700", activeText);
+            b.classList.replace(inactiveBorder, activeBorder);
           }
-          renderResearchFields(); // Re-render to keep "Select All" text in sync
           updateCalls();
         };
 
@@ -566,8 +562,7 @@ function showCallDetails(r, buttonElement) {
     { label: "Funding Body", val: r["Funding Body"] },
     { label: "Programme", val: r["Programme"] },
     { label: "Subprogramme", val: r["Subprogramme"] },
-    { label: "Type of Action", val: r["Type of Action"] },
-    { label: "Type of Grant", val: r["Type of Grant"] },
+    { label: "Type", val: r["Type of Action"] },
     { label: "Opening Date", val: excelDateToString(r["Opening date"]) },
     { label: "Deadline", val: excelDateToString(r["Deadline(s)"]) }
   ];
@@ -725,14 +720,9 @@ const today = new Date();
   });
 
   // Update Titles
-  const activeTitle = document.getElementById("calls-title");
-  activeTitle.className = "text-lg font-bold text-gray-800 tracking-tight mb-1"; 
-  activeTitle.textContent = `Active Calls (${activeCalls.length})`;
+  document.getElementById("calls-title").textContent = `Active Calls (${activeCalls.length})`;
+  document.getElementById("expired-calls-title").textContent = `Expired Calls (${expiredCalls.length})`;
 
-  const expiredTitle = document.getElementById("expired-calls-title");
-  expiredTitle.className = "text-lg font-bold text-gray-500 tracking-tight mb-1";
-  expiredTitle.textContent = `Expired Calls (${expiredCalls.length})`;
-  
   const activeContainer = document.getElementById("calls-container");
   const expiredContainer = document.getElementById("expired-calls-container");
   
@@ -776,26 +766,8 @@ window.addEventListener("DOMContentLoaded", () => {
     selectedDisciplines.clear();
     selectedResearchFields.clear();
     selectedCallButton = null;
-
-    // 2. Limpiar input keywords
-    // const keywordInput = document.getElementById("keyword-input");
-    //if (keywordInput) keywordInput.value = "";
-
-    // 3. Reset estilos visuales
-    document
-      .querySelectorAll("#discipline-container button, #field-container button")
-      .forEach(btn => {
-        btn.classList.remove(
-          "bg-blue-600",
-          "bg-green-600",
-          "text-white"
-        );
-      });
-
-    // 4. Reset panel detalles
-    resetDetailsPanel();
-
-    // 5. Re-render
+  // Re-render both sections to reset all dynamic styles and categories
+    renderDisciplines(); 
     renderResearchFields();
     updateCalls();
     document.getElementById("more-info-btn").classList.add("hidden");
