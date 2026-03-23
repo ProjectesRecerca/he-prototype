@@ -176,24 +176,20 @@
   </div>
 
   <!-- Description -->
-  <div class="bg-white rounded-xl shadow p-4 mb-6 text-sm text-gray-700 leading-relaxed">
-    <p class="mb-3">
-      <strong>Welcome to GrantRadar.</strong> Explore European and International funding opportunities.
-    </p>
-    <ul class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1 list-disc ml-5">
-      <li>Filter by <strong>Discipline</strong> or <strong>Research Field</strong>.</li>
-      <li>Search keywords (use <code>;</code> for multiple terms).</li>
-      <li>Select a call to view details and <strong>Summary</strong>.</li>
-      <li>Click <strong>"More information"</strong> to contact us for support.</li>
-    </ul>
-  </div>                          
+  <div class="bg-white rounded-xl shadow p-6 mb-6">
+  <h1 class="text-xl font-extrabold text-gray-900 mb-1">Welcome to GrantRadar</h1>
+  <p class="text-sm text-gray-600">
+    Discover European and International funding opportunities. 
+    Filter by discipline, search keywords, and click any call for full details.
+  </p>
+  </div>                         
 
   <!-- Keyword search-->
   <div class="flex gap-2 mt-2 mb-6">
     <input
       id="keyword-input"
       type="text"
-      placeholder='Keywords (separated by ;)'
+      placeholder='Search keywords (use ; for multiple terms)'
       class="w-full border rounded px-2 py-1"
     />
     <button
@@ -228,7 +224,7 @@
       <!-- Calls -->
       <div id="calls-section" class="bg-white rounded-xl shadow p-4 mb-6">
         <h3 id="calls-title" class="font-bold mb-3">Active Calls (0)</h3>
-        <p class="text-xs text-gray-500">Browse available funding opportunities matching your current filters.</p>
+        <p class="text-xs mb-3 text-gray-500">Browse available funding opportunities matching your current filters.</p>
         <div id="calls-container" class="flex flex-col gap-2"></div>
         <button
           id="scroll-top-btn"
@@ -241,7 +237,7 @@
 
       <div id="expired-calls-section" class="bg-gray-200 rounded-xl shadow p-4 mb-6 opacity-75">
         <h3 id="expired-calls-title" class="font-bold mb-3 text-gray-600">Expired Calls (0)</h3>
-        <p class="text-xs text-gray-400">Past opportunities for reference purposes only.</p>
+        <p class="text-xs mb-3 text-gray-400">Past opportunities for reference purposes only.</p>
         <div id="expired-calls-container" class="flex flex-col gap-2"></div>
       </div>
     </div>
@@ -410,7 +406,7 @@ function renderResearchFields() {
       const toggleBtn = document.createElement("button");
       const isAllSelected = catFields.every(f => selectedResearchFields.has(f));
       toggleBtn.textContent = isAllSelected ? "Deselect All" : "Select All";
-      toggleBtn.className = `text-[10px] font-bold uppercase px-2 py-1 rounded border border-${cat.color}-300 text-${cat.color}-600 hover:bg-${cat.color}-50 transition-colors`;
+      toggleBtn.className = `text-[8px] font-bold uppercase px-2 py-1 rounded border border-${cat.color}-300 text-${cat.color}-600 hover:bg-${cat.color}-50 transition-colors`;
       
       toggleBtn.onclick = () => {
         if (isAllSelected) {
