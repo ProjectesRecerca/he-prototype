@@ -519,6 +519,8 @@ function countKeywordMatches(call, userInput) {
   if (!userInput) return 0;
 
   const haystack = [
+    call["Call ID"] || "",      // Added for consistency
+    call["Call Title"] || "",    // Added for consistency
     call["Keywords"] || "",
     call["SSH Keywords"] || "",
     call["Summary"] || "",
