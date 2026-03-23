@@ -697,11 +697,13 @@ function showNoCallsPopup() {
   };
 }
 
-/* ================= UPDATE CALLS (WITH CONSISTENT STYLING) ================= */
 /* ================= UPDATE CALLS ================= */
 function updateCalls() {
   const container = document.getElementById("calls-container");
+  const expiredContainer = document.getElementById("expired-calls-container");
+  
   container.innerHTML = "";
+  expiredContainer.innerHTML = "";
   selectedCallButton = null;
   resetDetailsPanel();
 
@@ -744,12 +746,12 @@ function updateCalls() {
     const score = countKeywordMatches(r, keywordInput);
     const btn = document.createElement("button");
     
-    // Updated to p-2 as requested
+    // Standardized spacing p-2
     btn.className = `w-full text-left p-2 border rounded transition-all mb-2 flex justify-between items-start leading-tight 
       ${isExpired ? 'bg-gray-50 border-gray-200 text-gray-400' : 'bg-white border-gray-200 text-gray-700 hover:border-blue-400'}`;
 
-    // Removed bold from Call ID
-    const callId = r["Call ID"] ? `<span class="font-normal text-gray-600">${r["Call ID"]}:</span> ` : "";
+    // Call ID is NOT bold (font-normal)
+    const callId = r["Call ID"] ? `<span class="font-normal text-gray-500">${r["Call ID"]}:</span> ` : "";
     
     btn.innerHTML = `
       <div class="text-sm font-medium pr-4">
@@ -762,8 +764,13 @@ function updateCalls() {
     targetContainer.appendChild(btn);
   };
 
-  activeCalls.forEach(r => renderCall(document.getElementById("calls-container"), false));
-  expiredCalls.forEach(r => renderCall(document.getElementById("expired-calls-container"), true));
+  // FIXED: Passing 'r' as the first argument
+  activeCalls.forEach(r => renderCall(r, container, false));
+  expiredCalls.forEach(r => renderCall(r, expiredContainer, true));
+
+  if (activeCalls.length === 0 && expiredCalls.length === 0 && keywordInput) {
+    showNoCallsPopup();
+  }
 }
 
 
