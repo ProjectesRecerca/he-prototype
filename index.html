@@ -176,22 +176,17 @@
   </div>
 
   <!-- Description -->
-  <div class="bg-white rounded-xl shadow p-4 mb-6 text-sm text-gray-700">
-    <p class="mb-2">
-      <b>Welcome to GrantRadar </b>
-      <p class="mb-2">
-      The online tool of the Research Service to discover European and Internacional funding opportunities.
+  <div class="bg-white rounded-xl shadow p-4 mb-6 text-sm text-gray-700 leading-relaxed">
+    <p class="mb-3">
+      <strong>Welcome to GrantRadar.</strong> Explore European and International funding opportunities.
     </p>
-    </p>
-    <ul class="list-disc ml-5 space-y-1 mb-2">
-      <li>Select one or more <b>Disciplines</b> and/or <b>Research Fields</b></li>
-      <li>Optionally enter one or two keywords separated by <code>;</code></li>
-      <li>Click on a call to view its details on the right panel</li>
+    <ul class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1 list-disc ml-5">
+      <li>Filter by <strong>Discipline</strong> or <strong>Research Field</strong>.</li>
+      <li>Search keywords (use <code>;</code> for multiple terms).</li>
+      <li>Select a call to view details and <strong>Summary</strong>.</li>
+      <li>Click <strong>"More information"</strong> to contact us for support.</li>
     </ul>
-    <p class="mb-2">
-      If a call matches your interests, click on <b>“More information”</b> and <b>“Contact us</b> to send us an email directly — we will be happy to support you.
-    </p>
-  </div>
+  </div>                          
 
   <!-- Keyword search-->
   <div class="flex gap-2 mt-2 mb-6">
@@ -219,18 +214,21 @@
       <!-- Discipline -->
       <div class="bg-white rounded-xl shadow p-4 mb-6">
         <h3 class="font-bold mb-3">Discipline</h3>
+        <p class="text-xs text-gray-500 mb-3">Filter calls by broad scientific domains.</p>
         <div id="discipline-container" class="flex flex-wrap gap-2"></div>
       </div>
 
       <!-- Research Fields -->
       <div class="bg-white rounded-xl shadow p-4 mb-6">
         <h3 class="font-bold mb-3">Research Fields</h3>
+        <p class="text-xs text-gray-500 mb-3">Select one or more specific domains.</p>
         <div id="field-container" class="flex flex-wrap gap-2"></div>
       </div>
 
       <!-- Calls -->
       <div id="calls-section" class="bg-white rounded-xl shadow p-4 mb-6">
-        <h3 id="calls-title" class="font-bold mb-3">Calls (0)</h3>
+        <h3 id="calls-title" class="font-bold mb-3">Active Calls (0)</h3>
+        <p class="text-xs text-gray-500">Browse available funding opportunities matching your current filters.</p>
         <div id="calls-container" class="flex flex-col gap-2"></div>
         <button
           id="scroll-top-btn"
@@ -243,6 +241,7 @@
 
       <div id="expired-calls-section" class="bg-gray-200 rounded-xl shadow p-4 mb-6 opacity-75">
         <h3 id="expired-calls-title" class="font-bold mb-3 text-gray-600">Expired Calls (0)</h3>
+        <p class="text-xs text-gray-400">Past opportunities for reference purposes only.</p>
         <div id="expired-calls-container" class="flex flex-col gap-2"></div>
       </div>
     </div>
@@ -468,6 +467,8 @@ function keywordMatchesMulti(call, userInput) {
   if (!userInput) return true;
 
   const haystack = [
+    call["Call ID"] || "",      // Added
+    call["Call Title"] || "",    // Added
     call["Keywords"] || "",
     call["SSH Keywords"] || "",
     call["Summary"] || "",
