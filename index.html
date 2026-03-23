@@ -698,7 +698,7 @@ function showNoCallsPopup() {
   };
 }
 
-/* ================= UPDATE CALLS ================= */
+/* ================= UPDATE CALLS (WITH CONSISTENT STYLING) ================= */
 function updateCalls() {
   const container = document.getElementById("calls-container");
   container.innerHTML = "";
@@ -708,53 +708,35 @@ function updateCalls() {
   const keywordInput = document.getElementById("keyword-input").value.trim();
 
   const filtered = excelData.filter(r => {
+    // Discipline Filter
+    if (selectedDisciplines.size && !selectedDisciplines.has(r.Discipline)) return false;
 
-    // Discipline
-    if (selectedDisciplines.size && !selectedDisciplines.has(r.Discipline)) {
-      return false;
-    }
-
-    // Research Fields
+    // Research Fields Filter
     if (selectedResearchFields.size) {
       if (!r["Research Fields"]) return false;
-
-      const fields = r["Research Fields"]
-        .split(";")
-        .map(f => f.trim());
-
-      if (!fields.some(f => selectedResearchFields.has(f))) {
-        return false;
-      }
+      const fields = r["Research Fields"].split(";").map(f => f.trim());
+      if (!fields.some(f => selectedResearchFields.has(f))) return false;
     }
 
-    // Keywords
-    if (keywordInput && !keywordMatchesMulti(r, keywordInput)) {
-      return false;
-    }
+    // Keywords Filter
+    if (keywordInput && !keywordMatchesMulti(r, keywordInput)) return false;
 
     return true;
   });
 
+  // Sort by Keyword Relevance
+  filtered.sort((a, b) => countKeywordMatches(b, keywordInput) - countKeywordMatches(a, keywordInput));
 
-  filtered.sort((a, b) => {
-  const scoreA = countKeywordMatches(a, keywordInput);
-  const scoreB = countKeywordMatches(b, keywordInput);
-  return scoreB - scoreA;
-  });
-
-const today = new Date();
-  today.setHours(0, 0, 0, 0); // Reset time for accurate date comparison
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
   const activeCalls = [];
   const expiredCalls = [];
 
   filtered.forEach(r => {
     const deadlineStr = excelDateToString(r["Deadline(s)"]);
-    // Simple date parsing (DD/MM/YYYY)
     const parts = deadlineStr.split('/');
-    const deadlineDate = parts.length === 3 
-      ? new Date(parts[2], parts[1] - 1, parts[0]) 
-      : null;
+    const deadlineDate = parts.length === 3 ? new Date(parts[2], parts[1] - 1, parts[0]) : null;
 
     if (deadlineDate && deadlineDate < today) {
       expiredCalls.push(r);
@@ -763,7 +745,7 @@ const today = new Date();
     }
   });
 
-  // Update Titles
+  // Update Titles with consistent styling
   document.getElementById("calls-title").textContent = `Active Calls (${activeCalls.length})`;
   document.getElementById("expired-calls-title").textContent = `Expired Calls (${expiredCalls.length})`;
 
@@ -773,16 +755,25 @@ const today = new Date();
   activeContainer.innerHTML = "";
   expiredContainer.innerHTML = "";
 
-  // Helper to render buttons
+  // Helper to render buttons with standardized typography
   const renderCall = (r, targetContainer, isExpired) => {
     const score = countKeywordMatches(r, keywordInput);
     const btn = document.createElement("button");
-    btn.className = `w-full text-left p-2 border rounded hover:bg-gray-100 flex justify-between items-center ${isExpired ? 'bg-gray-50 text-gray-500' : ''}`;
+    
+    // Consistent classes: text-sm (matching headers), font-medium, and gray-700 colors
+    btn.className = `w-full text-left p-4 border rounded-lg transition-all mb-2 flex justify-between items-start leading-relaxed 
+      ${isExpired 
+        ? 'bg-gray-50 border-gray-200 text-gray-400 opacity-80' 
+        : 'bg-white border-gray-200 text-gray-700 hover:border-blue-400 hover:shadow-sm'}`;
 
-    const callId = r["Call ID"] ? `${r["Call ID"]}: ` : ""; // Only add colon if ID exists
+    const callId = r["Call ID"] ? `<span class="font-bold text-gray-900">${r["Call ID"]}:</span> ` : "";
+    
+    // Using a span to control text consistency specifically
     btn.innerHTML = `
-      <span>${callId}${r["Call Title"] || ""}</span>
-      ${keywordInput ? `<span class="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">${score}</span>` : ""}
+      <div class="text-sm font-medium pr-4">
+        ${callId} ${r["Call Title"] || ""}
+      </div>
+      ${keywordInput ? `<span class="text-[10px] font-bold bg-blue-100 text-blue-700 px-2 py-1 rounded-full whitespace-nowrap uppercase">Matches: ${score}</span>` : ""}
     `;
 
     btn.onclick = () => showCallDetails(r, btn);
@@ -792,10 +783,9 @@ const today = new Date();
   activeCalls.forEach(r => renderCall(r, activeContainer, false));
   expiredCalls.forEach(r => renderCall(r, expiredContainer, true));
 
-  if (activeCalls.length === 0 && expiredCalls.length === 0) {
+  if (activeCalls.length === 0 && expiredCalls.length === 0 && keywordInput) {
     showNoCallsPopup();
   }
-
 }
 
 
