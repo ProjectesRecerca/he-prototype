@@ -366,7 +366,9 @@ function renderResearchFields() {
 function keywordMatchesMulti(call, userInput) {
   if (!userInput) return true;
 
-  const haystack = [
+const haystack = [
+    call["Call ID"] || "",      // Added
+    call["Call Title"] || "",    // Added
     call["Keywords"] || "",
     call["SSH Keywords"] || "",
     call["Summary"] || "",
@@ -416,7 +418,9 @@ function highlightKeywords(text, userInput) {
 function countKeywordMatches(call, userInput) {
   if (!userInput) return 0;
 
-  const haystack = [
+const haystack = [
+    call["Call ID"] || "",      // Added for consistency
+    call["Call Title"] || "",    // Added for consistency
     call["Keywords"] || "",
     call["SSH Keywords"] || "",
     call["Summary"] || "",
