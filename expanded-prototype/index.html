@@ -16,6 +16,47 @@
   <!-- SheetJS -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 </head>
+
+<style>
+  /* Standardizing font family and base colors */
+  body {
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+    color: #374151; /* gray-700 */
+  }
+
+  /* Standardizing Section Titles */
+  h3 {
+    font-size: 0.875rem !important; /* text-sm */
+    font-weight: 700 !important;   /* font-bold */
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #111827; /* gray-900 */
+  }
+
+  /* Call ID and Title Styling */
+  .call-item-text {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+  }
+
+  /* Consistency for Discipline Buttons */
+  #discipline-container button {
+    font-size: 0.75rem; /* text-xs */
+    font-weight: 500;
+    padding: 0.375rem 0.75rem;
+  }
+
+  /* Standardizing form labels in the Detail Panel */
+  #dynamic-details-container strong {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: #6B7280; /* gray-500 */
+    letter-spacing: 0.025em;
+  }
+</style>
+
+
 <!-- More info modal -->
 <div
   id="more-info-modal"
@@ -320,13 +361,10 @@ function renderDisciplines() {
 }
 
 
-/* ================= RESEARCH FIELDS ================= */
 /* ================= RESEARCH FIELDS (CATEGORIZED) ================= */
 function renderResearchFields() {
   const container = document.getElementById("field-container");
   container.innerHTML = "";
-  
-  // Ensure the container itself allows vertical stacking of categories
   container.className = "flex flex-col gap-6";
 
   const categories = [
@@ -346,58 +384,64 @@ function renderResearchFields() {
   });
 
   categories.forEach(cat => {
-    // Filter fields starting with the prefix (e.g., PE1, LS3)
     const catFields = [...allFields]
       .filter(f => f.startsWith(cat.prefix))
-      .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+      .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
 
     if (catFields.length > 0) {
       const section = document.createElement("div");
       section.className = "w-full";
       
-      const header = document.createElement("h4");
-      // Use standard hex or specific Tailwind colors to ensure they render
-      header.className = `text-xs font-bold uppercase tracking-wider mb-3 pb-1 border-b border-${cat.color}-200 text-${cat.color}-700`;
-      header.textContent = cat.label;
-      section.appendChild(header);
+      // Category Header with Toggle
+      const headerFlex = document.createElement("div");
+      headerFlex.className = `flex justify-between items-center mb-3 pb-1 border-b border-${cat.color}-200`;
+
+      const headerTitle = document.createElement("h4");
+      headerTitle.className = `text-xs font-bold uppercase tracking-wider text-${cat.color}-700`;
+      headerTitle.textContent = cat.label;
+
+      const toggleBtn = document.createElement("button");
+      const isAllSelected = catFields.every(f => selectedResearchFields.has(f));
+      toggleBtn.textContent = isAllSelected ? "Deselect All" : "Select All";
+      toggleBtn.className = `text-[10px] font-bold uppercase px-2 py-1 rounded border border-${cat.color}-300 text-${cat.color}-600 hover:bg-${cat.color}-50 transition-colors`;
+      
+      toggleBtn.onclick = () => {
+        if (isAllSelected) {
+          catFields.forEach(f => selectedResearchFields.delete(f));
+        } else {
+          catFields.forEach(f => selectedResearchFields.add(f));
+        }
+        renderResearchFields(); 
+        updateCalls();
+      };
+
+      headerFlex.appendChild(headerTitle);
+      headerFlex.appendChild(toggleBtn);
+      section.appendChild(headerFlex);
 
       const buttonWrapper = document.createElement("div");
       buttonWrapper.className = "flex flex-wrap gap-2";
 
       catFields.forEach(f => {
         const b = document.createElement("button");
-        
-        // Clean the label (Removes "PE1 ", "SH4 ", etc.)
         const cleanLabel = f.replace(/^[A-Z]{2,3}\d+\s*/, ""); 
-        
         b.textContent = cleanLabel;
-        b.className = `px-3 py-1 border rounded text-xs transition-all duration-200 hover:shadow-sm`;
-
-        // Apply dynamic colors based on selection and category
-        const activeClass = `bg-${cat.color}-600`;
-        const activeText = `text-white`;
-        const activeBorder = `border-${cat.color}-600`;
-        const inactiveBorder = `border-gray-200`;
-        const hoverBg = `hover:bg-${cat.color}-50`;
+        // Consistent button styling
+        b.className = `px-3 py-1.5 border rounded text-xs font-medium transition-all duration-200`;
 
         if (selectedResearchFields.has(f)) {
-          b.classList.add(activeClass, activeText, activeBorder);
+          b.classList.add(`bg-${cat.color}-600`, "text-white", `border-${cat.color}-600`, "shadow-sm");
         } else {
-          b.classList.add("bg-white", "text-gray-700", inactiveBorder, hoverBg);
+          b.classList.add("bg-white", "text-gray-600", "border-gray-200", `hover:border-${cat.color}-300`, `hover:text-${cat.color}-700`);
         }
 
         b.onclick = () => {
           if (selectedResearchFields.has(f)) {
             selectedResearchFields.delete(f);
-            b.classList.replace(activeClass, "bg-white");
-            b.classList.replace(activeText, "text-gray-700");
-            b.classList.replace(activeBorder, inactiveBorder);
           } else {
             selectedResearchFields.add(f);
-            b.classList.replace("bg-white", activeClass);
-            b.classList.replace("text-gray-700", activeText);
-            b.classList.replace(inactiveBorder, activeBorder);
           }
+          renderResearchFields(); 
           updateCalls();
         };
 
