@@ -321,43 +321,77 @@ function renderDisciplines() {
 
 
 /* ================= RESEARCH FIELDS ================= */
+/* ================= RESEARCH FIELDS (CATEGORIZED) ================= */
 function renderResearchFields() {
-  const c = document.getElementById("field-container");
-  c.innerHTML = "";
+  const container = document.getElementById("field-container");
+  container.innerHTML = "";
+  
+  // 1. Define the Mapping
+  const categories = [
+    { label: "Physical Sciences & Engineering", prefix: "PE", color: "blue" },
+    { label: "Life Sciences", prefix: "LS", color: "green" },
+    { label: "Social Sciences & Humanities", prefix: "SH", color: "indigo" }
+  ];
 
   let rows = selectedDisciplines.size
     ? excelData.filter(r => selectedDisciplines.has(r.Discipline))
     : excelData;
 
-  const fields = new Set();
+  const allFields = new Set();
   rows.forEach(r => {
     if (!r["Research Fields"]) return;
-    r["Research Fields"].split(";").map(f => f.trim()).forEach(f => fields.add(f));
+    r["Research Fields"].split(";").map(f => f.trim()).forEach(f => allFields.add(f));
   });
 
-  [...fields].sort().forEach(f => {
-    const b = document.createElement("button");
-    b.textContent = f;
-    b.className = "px-3 py-1 border rounded";
+  // 2. Create Sections for each Category
+  categories.forEach(cat => {
+    // Filter fields belonging to this category based on the prefix (PE, LS, SH)
+    const catFields = [...allFields].filter(f => f.startsWith(cat.prefix)).sort();
 
-    // restaurar estado visual
-    if (selectedResearchFields.has(f)) {
-      b.classList.add("bg-green-600", "text-white");
+    if (catFields.length > 0) {
+      // Create Category Header
+      const section = document.createElement("div");
+      section.className = "w-full mb-4";
+      
+      const header = document.createElement("h4");
+      header.className = `text-sm font-semibold mb-2 border-b pb-1 text-${cat.color}-700`;
+      header.textContent = cat.label;
+      section.appendChild(header);
+
+      const buttonWrapper = document.createElement("div");
+      buttonWrapper.className = "flex flex-wrap gap-2";
+
+      catFields.forEach(f => {
+        const b = document.createElement("button");
+        
+        // 3. Remove the Code (e.g., "PE1 ") using Regex
+        const cleanLabel = f.replace(/^[A-Z]{2,3}\d+\s*/, ""); 
+        
+        b.textContent = cleanLabel;
+        b.className = `px-3 py-1 border rounded text-xs transition-colors hover:bg-${cat.color}-50`;
+
+        // Maintain selection state
+        if (selectedResearchFields.has(f)) {
+          b.classList.add(`bg-${cat.color}-600`, "text-white", `border-${cat.color}-600`);
+        }
+
+        b.onclick = () => {
+          if (selectedResearchFields.has(f)) {
+            selectedResearchFields.delete(f);
+            b.classList.remove(`bg-${cat.color}-600`, "text-white");
+          } else {
+            selectedResearchFields.add(f);
+            b.classList.add(`bg-${cat.color}-600`, "text-white");
+          }
+          updateCalls();
+        };
+
+        buttonWrapper.appendChild(b);
+      });
+
+      section.appendChild(buttonWrapper);
+      container.appendChild(section);
     }
-
-    b.onclick = () => {
-      if (selectedResearchFields.has(f)) {
-        selectedResearchFields.delete(f);
-        b.classList.remove("bg-green-600", "text-white");
-      } else {
-        selectedResearchFields.add(f);
-        b.classList.add("bg-green-600", "text-white");
-      }
-
-      updateCalls();
-    };
-
-    c.appendChild(b);
   });
 }
 
