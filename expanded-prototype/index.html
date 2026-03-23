@@ -406,7 +406,7 @@ function renderResearchFields() {
       const toggleBtn = document.createElement("button");
       const isAllSelected = catFields.every(f => selectedResearchFields.has(f));
       toggleBtn.textContent = isAllSelected ? "Deselect All" : "Select All";
-      toggleBtn.className = `text-[8px] font-bold uppercase px-2 py-1 rounded border border-${cat.color}-300 text-${cat.color}-600 hover:bg-${cat.color}-50 transition-colors`;
+      toggleBtn.className = `text-[6px] font-bold uppercase px-2 py-1 rounded border border-${cat.color}-300 text-${cat.color}-600 hover:bg-${cat.color}-50 transition-colors`;
       
       toggleBtn.onclick = () => {
         if (isAllSelected) {
