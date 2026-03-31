@@ -332,7 +332,9 @@ function loadExcel() {
     .then(r => r.arrayBuffer())
     .then(data => {
       const wb = XLSX.read(data, { type: "array" });
-      excelData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+      // Change [0] to [1] to target the second sheet regardless of its name
+      const secondSheetName = wb.SheetNames[1]; 
+      excelData = XLSX.utils.sheet_to_json(wb.Sheets[secondSheetName]);
       renderDisciplines();
       renderResearchFields();
       updateCalls();
