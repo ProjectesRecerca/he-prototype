@@ -180,10 +180,15 @@
   <h1 class="text-l font-bold text-gray-900 mb-1">Welcome to GrantRadar</h1>
  <div class="text-sm text-gray-600 leading-relaxed">
     <p class="mb-2">
-      Discover European and International funding opportunities. 
-      Filter by discipline, search keywords, and click <strong> More information</strong> for more details.
+      Discover European and international funding opportunities aligned with your research interests.
     </p>
-    <p>
+    <p class="mb-2">
+      Refine your search by discipline, specific research fields, and/or keywords to find the most relevant calls.
+    </p>
+    <p class="mb-2">
+      Select <strong> More information</strong> to explore the scope and expected outcomes.
+    </p>
+    <p class="mb-2">
       If a call matches your interest, click <strong> Visit Official Website</strong> 
       or <strong>Contact us</strong> for further information.
     </p>
@@ -323,11 +328,13 @@ function handleCredentialResponse(response) {
 
 /* ================= LOAD EXCEL ================= */
 function loadExcel() {
-  fetch("./Calls_v2.0.xlsx")
+  fetch("./GrantRadar_Calls.xlsx")
     .then(r => r.arrayBuffer())
     .then(data => {
       const wb = XLSX.read(data, { type: "array" });
-      excelData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+      // Change [0] to [1] to target the second sheet regardless of its name
+      const secondSheetName = wb.SheetNames[1]; 
+      excelData = XLSX.utils.sheet_to_json(wb.Sheets[secondSheetName]);
       renderDisciplines();
       renderResearchFields();
       updateCalls();
@@ -724,6 +731,12 @@ function updateCalls() {
   const keywordInput = document.getElementById("keyword-input").value.trim();
 
   const filtered = excelData.filter(r => {
+    // NEW RULE: If the discipline is "General", bypass all filters and always include it.
+    if (r.Discipline && r.Discipline.trim().toLowerCase() === "general") {
+      return true;
+    }
+
+    // Standard filtering logic for all other calls
     if (selectedDisciplines.size && !selectedDisciplines.has(r.Discipline)) return false;
     if (selectedResearchFields.size) {
       if (!r["Research Fields"]) return false;
