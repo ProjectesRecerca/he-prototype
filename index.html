@@ -731,6 +731,12 @@ function updateCalls() {
   const keywordInput = document.getElementById("keyword-input").value.trim();
 
   const filtered = excelData.filter(r => {
+    // NEW RULE: If the discipline is "General", bypass all filters and always include it.
+    if (r.Discipline && r.Discipline.trim().toLowerCase() === "general") {
+      return true;
+    }
+
+    // Standard filtering logic for all other calls
     if (selectedDisciplines.size && !selectedDisciplines.has(r.Discipline)) return false;
     if (selectedResearchFields.size) {
       if (!r["Research Fields"]) return false;
