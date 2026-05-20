@@ -770,26 +770,45 @@ function updateCalls() {
   document.getElementById("expired-calls-title").textContent = `Expired Calls (${expiredCalls.length})`;
 
   const renderCall = (r, targetContainer, isExpired) => {
-    const score = countKeywordMatches(r, keywordInput);
-    const btn = document.createElement("button");
-    
-    // Standardized spacing p-2
-    btn.className = `w-full text-left p-2 border rounded transition-all mb-2 flex justify-between items-start leading-tight 
-      ${isExpired ? 'bg-gray-50 border-gray-200 text-gray-400' : 'bg-white border-gray-200 text-gray-700 hover:border-blue-400'}`;
+      const score = countKeywordMatches(r, keywordInput);
+      const btn = document.createElement("button");
+      
+      const isGeneral = r.Discipline && r.Discipline.trim().toLowerCase() === "general";
+      
+      // Add a subtle purple left-border accent if it's an active General call
+      const borderAccent = (isGeneral && !isExpired) ? 'border-l-4 border-l-purple-500 pl-2' : '';
 
-    // Call ID is NOT bold (font-normal)
-    const callId = r["Call ID"] ? `<span class="font-normal text-gray-500">${r["Call ID"]}:</span> ` : "";
-    
-    btn.innerHTML = `
-      <div class="text-sm font-medium pr-4">
-        ${callId} ${r["Call Title"] || ""}
-      </div>
-      ${keywordInput ? `<span class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full whitespace-nowrap">Matches: ${score}</span>` : ""}
-    `;
+      // Standardized spacing p-2 with our new border accent styling included
+      btn.className = `w-full text-left p-2 border rounded transition-all mb-2 flex justify-between items-start leading-tight ${borderAccent} 
+        ${isExpired ? 'bg-gray-50 border-gray-200 text-gray-400' : 'bg-white border-gray-200 text-gray-700 hover:border-blue-400'}`;
 
-    btn.onclick = () => showCallDetails(r, btn);
-    targetContainer.appendChild(btn);
-  };
+      const callId = r["Call ID"] ? `<span class="font-normal text-gray-500">${r["Call ID"]}:</span> ` : "";
+      
+      // Determine what badge to show on the right side
+      let badgeHTML = "";
+      if (keywordInput) {
+        if (score > 0) {
+          // Show match count if it explicitly matches the user's keyword
+          badgeHTML = `<span class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full whitespace-nowrap">Matches: ${score}</span>`;
+        } else if (isGeneral) {
+          // Swap "Matches: 0" for the descriptive purple "General Call" pill
+          badgeHTML = `<span class="text-[10px] bg-purple-100 text-purple-700 font-semibold px-2 py-0.5 rounded-full whitespace-nowrap">General Call</span>`;
+        }
+      } else if (isGeneral) {
+        // If no keyword search is active, still label it clearly as a General Call
+        badgeHTML = `<span class="text-[10px] bg-purple-100 text-purple-700 font-semibold px-2 py-0.5 rounded-full whitespace-nowrap">General Call</span>`;
+      }
+
+      btn.innerHTML = `
+        <div class="text-sm font-medium pr-4">
+          ${callId} ${r["Call Title"] || ""}
+        </div>
+        ${badgeHTML}
+      `;
+
+      btn.onclick = () => showCallDetails(r, btn);
+      targetContainer.appendChild(btn);
+    };
 
   // FIXED: Passing 'r' as the first argument
   activeCalls.forEach(r => renderCall(r, container, false));
