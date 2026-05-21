@@ -218,19 +218,17 @@
     <!-- LEFT COLUMN -->
     <div class="w-3/4">
 
-      <!-- Discipline -->
-      <div class="bg-white rounded-xl shadow p-4 mb-6">
-        <h3 class="font-bold mb-3">Discipline</h3>
-        <p class="text-xs text-gray-500 mb-3">Filter calls by broad scientific domains.</p>
-        <div id="discipline-container" class="flex flex-wrap gap-2"></div>
-      </div>
+    <div class="bg-white rounded-xl shadow p-4 mb-6">
+      <h3 class="font-bold mb-3">Scientific Domain</h3>
+      <p class="text-xs text-gray-500 mb-3">Filter calls by broad research pillars.</p>
+      <div id="discipline-container" class="flex flex-wrap gap-2"></div>
+    </div>
 
-      <!-- Research Fields -->
-      <div class="bg-white rounded-xl shadow p-4 mb-6">
-        <h3 class="font-bold mb-3">Research Fields</h3>
-        <p class="text-xs text-gray-500 mb-3">Select one or more specific domains.</p>
-        <div id="field-container" class="flex flex-wrap gap-2"></div>
-      </div>
+    <div class="bg-white rounded-xl shadow p-4 mb-6">
+      <h3 class="font-bold mb-3">Specific Disciplines / Areas</h3>
+      <p class="text-xs text-gray-500 mb-3">Select one or more target fields to narrow your search.</p>
+      <div id="field-container" class="flex flex-wrap gap-2"></div>
+    </div>
 
       <!-- Calls -->
       <div id="calls-section" class="bg-white rounded-xl shadow p-4 mb-6">
@@ -246,9 +244,25 @@
         </button>
       </div>
 
-      <div id="expired-calls-section" class="bg-gray-200 rounded-xl shadow p-4 mb-6 opacity-75">
-        <h3 id="expired-calls-title" class="font-bold mb-3 text-gray-600">Expired Calls (0)</h3>
-        <p class="text-xs mb-3 text-gray-400">Past opportunities for reference purposes only.</p>
+    <div id="expired-calls-section" class="bg-gray-200 rounded-xl shadow p-4 mb-6 opacity-75">
+      <button 
+        id="expired-calls-toggle" 
+        class="w-full flex justify-between items-center text-left focus:outline-none group"
+        onclick="toggleExpiredCalls()"
+      >
+        <div>
+          <h3 id="expired-calls-title" class="font-bold text-gray-600 inline-block">Expired Calls (0)</h3>
+          <p class="text-xs text-gray-400 mt-1">Past opportunities for reference purposes only.</p>
+        </div>
+        <span 
+          id="expired-arrow" 
+          class="text-gray-500 font-bold text-lg transform transition-transform duration-200 mr-2 group-hover:text-gray-700"
+        >
+          &#9662;
+        </span>
+      </button>
+      
+      <div id="expired-calls-wrapper" class="hidden mt-4 pt-3 border-t border-gray-300">
         <div id="expired-calls-container" class="flex flex-col gap-2"></div>
       </div>
     </div>
@@ -840,7 +854,21 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 });
 
+/* ================= TOGGLE EXPIRED CALLS ================= */
+function toggleExpiredCalls() {
+  const wrapper = document.getElementById("expired-calls-wrapper");
+  const arrow = document.getElementById("expired-arrow");
+  
+  if (wrapper.classList.contains("hidden")) {
+    wrapper.classList.remove("hidden");
+    arrow.style.transform = "rotate(180deg)"; // Point arrow up when open
+  } else {
+    wrapper.classList.add("hidden");
+    arrow.style.transform = "rotate(0deg)";   // Point arrow down when closed
+  }
+}
 
+/* ================= MORE INFORMATION WINDOW ================= */
 
 function openMoreInfoEmail(callId) {
   const accepted = confirm(
