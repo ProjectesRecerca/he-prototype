@@ -209,8 +209,8 @@
 
 
   <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
-      <div class="lg:col-span-3 flex flex-col gap-6">
-        <div class="bg-white rounded-xl shadow p-4">
+    <div class="lg:col-span-3 flex flex-col gap-6 lg:pr-80">        
+      <div class="bg-white rounded-xl shadow p-4">
         <h3 class="font-bold mb-3">Scientific Domain</h3>
         <p class="text-xs text-gray-500 mb-3">Filter calls by broad scientific domains.</p>
         <div id="discipline-container" class="flex flex-wrap gap-2"></div>
@@ -263,8 +263,7 @@
 
 
     <div id="call-details-panel" class="lg:col-span-1">
-<div id="call-details-inner" class="bg-white rounded-xl shadow p-4 sticky w-full z-40 flex flex-col" style="top: 0; max-height: calc(100vh - 1rem);">  <h3 class="text-lg font-semibold mb-2">Call details</h3>
-        
+      <div id="call-details-inner" class="bg-white rounded-xl shadow p-4 fixed right-6 w-72 z-40 flex flex-col" style="top: 0; max-height: calc(100vh - 1rem);">        
         <div id="dynamic-details-container" class="text-sm space-y-1 mb-4"></div>
 
         <div id="summary-section" class="mt-4 border-t pt-2">
@@ -906,7 +905,20 @@ function openMoreInfoEmail(callId) {
   }
 });
 
+ /* ================= POSITION CALL DETAILS PANEL ================= */
+  function positionCallDetailsPanel() {
+    const keywordBar = document.getElementById("keyword-input");
+    const panel = document.getElementById("call-details-inner");
+    if (!keywordBar || !panel) return;
+    // offsetTop = distance from page top, stable regardless of scroll
+    const barBottom = keywordBar.offsetTop + keywordBar.offsetHeight + 12;
+    panel.style.top = barBottom + "px";
+    panel.style.maxHeight = (window.innerHeight - barBottom - 16) + "px";
+  }
 
+  window.addEventListener("load", positionCallDetailsPanel);
+  window.addEventListener("resize", positionCallDetailsPanel);
+  positionCallDetailsPanel();
 
 /* window.addEventListener("DOMContentLoaded", () => {
   const moreInfoBtn = document.getElementById("more-info-btn");
