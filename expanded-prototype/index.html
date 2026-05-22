@@ -201,9 +201,15 @@
     />
     <button
       id="search-btn"
-      class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+      class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
     >
       Search
+    </button>
+    <button
+      id="search-clear-btn"
+      class="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400 transition-colors"
+    >
+      Clear
     </button>
   </div>
 
@@ -828,26 +834,39 @@ function updateCalls() {
   }
 }
 
-/* ================= CLEAR BUTTON ================= */
+/* ================= FILTER RESET LOGIC ================= */
+function resetAllFilters() {
+  // 1. Reset input states
+  const keywordInput = document.getElementById("keyword-input");
+  if (keywordInput) keywordInput.value = "";
+  
+  selectedDisciplines.clear();
+  selectedResearchFields.clear();
+  selectedCallButton = null;
+
+  // 2. Re-render components and recalculate active/expired lists
+  renderDisciplines(); 
+  renderResearchFields();
+  updateCalls(); // This function automatically handles collapsing the expired panel
+  
+  // 3. Hide details panel actions if open
+  const moreInfoBtn = document.getElementById("more-info-btn");
+  if (moreInfoBtn) moreInfoBtn.classList.add("hidden");
+}
+
 window.addEventListener("DOMContentLoaded", () => {
-  const clearBtn = document.getElementById("clear-btn");
+  const sidebarClearBtn = document.getElementById("clear-btn");
+  const topClearBtn = document.getElementById("search-clear-btn");
 
-  if (!clearBtn) return;
+  // Bind the global reset function to the sidebar clear button
+  if (sidebarClearBtn) {
+    sidebarClearBtn.addEventListener("click", resetAllFilters);
+  }
 
-  clearBtn.addEventListener("click", () => {
-    // Reset states
-    document.getElementById("keyword-input").value = "";
-    selectedDisciplines.clear();
-    selectedResearchFields.clear();
-    selectedCallButton = null;
-
-    // Re-render and apply updates (updateCalls handles the collapse)
-    renderDisciplines(); 
-    renderResearchFields();
-    updateCalls();
-    
-    document.getElementById("more-info-btn").classList.add("hidden");
-  });
+  // Bind the global reset function to the new top search-bar clear button
+  if (topClearBtn) {
+    topClearBtn.addEventListener("click", resetAllFilters);
+  }
 });
 
 /* ================= TOGGLE EXPIRED CALLS ================= */
