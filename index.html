@@ -263,7 +263,7 @@
 
 
     <div id="call-details-panel" class="lg:col-span-1">
- <div id="call-details-inner" class="bg-white rounded-xl shadow p-4 fixed right-6 w-72 z-40 flex flex-col" style="top: 0; max-height: calc(100vh - 1rem);">        <h3 class="text-lg font-semibold mb-2">Call details</h3>
+<div id="call-details-inner" class="bg-white rounded-xl shadow p-4 sticky w-full z-40 flex flex-col" style="top: 0; max-height: calc(100vh - 1rem);">  <h3 class="text-lg font-semibold mb-2">Call details</h3>
         
         <div id="dynamic-details-container" class="text-sm space-y-1 mb-4"></div>
 
@@ -906,21 +906,7 @@ function openMoreInfoEmail(callId) {
   }
 });
 
-/* ================= POSITION CALL DETAILS PANEL ================= */
-  function positionCallDetailsPanel() {
-    const keywordBar = document.getElementById("keyword-input");
-    const panel = document.getElementById("call-details-inner");
-    if (!keywordBar || !panel) return;
-    // Use offsetTop (distance from page top) + height, not getBoundingClientRect
-    // so the panel stays fixed below the keyword bar regardless of scroll position
-    const barBottom = keywordBar.offsetTop + keywordBar.offsetHeight + 12;
-    panel.style.top = barBottom + "px";
-    panel.style.maxHeight = (window.innerHeight - 16) + "px";
-  }
 
-  window.addEventListener("load", positionCallDetailsPanel);
-  window.addEventListener("resize", positionCallDetailsPanel);
-  positionCallDetailsPanel();
 
 /* window.addEventListener("DOMContentLoaded", () => {
   const moreInfoBtn = document.getElementById("more-info-btn");
