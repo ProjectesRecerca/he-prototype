@@ -727,7 +727,16 @@ function showNoCallsPopup() {
 }
 
 /* ================= UPDATE CALLS ================= */
+/* ================= UPDATE CALLS ================= */
 function updateCalls() {
+  // Collapse the Expired Calls section automatically whenever filters update
+  const expiredWrapper = document.getElementById("expired-calls-wrapper");
+  const expiredArrow = document.getElementById("expired-arrow");
+  if (expiredWrapper && expiredArrow) {
+    expiredWrapper.classList.add("hidden");
+    expiredArrow.style.transform = "rotate(0deg)";
+  }
+
   const container = document.getElementById("calls-container");
   const expiredContainer = document.getElementById("expired-calls-container");
   
@@ -739,7 +748,7 @@ function updateCalls() {
   const keywordInput = document.getElementById("keyword-input").value.trim();
 
   const filtered = excelData.filter(r => {
-    // NEW RULE: If the discipline is "General", bypass all filters and always include it.
+    // If the discipline is "General", bypass all filters and always include it.
     if (r.Discipline && r.Discipline.trim().toLowerCase() === "general") {
       return true;
     }
@@ -782,28 +791,21 @@ function updateCalls() {
       const btn = document.createElement("button");
       
       const isGeneral = r.Discipline && r.Discipline.trim().toLowerCase() === "general";
-      
-      // Add a subtle purple left-border accent if it's an active General call
       const borderAccent = (isGeneral && !isExpired) ? 'border-l-4 border-l-purple-500 pl-2' : '';
 
-      // Standardized spacing p-2 with our new border accent styling included
       btn.className = `w-full text-left p-2 border rounded transition-all mb-2 flex justify-between items-start leading-tight ${borderAccent} 
         ${isExpired ? 'bg-gray-50 border-gray-200 text-gray-400' : 'bg-white border-gray-200 text-gray-700 hover:border-blue-400'}`;
 
       const callId = r["Call ID"] ? `<span class="font-normal text-gray-500">${r["Call ID"]}:</span> ` : "";
       
-      // Determine what badge to show on the right side
       let badgeHTML = "";
       if (keywordInput) {
         if (score > 0) {
-          // Show match count if it explicitly matches the user's keyword
           badgeHTML = `<span class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full whitespace-nowrap">Matches: ${score}</span>`;
         } else if (isGeneral) {
-          // Swap "Matches: 0" for the descriptive purple "General Call" pill
           badgeHTML = `<span class="text-[10px] bg-purple-100 text-purple-700 font-semibold px-2 py-0.5 rounded-full whitespace-nowrap">General Call</span>`;
         }
       } else if (isGeneral) {
-        // If no keyword search is active, still label it clearly as a General Call
         badgeHTML = `<span class="text-[10px] bg-purple-100 text-purple-700 font-semibold px-2 py-0.5 rounded-full whitespace-nowrap">General Call</span>`;
       }
 
@@ -818,7 +820,6 @@ function updateCalls() {
       targetContainer.appendChild(btn);
     };
 
-  // FIXED: Passing 'r' as the first argument
   activeCalls.forEach(r => renderCall(r, container, false));
   expiredCalls.forEach(r => renderCall(r, expiredContainer, true));
 
@@ -827,7 +828,6 @@ function updateCalls() {
   }
 }
 
-
 /* ================= CLEAR BUTTON ================= */
 window.addEventListener("DOMContentLoaded", () => {
   const clearBtn = document.getElementById("clear-btn");
@@ -835,27 +835,18 @@ window.addEventListener("DOMContentLoaded", () => {
   if (!clearBtn) return;
 
   clearBtn.addEventListener("click", () => {
-    // 1. Reset input states
-    document.getElementById("keyword-input").value = ""; // Clear text input
+    // Reset states
+    document.getElementById("keyword-input").value = "";
     selectedDisciplines.clear();
     selectedResearchFields.clear();
     selectedCallButton = null;
 
-    // 2. Re-render components back to default values
+    // Re-render and apply updates (updateCalls handles the collapse)
     renderDisciplines(); 
     renderResearchFields();
     updateCalls();
     
-    // Hide details panel action button
     document.getElementById("more-info-btn").classList.add("hidden");
-
-    // 3. Force collapse the Expired Calls module on Clear
-    const wrapper = document.getElementById("expired-calls-wrapper");
-    const arrow = document.getElementById("expired-arrow");
-    if (wrapper && arrow) {
-      wrapper.classList.add("hidden");
-      arrow.style.transform = "rotate(0deg)";
-    }
   });
 });
 
