@@ -237,30 +237,29 @@
         </button>
       </div>
 
-      <div id="expired-calls-section" class="bg-gray-200 rounded-xl shadow p-4 opacity-75">
-        <button 
-          id="expired-calls-toggle" 
-          type="button"
-          class="w-full flex justify-between items-center text-left focus:outline-none group"
-          onclick="toggleExpiredCalls()"
-        >
-          <div>
-            <h3 id="expired-calls-title" class="font-bold text-gray-600 inline-block">Expired Calls (0)</h3>
-            <p class="text-xs text-gray-400 mt-1">Past opportunities for reference purposes only.</p>
-          </div>
-          <span 
-            id="expired-arrow" 
-            class="text-gray-500 font-bold text-lg transform transition-transform duration-200 mr-2 group-hover:text-gray-700"
-          >
-            &#9662;
-          </span>
-        </button>
-        
-        <div id="expired-calls-wrapper" class="hidden mt-4 pt-3 border-t border-gray-300">
-          <div id="expired-calls-container" class="flex flex-col gap-2"></div>
+    <div id="expired-calls-section" class="bg-gray-200 rounded-xl shadow p-4 opacity-75">
+      <button 
+        id="expired-calls-toggle" 
+        type="button"
+        class="w-full flex justify-between items-center text-left focus:outline-none group"
+        onclick="toggleExpiredCalls()"
+      >
+        <div>
+          <h3 id="expired-calls-title" class="font-bold text-gray-600 inline-block">Expired Calls (0)</h3>
+          <p class="text-xs text-gray-400 mt-1">Past opportunities for reference purposes only.</p>
         </div>
+        <span 
+          id="expired-arrow" 
+          class="text-gray-500 font-bold text-lg transform transition-transform duration-200 mr-2 group-hover:text-gray-700"
+          style="transform: rotate(0deg);"
+        >
+          &#9662;
+        </span>
+      </button>
+      
+      <div id="expired-calls-wrapper" class="hidden mt-4 pt-3 border-t border-gray-300">
+        <div id="expired-calls-container" class="flex flex-col gap-2"></div>
       </div>
-
     </div>
 
 
@@ -836,16 +835,27 @@ window.addEventListener("DOMContentLoaded", () => {
   if (!clearBtn) return;
 
   clearBtn.addEventListener("click", () => {
-    // 1. Reset estados
+    // 1. Reset input states
+    document.getElementById("keyword-input").value = ""; // Clear text input
     selectedDisciplines.clear();
     selectedResearchFields.clear();
     selectedCallButton = null;
-  // Re-render both sections to reset all dynamic styles and categories
+
+    // 2. Re-render components back to default values
     renderDisciplines(); 
     renderResearchFields();
     updateCalls();
+    
+    // Hide details panel action button
     document.getElementById("more-info-btn").classList.add("hidden");
 
+    // 3. Force collapse the Expired Calls module on Clear
+    const wrapper = document.getElementById("expired-calls-wrapper");
+    const arrow = document.getElementById("expired-arrow");
+    if (wrapper && arrow) {
+      wrapper.classList.add("hidden");
+      arrow.style.transform = "rotate(0deg)";
+    }
   });
 });
 
@@ -854,6 +864,8 @@ function toggleExpiredCalls() {
   const wrapper = document.getElementById("expired-calls-wrapper");
   const arrow = document.getElementById("expired-arrow");
   
+  if (!wrapper || !arrow) return;
+
   if (wrapper.classList.contains("hidden")) {
     wrapper.classList.remove("hidden");
     arrow.style.transform = "rotate(180deg)"; // Point arrow up when open
