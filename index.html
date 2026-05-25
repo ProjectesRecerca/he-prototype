@@ -1,276 +1,312 @@
 
 <!--          data-client_id="871231787095-ug0o6pu89sn0t6i97s0nagakohighot8.apps.googleusercontent.com"
           -->
-<<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GrantRadar</title>
+  <title> GrantRadar</title>
 
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 
   <script src="https://cdn.tailwindcss.com"></script>
 
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-
-  <style>
-    body {
-      font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
-      color: #374151;
-      font-size: 0.875rem; 
-    }
-
-    /* Section Titles (Discipline, Research Fields, Active Calls) */
-    h3 {
-      font-size: 0.875rem !important; 
-      font-weight: 700 !important;   
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: #111827; 
-    }
-
-    /* Right Panel "Call details" Header */
-    #call-details-panel h3 {
-      font-size: 1.125rem !important; 
-      font-weight: 800 !important;   
-      text-transform: none !important; 
-      color: #000000 !important;      
-    }
-
-    /* Standardizing Buttons */
-    #discipline-container button, 
-    #field-container button {
-      font-size: 0.875rem !important; 
-      font-weight: 500;
-      padding: 0.375rem 0.75rem;
-    }
-
-    /* Standardizing Labels in the Detail Panel */
-    #dynamic-details-container strong,
-    #summary-section strong {
-      font-size: 0.875rem !important;
-      font-weight: 700;
-      color: #111827;
-    }
-    
-    #detail-summary {
-      font-size: 0.875rem;
-      line-height: 1.5;
-    }
-  </style>
 </head>
+
+<style>
+  body {
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+    color: #374151;
+    /* Main size based on summary text */
+    font-size: 0.875rem; 
+  }
+
+  /* Section Titles (Discipline, Research Fields, Active Calls, Keyword Title) */
+  h3 {
+    font-size: 0.875rem !important; 
+    font-weight: 700 !important;   
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #111827; 
+  }
+
+  /* Right Panel "Call details" Header - Larger than body but bold/black */
+  #call-details-panel h3 {
+    font-size: 1.125rem !important; 
+    font-weight: 800 !important;   
+    text-transform: none !important; 
+    color: #000000 !important;      
+  }
+
+  /* Standardizing Buttons (Disciplines and Research Fields) */
+  #discipline-container button, 
+  #field-container button {
+    font-size: 0.875rem !important; /* Standardized to summary size */
+    font-weight: 500;
+    padding: 0.375rem 0.75rem;
+  }
+
+  /* Standardizing Labels in the Detail Panel */
+  #dynamic-details-container strong,
+  #summary-section strong {
+    font-size: 0.875rem !important;
+    font-weight: 700;
+    color: #111827;
+  }
+  
+  #detail-summary {
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+</style>
 
 <body class="bg-gray-100 min-h-screen">
 
-  <div id="more-info-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
-    <div class="bg-white rounded-xl shadow-lg max-w-3xl w-full max-h-[85vh] flex flex-col">
-      <div class="px-6 py-4 border-b">
-        <h3 class="text-lg font-bold">Call information</h3>
-      </div>
+<div
+  id="more-info-modal"
+  class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center"
+>
+<div class="bg-white rounded-xl shadow-lg max-w-3xl w-full max-h-[85vh] flex flex-col">
 
-      <div class="px-6 py-4 overflow-y-auto space-y-6 flex-1">
-        <div>
-          <h4 class="font-semibold text-base mb-2">Expected Outcomes</h4>
-          <p id="modal-expected-outcomes" class="text-sm text-gray-700 leading-relaxed text-justify"></p>
-        </div>
-
-        <div>
-          <h4 class="font-semibold text-base mb-2">Scope</h4>
-          <p id="modal-scope" class="text-sm text-gray-700 leading-relaxed text-justify"></p>
-        </div>
-
-        <div id="modal-keywords" class="text-gray-500 italic text-xs mt-2 mb-4"></div>
-      </div>
-
-      <div class="px-6 py-4 border-t flex flex-wrap gap-2 justify-between items-center bg-white">
-        <button id="close-modal-btn" class="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400">
-          Close
-        </button>
-
-        <div class="flex gap-2">
-          <a id="modal-website-btn" target="_blank" class="hidden px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 transition">
-            Visit Official Website Call
-          </a>
-          <button id="contact-us-btn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-            Contact us
-          </button>
-        </div>
-      </div>
-    </div>
+  <div class="px-6 py-4 border-b">
+    <h3 class="text-lg font-bold"> Call information</h3>
   </div>
 
-  <div
-    id="no-calls-popup"
-    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50"
-  >
-    <div class="bg-white p-6 rounded-xl shadow-xl w-96 text-center border border-gray-100">
-      <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl font-bold">
-        !
-      </div>
-      <h4 class="font-bold text-gray-900 text-base mb-1">No Direct Matches Found</h4>
-      <p class="text-sm text-gray-600 mb-4 leading-relaxed">
-        No specific calls match your chosen keyword(s). However, you can still browse the <strong>"General" calls</strong> displayed in your list, as they are open to all domains.
-      </p>
-      <button
-        id="close-popup-btn"
-        class="w-full px-4 py-2 bg-blue-600 text-white font-medium text-sm rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+  <div class="px-6 py-4 overflow-y-auto space-y-6 flex-1">
+    <div>
+      <h4 class="font-semibold text-base mb-2">
+        Expected Outcomes
+      </h4>
+      <p
+        id="modal-expected-outcomes"
+        class="text-sm text-gray-700 leading-relaxed text-justify"
+      ></p>
+    </div>
+
+    <div>
+      <h4 class="font-semibold text-base mb-2">
+        Scope
+      </h4>
+      <p
+        id="modal-scope"
+        class="text-sm text-gray-700 leading-relaxed text-justify"
+      ></p>
+    </div>
+
+    <div id="modal-keywords" class="text-gray-500 italic text-xs mt-2 mb-4"></div>
+  </div>
+
+  <div class="px-6 py-4 border-t flex flex-wrap gap-2 justify-between items-center bg-white">
+    <button
+      id="close-modal-btn"
+      class="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400"
+    >
+      Close
+    </button>
+
+    <div class="flex gap-2">
+      <a
+        id="modal-website-btn"
+        target="_blank"
+        class="hidden px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 transition"
       >
-        OK
+        Visit Official Website Call
+      </a>
+
+      <button
+        id="contact-us-btn"
+        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+      >
+        Contact us
       </button>
     </div>
   </div>
 
+  </div>
+</div>
 
-  <div id="login" class="min-h-screen flex items-center justify-center">
-    <div class="bg-white p-10 rounded-xl shadow-lg text-center w-full max-w-md">
-      <img src="./logo.png" class="mx-auto mb-6 h-60" alt="Logo" />
-      <p class="text-sm text-gray-400 mb-6">Developed by the Research Service</p>
+<div id="login" class="min-h-screen flex items-center justify-center">
+  <div class="bg-white p-10 rounded-xl shadow-lg text-center w-full max-w-md">
+    <img src="./logo.png" class="mx-auto mb-6 h-60" />
+    <p class="text-sm text-gray-400 mb-6">Developed by the Research Service </p>
 
-      <div id="g_id_onload"
-           data-client_id="871231787095-ug0o6pu89sn0t6i97s0nagakohighot8.apps.googleusercontent.com"
-           data-callback="handleCredentialResponse"
-           data-auto_prompt="false">
-      </div>
+    <div
+      id="g_id_onload"
+      data-client_id="871231787095-ug0o6pu89sn0t6i97s0nagakohighot8.apps.googleusercontent.com"
+      data-callback="handleCredentialResponse"
+      data-auto_prompt="false">
+    </div>
 
-      <div class="flex justify-center">
-        <div class="g_id_signin" data-size="large"></div>
-      </div>
+    <div class="flex justify-center">
+      <div class="g_id_signin" data-size="large"></div>
+    </div>
+  </div>
+</div>
+
+<div id="private" class="hidden max-w-7xl mx-auto p-6">
+
+  <div class="flex items-center justify-between mb-8 border-b pb-4">
+    <div class="flex items-center">
+      <img src="./LogoGrantRadar.png" class="h-28 object-contain" alt="Grant Radar Logo" />
+    </div>
+
+    <div class="flex flex-col items-end text-right">
+      <img src="./logoUPF.png" class="h-20 object-contain mb-1" alt="UPF Logo" />
+      <h2 class="text-gray-500 font-small tracking-wide text-[10px] uppercase">
+        Research Service
+      </h2>
     </div>
   </div>
 
-
-  <div id="private" class="hidden max-w-7xl mx-auto p-6">
-
-    <div class="flex items-center justify-between mb-8 border-b pb-4">
-      <div class="flex items-center">
-        <img src="./LogoGrantRadar.png" class="h-28 object-contain" alt="Grant Radar Logo" />
-      </div>
-
-      <div class="flex flex-col items-end text-right">
-        <img src="./logoUPF.png" class="h-20 object-contain mb-1" alt="UPF Logo" />
-        <h2 class="text-gray-500 font-small tracking-wide text-[10px] uppercase">
-          Research Service
-        </h2>
-      </div>
+  <div class="bg-white rounded-xl shadow p-6 mb-6">
+    <h1 class="text-l font-bold text-gray-900 mb-1">Welcome to GrantRadar</h1>
+    <div class="text-sm text-gray-600 leading-relaxed">
+      <p class="mb-2">
+        Discover European and international funding opportunities aligned with your research interests.
+      </p>
+      <p class="mb-2">
+        Refine your search by scientific domains, specific disciplines, and/or keywords to find the most relevant calls.
+      </p>
+      <p class="mb-2">
+        Select <strong> More information</strong> to explore the scope and expected outcomes.
+      </p>
+      <p class="mb-2">
+        If a call matches your interest, click <strong> Visit Official Website</strong> 
+        or <strong>Contact us</strong> for further information.
+      </p>
     </div>
+  </div>                         
 
-    <div class="bg-white rounded-xl shadow p-6 mb-6">
-      <h1 class="text-lg font-bold text-gray-900 mb-1">Welcome to GrantRadar</h1>
-      <div class="text-sm text-gray-600 leading-relaxed space-y-2">
-        <p>Discover European and international funding opportunities aligned with your research interests.</p>
-        <p>Refine your search by scientific domains, specific disciplines, and/or keywords to find the most relevant calls.</p>
-        <p>Select <strong>More information</strong> to explore the scope and expected outcomes.</p>
-        <p>If a call matches your interest, click <strong>Visit Official Website</strong> or <strong>Contact us</strong> for further information.</p>
+  <div class="bg-white rounded-xl shadow p-4 mb-6">
+    <div class="flex flex-col md:flex-row md:items-center gap-4">
+      
+      <div class="w-full md:w-1/4 shrink-0">
+        <h3 class="font-bold text-gray-900">Type keywords here</h3>
+        <span class="block text-xs text-gray-400 mt-1">
+          Use a semicolon (;) to separate multiple terms.
+        </span>
       </div>
-    </div>                 
 
-    <div class="bg-white rounded-xl shadow p-4 mb-6">
-      <div class="flex flex-col md:flex-row md:items-center gap-4">
-        
-        <div class="w-full md:w-1/4 shrink-0">
-          <h3 class="font-bold text-gray-900 uppercase tracking-wide text-xs">
-            <label for="keyword-input">Type keywords here</label>
-          </h3>
-          <span class="block text-xs text-gray-400 mt-0.5">
-            Use a semicolon (;) to separate multiple terms.
+      <div class="flex flex-1 gap-2 w-full">
+        <input
+          id="keyword-input"
+          type="text"
+          placeholder="e.g., Climate change; Biodiversity; Horizon Europe"
+          class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+        />
+        <button
+          id="search-btn"
+          class="px-5 py-2 bg-blue-600 text-white font-medium text-sm rounded-lg hover:bg-blue-700 transition-colors shrink-0 shadow-sm"
+        >
+          Search
+        </button>
+        <button
+          id="search-clear-btn"
+          class="px-5 py-2 bg-gray-200 text-gray-700 font-medium text-sm rounded-lg hover:bg-gray-300 transition-colors shrink-0"
+        >
+          Clear
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
+
+    <div class="lg:col-span-3 flex flex-col gap-6">
+
+      <div class="bg-white rounded-xl shadow p-4">
+        <h3 class="font-bold mb-3">Scientific Domain</h3>
+        <p class="text-xs text-gray-500 mb-3">Filter calls by broad scientific domains.</p>
+        <div id="discipline-container" class="flex flex-wrap gap-2"></div>
+      </div>
+
+      <div class="bg-white rounded-xl shadow p-4">
+        <h3 class="font-bold mb-3">Specific Disciplines / Areas</h3>
+        <p class="text-xs text-gray-500 mb-3">Select one or more specific domains.</p>
+        <div id="field-container" class="flex flex-wrap gap-2"></div>
+      </div>
+
+      <div id="calls-section" class="bg-white rounded-xl shadow p-4">
+        <h3 id="calls-title" class="font-bold mb-3">Active Calls (0)</h3>
+        <p class="text-xs mb-3 text-gray-500">Browse available funding opportunities matching your current filters.</p>
+        <div id="calls-container" class="flex flex-col gap-2"></div>
+        <button
+          id="scroll-top-btn"
+          class="hidden fixed bottom-8 right-8 w-10 h-10 bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-700 transition"
+          title="Scroll to top"
+        >
+          &#8679;
+        </button>
+      </div>
+
+      <div id="expired-calls-section" class="bg-gray-200 rounded-xl shadow p-4 opacity-75">
+        <button 
+          id="expired-calls-toggle" 
+          type="button"
+          class="w-full flex justify-between items-center text-left focus:outline-none group"
+          onclick="toggleExpiredCalls()"
+        >
+          <div>
+            <h3 id="expired-calls-title" class="font-bold text-gray-600 inline-block">Expired Calls (0)</h3>
+            <p class="text-xs text-gray-400 mt-1">Past opportunities for reference purposes only.</p>
+          </div>
+          <span 
+            id="expired-arrow" 
+            class="text-gray-500 font-bold text-lg transform transition-transform duration-200 mr-2 group-hover:text-gray-700"
+            style="transform: rotate(0deg);"
+          >
+            &#9662;
           </span>
+        </button>
+        
+        <div id="expired-calls-wrapper" class="hidden mt-4 pt-3 border-t border-gray-300">
+          <div id="expired-calls-container" class="flex flex-col gap-2"></div>
+        </div>
+      </div>
+
+    </div> <div id="call-details-panel" class="lg:col-span-1 sticky top-6 h-fit">
+      <div class="bg-white rounded-xl shadow p-4">
+        <h3 class="text-lg font-semibold mb-2">Call details</h3>
+        
+        <div id="dynamic-details-container" class="text-sm space-y-1 mb-4"></div>
+
+        <div id="summary-section" class="mt-4 border-t pt-2">
+          <strong class="text-sm">Summary</strong>
+          <p id="detail-summary" class="mt-1 text-justify text-sm text-gray-700"></p>
+          <p id="detail-ssh-keywords" class="mt-2 text-justify text-xs italic text-gray-500"></p>
         </div>
 
-        <div class="flex flex-1 gap-2 w-full">
-          <input
-            id="keyword-input"
-            type="text"
-            placeholder="e.g., Climate change; Biodiversity; Horizon Europe"
-            class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-          />
-          <button
-            id="search-btn"
-            class="px-5 py-2 bg-blue-600 text-white font-medium text-sm rounded-lg hover:bg-blue-700 transition-colors shrink-0 shadow-sm"
-          >
-            Search
+        <div class="flex flex-col gap-2 pt-4">
+          <button id="more-info-btn" class="hidden px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+            More information
           </button>
-          <button
-            id="search-clear-btn"
-            class="px-5 py-2 bg-gray-200 text-gray-700 font-medium text-sm rounded-lg hover:bg-gray-300 transition-colors shrink-0"
-          >
+          <button id="clear-btn" class="px-4 py-1 bg-gray-300 text-gray-800 rounded hover:bg-gray-400">
             Clear
           </button>
         </div>
-
       </div>
+    </div> </div> </div> <div
+  id="no-calls-popup"
+  class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50"
+>
+  <div class="bg-white p-6 rounded-xl shadow-xl w-96 text-center border border-gray-100">
+    <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl font-bold">
+      !
     </div>
-
-    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
-
-      <div class="lg:col-span-3 flex flex-col gap-6">
-
-        <div class="bg-white rounded-xl shadow p-4">
-          <h3 class="font-bold mb-3">Scientific Domain</h3>
-          <p class="text-xs text-gray-500 mb-3">Filter calls by broad scientific domains.</p>
-          <div id="discipline-container" class="flex flex-wrap gap-2"></div>
-        </div>
-
-        <div class="bg-white rounded-xl shadow p-4">
-          <h3 class="font-bold mb-3">Specific Disciplines / Areas</h3>
-          <p class="text-xs text-gray-500 mb-3">Select one or more specific domains.</p>
-          <div id="field-container" class="flex flex-wrap gap-2"></div>
-        </div>
-
-        <div id="calls-section" class="bg-white rounded-xl shadow p-4 relative">
-          <h3 id="calls-title" class="font-bold mb-3">Active Calls (0)</h3>
-          <p class="text-xs mb-3 text-gray-500">Browse available funding opportunities matching your current filters.</p>
-          <div id="calls-container" class="flex flex-col gap-2"></div>
-          
-          <button id="scroll-top-btn" class="hidden fixed bottom-8 right-8 w-10 h-10 bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-700 transition" title="Scroll to top">
-            &#8679;
-          </button>
-        </div>
-
-        <div id="expired-calls-section" class="bg-gray-200 rounded-xl shadow p-4 opacity-75">
-          <button id="expired-calls-toggle" type="button" class="w-full flex justify-between items-center text-left focus:outline-none group" onclick="toggleExpiredCalls()">
-            <div>
-              <h3 id="expired-calls-title" class="font-bold text-gray-600 inline-block">Expired Calls (0)</h3>
-              <p class="text-xs text-gray-400 mt-1">Past opportunities for reference purposes only.</p>
-            </div>
-            <span id="expired-arrow" class="text-gray-500 font-bold text-lg transform transition-transform duration-200 mr-2 group-hover:text-gray-700" style="transform: rotate(0deg);">
-              &#9662;
-            </span>
-          </button>
-          
-          <div id="expired-calls-wrapper" class="hidden mt-4 pt-3 border-t border-gray-300">
-            <div id="expired-calls-container" class="flex flex-col gap-2"></div>
-          </div>
-        </div>
-
-      </div> 
-      <div id="call-details-panel" class="lg:col-span-1 sticky top-6 h-fit">
-        <div class="bg-white rounded-xl shadow p-4">
-          <h3 class="text-lg font-semibold mb-2">Call details</h3>
-          
-          <div id="dynamic-details-container" class="text-sm space-y-1 mb-4"></div>
-
-          <div id="summary-section" class="mt-4 border-t pt-2">
-            <strong class="text-sm">Summary</strong>
-            <p id="detail-summary" class="mt-1 text-justify text-sm text-gray-700"></p>
-            <p id="detail-ssh-keywords" class="mt-2 text-justify text-xs italic text-gray-500"></p>
-          </div>
-
-          <div class="flex flex-col gap-2 pt-4">
-            <button id="more-info-btn" class="hidden px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-              More information
-            </button>
-            <button id="clear-btn" class="px-4 py-1 bg-gray-300 text-gray-800 rounded hover:bg-gray-400">
-              Clear
-            </button>
-          </div>
-        </div>
-      </div>
-     </div> 
-    </div> 
-  </body>
-</html>
-
+    <h4 class="font-bold text-gray-900 text-base mb-1">No Direct Matches Found</h4>
+    <p class="text-sm text-gray-600 mb-4 leading-relaxed">
+      No specific calls match your chosen keyword(s). However, you can still browse the <strong>"General" calls</strong> displayed in your list, as they are open to all domains.
+    </p>
+    <button
+      id="close-popup-btn"
+      class="w-full px-4 py-2 bg-blue-600 text-white font-medium text-sm rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+    >
+      Got it, thank you
+    </button>
+  </div>
+</div>
 
 <script>
 let excelData = [];
@@ -291,7 +327,7 @@ function excelDateToString(value) {
 
 /* ================= LOGIN ================= */
 function handleCredentialResponse(response) {
-  const payload = JSON.parse(atob(response.credential.split(".")[1]));
+  const payload = JSON.parse(atob(response.credential.split(".")));
   const email = payload.email || "";
 
   if (!email.endsWith("@upf.edu")) {
@@ -310,9 +346,8 @@ function loadExcel() {
     .then(r => r.arrayBuffer())
     .then(data => {
       const wb = XLSX.read(data, { type: "array" });
-      // Change [0] to [1] to target the second sheet regardless of its name
-      const secondSheetName = wb.SheetNames[1]; 
-      excelData = XLSX.utils.sheet_to_json(wb.Sheets[secondSheetName]);
+      const firstSheetName = wb.SheetNames; 
+      excelData = XLSX.utils.sheet_to_json(wb.Sheets[firstSheetName]);
       renderDisciplines();
       renderResearchFields();
       updateCalls();
@@ -332,7 +367,6 @@ function renderDisciplines() {
       b.textContent = d;
       b.className = "px-3 py-1 border rounded";
 
-      // restaurar estado visual
       if (selectedDisciplines.has(d)) {
         b.classList.add("bg-blue-600", "text-white");
       }
@@ -353,7 +387,6 @@ function renderDisciplines() {
       c.appendChild(b);
     });
 }
-
 
 /* ================= RESEARCH FIELDS (CATEGORIZED) ================= */
 function renderResearchFields() {
@@ -386,7 +419,6 @@ function renderResearchFields() {
       const section = document.createElement("div");
       section.className = "w-full";
       
-      // Category Header with Toggle
       const headerFlex = document.createElement("div");
       headerFlex.className = `flex justify-between items-center mb-3 pb-1 border-b border-${cat.color}-200`;
 
@@ -397,7 +429,7 @@ function renderResearchFields() {
       const toggleBtn = document.createElement("button");
       const isAllSelected = catFields.every(f => selectedResearchFields.has(f));
       toggleBtn.textContent = isAllSelected ? "Deselect All" : "Select All";
-      toggleBtn.className = `text-[6px] font-bold uppercase px-2 py-1 rounded border border-${cat.color}-300 text-${cat.color}-600 hover:bg-${cat.color}-50 transition-colors`;
+      toggleBtn.className = `text-[10px] font-bold uppercase px-2 py-1 rounded border border-${cat.color}-300 text-${cat.color}-600 hover:bg-${cat.color}-50 transition-colors`;
       
       toggleBtn.onclick = () => {
         if (isAllSelected) {
@@ -420,7 +452,6 @@ function renderResearchFields() {
         const b = document.createElement("button");
         const cleanLabel = f.replace(/^[A-Z]{2,3}\d+\s*/, ""); 
         b.textContent = cleanLabel;
-        // Consistent button styling
         b.className = `px-3 py-1.5 border rounded text-xs font-medium transition-all duration-200`;
 
         if (selectedResearchFields.has(f)) {
@@ -448,14 +479,13 @@ function renderResearchFields() {
   });
 }
 
-
-/* ================= KEYWORD SEARCH ================= */
+/* ================= KEYWORD SEARCH MATCHER ENGINE ================= */
 function keywordMatchesMulti(call, userInput) {
   if (!userInput) return true;
 
   const haystack = [
-    call["Call ID"] || "",      // Added
-    call["Call Title"] || "",    // Added
+    call["Call ID"] || "",      
+    call["Call Title"] || "",    
     call["Keywords"] || "",
     call["SSH Keywords"] || "",
     call["Summary"] || "",
@@ -488,9 +518,7 @@ function highlightKeywords(text, userInput) {
     .filter(Boolean);
 
   terms.forEach(term => {
-    // Escapar caracteres regex
     const safeTerm = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
     const regex = new RegExp(`(${safeTerm})`, "gi");
     result = result.replace(
       regex,
@@ -501,13 +529,12 @@ function highlightKeywords(text, userInput) {
   return result;
 }
 
-
 function countKeywordMatches(call, userInput) {
   if (!userInput) return 0;
 
   const haystack = [
-    call["Call ID"] || "",      // Added for consistency
-    call["Call Title"] || "",    // Added for consistency
+    call["Call ID"] || "",      
+    call["Call Title"] || "",    
     call["Keywords"] || "",
     call["SSH Keywords"] || "",
     call["Summary"] || "",
@@ -524,7 +551,6 @@ function countKeywordMatches(call, userInput) {
     .filter(Boolean);
 
   let count = 0;
-
   terms.forEach(term => {
     const matches = haystack.match(new RegExp(term, "g"));
     if (matches) count += matches.length;
@@ -533,21 +559,18 @@ function countKeywordMatches(call, userInput) {
   return count;
 }
 
-
 document.getElementById("search-btn").addEventListener("click", () => {
   updateCalls();
   scrollToCalls();
 });
 
-document
-  .getElementById("keyword-input")
-  .addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      updateCalls();
-      scrollToCalls();
-    }
-  });
+document.getElementById("keyword-input").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    updateCalls();
+    scrollToCalls();
+  }
+});
 
 function scrollToCalls() {
   const callsBlock = document.getElementById("calls-section");
@@ -556,16 +579,13 @@ function scrollToCalls() {
   }
 }
 
-// Helper to remove references like [1], [1,2], [10, 15]
 function cleanText(text) {
   if (!text) return "";
-  // Regex looks for brackets containing numbers and commas
   return text.replace(/\[\s*\d+(?:,\s*\d+)*\s*\]/g, "");
 }
 
 /* ================= SHOW CALL DETAILS ================= */
 function resetDetailsPanel(message = "Select a call to see its details.") {
-  // Use optional chaining (?.) or check if exists to prevent crashes
   const container = document.getElementById("dynamic-details-container");
   if (container) container.innerHTML = ""; 
 
@@ -595,9 +615,8 @@ function showCallDetails(r, buttonElement) {
   selectedCallButton = buttonElement;
   selectedCallButton.classList.add("bg-blue-100", "border-blue-500", "text-blue-800");
   const container = document.getElementById("dynamic-details-container");
-  container.innerHTML = ""; // Clear panel
+  container.innerHTML = ""; 
 
-  // Define fields to show 
   const fields = [
     { label: "Call ID", val: r["Call ID"] },
     { label: "Call Title", val: r["Call Title"] },
@@ -612,7 +631,6 @@ function showCallDetails(r, buttonElement) {
   const keywordInput = document.getElementById("keyword-input").value.trim();
 
   fields.forEach(field => {
-    // Check if info is available (Point 3)
     if (field.val && String(field.val).trim() !== "" && field.val !== "undefined") {
       const div = document.createElement("div");
       const highlightedVal = highlightKeywords(String(field.val), keywordInput);
@@ -622,15 +640,10 @@ function showCallDetails(r, buttonElement) {
   });
 
   const summaryElem = document.getElementById("detail-summary");
-  const sshElem = document.getElementById("detail-ssh-keywords");
-
   summaryElem.innerHTML = r["Summary"] ? highlightKeywords(r["Summary"], keywordInput) : "No summary available.";
 
-  // Get SSH Keywords and format them
   const sshRaw = r["SSH Keywords"] || ""; 
-  // Only display if data exists
   const sshText = sshRaw ? `SSH Keywords: ${sshRaw}` : "";
-  // Apply highlighting (reuses your existing keyword highlighter)
   document.getElementById("detail-ssh-keywords").innerHTML = highlightKeywords(sshText, keywordInput);
 
   const moreInfoBtn = document.getElementById("more-info-btn");
@@ -643,20 +656,17 @@ function openMoreInfoModal(call) {
   const webBtn = document.getElementById("modal-website-btn");
   modal.classList.remove("hidden");
 
-  // Logic to hide the modal and the website button (cleanup)
   const hideModal = () => {
     modal.classList.add("hidden");
     webBtn.classList.add("hidden");
   };
 
   document.getElementById("close-modal-btn").onclick = hideModal;
-
   document.getElementById("contact-us-btn").onclick = () => {
     hideModal();
     openMoreInfoEmail(call["Call ID"]);
   };
 
-  // Point 4: Show the button JUST when the link is available
   const url = call["Call Website"];
   if (url && String(url).trim().startsWith("http")) {
     webBtn.href = url;
@@ -666,12 +676,9 @@ function openMoreInfoModal(call) {
   }
 
   const keywordInput = document.getElementById("keyword-input").value.trim();
-
-  // 1. Clean the text (remove [1] refs)
   const rawOutcomes = cleanText(call["Expected Outcomes"] || "");
   const rawScope = cleanText(call["Scope"] || "");
 
-  // 2. Highlight keywords in the clean text
   document.getElementById("modal-expected-outcomes").innerHTML =
     highlightKeywords(rawOutcomes, keywordInput) || "Not available";
 
@@ -688,9 +695,7 @@ function openMoreInfoModal(call) {
 function showNoCallsPopup() {
   const popup = document.getElementById("no-calls-popup");
   if (!popup) return;
-
   popup.classList.remove("hidden");
-
   document.getElementById("close-popup-btn").onclick = () => {
     popup.classList.add("hidden");
   };
@@ -716,34 +721,35 @@ function updateCalls() {
 
   const keywordInput = document.getElementById("keyword-input").value.trim();
 
-  // Boolean flag tracking if a genuine, specific domain/keyword match occurs
+  // Flag to check if ANY non-General calls match the criteria, OR if a General call directly fits the keyword
   let specificTextMatchesFound = false;
 
   const filtered = excelData.filter(r => {
     const isGeneral = r.Discipline && r.Discipline.trim().toLowerCase() === "general";
     
-    // If it's a general call, it bypasses filtering criteria completely
+    // If it's a general call, it passes filtering arrays to always show up
     if (isGeneral) {
+      if (keywordInput && keywordMatchesMulti(r, keywordInput)) {
+        specificTextMatchesFound = true;
+      }
       return true; 
     }
 
-    // Standard structural criteria evaluation for non-general calls
+    // Standard structural criteria evaluation for non-general items
     if (selectedDisciplines.size && !selectedDisciplines.has(r.Discipline)) return false;
-    
     if (selectedResearchFields.size) {
       if (!r["Research Fields"]) return false;
       const fields = r["Research Fields"].split(";").map(f => f.trim());
       if (!fields.some(f => selectedResearchFields.has(f))) return false;
     }
-    
     if (keywordInput && !keywordMatchesMulti(r, keywordInput)) return false;
     
-    // If a non-general call survives all above criteria, we found a genuine specific match!
+    // If a non-general call survives all checks, it's a true target hit!
     specificTextMatchesFound = true;
     return true;
   });
 
-  // Sort by highest keyword hits
+  // Sort list by keyword query hits
   filtered.sort((a, b) => countKeywordMatches(b, keywordInput) - countKeywordMatches(a, keywordInput));
 
   const today = new Date();
@@ -752,6 +758,7 @@ function updateCalls() {
   const activeCalls = [];
   const expiredCalls = [];
 
+  // Safely divide our active items from expired timeline data logs
   filtered.forEach(r => {
     const deadlineStr = excelDateToString(r["Deadline(s)"]);
     const parts = deadlineStr.split('/');
@@ -803,28 +810,23 @@ function updateCalls() {
   activeCalls.forEach(r => renderCall(r, container, false));
   expiredCalls.forEach(r => renderCall(r, expiredContainer, true));
 
-  // POP-UP TRIGGER: If a user typed a keyword but NO specific matching calls were caught, show the pop-up alert
+  // POP-UP TRIGGER CONDITION: Show if user typed text but NO specific target data-hits occurred
   if (keywordInput && !specificTextMatchesFound) {
     showNoCallsPopup();
   }
 }
 
-/* ================= FILTER RESET LOGIC ================= */
+/* ================= FILTER RESET UTILITIES ================= */
 function resetAllFilters() {
-  // 1. Reset input states
-  const keywordInput = document.getElementById("keyword-input");
-  if (keywordInput) keywordInput.value = "";
-  
+  document.getElementById("keyword-input").value = "";
   selectedDisciplines.clear();
   selectedResearchFields.clear();
   selectedCallButton = null;
 
-  // 2. Re-render components and recalculate active/expired lists
   renderDisciplines(); 
   renderResearchFields();
-  updateCalls(); // This function automatically handles collapsing the expired panel
+  updateCalls(); 
   
-  // 3. Hide details panel actions if open
   const moreInfoBtn = document.getElementById("more-info-btn");
   if (moreInfoBtn) moreInfoBtn.classList.add("hidden");
 }
@@ -833,15 +835,8 @@ window.addEventListener("DOMContentLoaded", () => {
   const sidebarClearBtn = document.getElementById("clear-btn");
   const topClearBtn = document.getElementById("search-clear-btn");
 
-  // Bind the global reset function to the sidebar clear button
-  if (sidebarClearBtn) {
-    sidebarClearBtn.addEventListener("click", resetAllFilters);
-  }
-
-  // Bind the global reset function to the new top search-bar clear button
-  if (topClearBtn) {
-    topClearBtn.addEventListener("click", resetAllFilters);
-  }
+  if (sidebarClearBtn) sidebarClearBtn.addEventListener("click", resetAllFilters);
+  if (topClearBtn) topClearBtn.addEventListener("click", resetAllFilters);
 });
 
 /* ================= TOGGLE EXPIRED CALLS ================= */
@@ -849,19 +844,16 @@ function toggleExpiredCalls() {
   const wrapper = document.getElementById("expired-calls-wrapper");
   const arrow = document.getElementById("expired-arrow");
   
-  if (!wrapper || !arrow) return;
-
   if (wrapper.classList.contains("hidden")) {
     wrapper.classList.remove("hidden");
-    arrow.style.transform = "rotate(180deg)"; // Point arrow up when open
+    arrow.style.transform = "rotate(180deg)"; 
   } else {
     wrapper.classList.add("hidden");
-    arrow.style.transform = "rotate(0deg)";   // Point arrow down when closed
+    arrow.style.transform = "rotate(0deg)";   
   }
 }
 
 /* ================= MORE INFORMATION WINDOW ================= */
-
 function openMoreInfoEmail(callId) {
   const accepted = confirm(
     "A new window will open to compose an email from your active Gmail account.\n\n" +
@@ -871,7 +863,7 @@ function openMoreInfoEmail(callId) {
 
   if (!accepted) return;
 
-  const to = "projectes.recerca@upf.edu"; //
+  const to = "projectes.recerca@upf.edu"; 
   const subject = `[${callId}] Request for more information`;
   const body =
     "Dear Research Service,\n\n" +
@@ -889,51 +881,18 @@ function openMoreInfoEmail(callId) {
   window.open(mailtoLink, "_blank");
 }
 
-  const scrollTopBtn = document.getElementById("scroll-top-btn");
+const scrollTopBtn = document.getElementById("scroll-top-btn");
+scrollTopBtn.addEventListener("click", () => {
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
 
-  scrollTopBtn.addEventListener("click", () => {
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth"
-    });
-  });
-
-  window.addEventListener("scroll", () => {
+window.addEventListener("scroll", () => {
   if (window.scrollY > 200) {
     scrollTopBtn.classList.remove("hidden");
   } else {
     scrollTopBtn.classList.add("hidden");
   }
 });
-
-/* window.addEventListener("DOMContentLoaded", () => {
-  const moreInfoBtn = document.getElementById("more-info-btn");
-
-  moreInfoBtn.addEventListener("click", () => {
-    if (!selectedCallButton) return;
-
-    const callId = document.getElementById("detail-id").textContent;
-    const callTitle = document.getElementById("detail-title").textContent;
-
-    const toEmail = "projectes.recerca@upf.edu"; // 
-
-    const subject = encodeURIComponent(`[${callId}] Request for more information`);
-    const body = encodeURIComponent(
-        `Dear Research Service,
-
-        I am interested in the following Horizon Europe call:
-
-        Call ID: ${callId}
-        Title: ${callTitle}
-
-        I would appreciate more information and guidance on this opportunity.
-
-        Best regards,`
-    );
-
-    const gmailURL = `https://mail.google.com/mail/?view=cm&fs=1&to=${toEmail}&su=${subject}&body=${body}`;
-
-    window.open(gmailURL, "_blank");
-  });
-}); */
 </script>
+</body>
+</html>
