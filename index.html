@@ -290,7 +290,20 @@ function excelDateToString(value) {
   return date.toLocaleDateString("en-GB");
 }
 
+/* ================= LOG IN &  VALIDATION ================= */
+function handleCredentialResponse(response) {
+  const payload = JSON.parse(atob(response.credential.split(".")[1]));
+  const email = payload.email || "";
 
+  if (!email.endsWith("@upf.edu")) {
+    alert("Restricted access to institutional personnel");
+    return;
+  }
+
+  document.getElementById("login").style.display = "none";
+  document.getElementById("private").style.display = "block";
+  loadExcel();
+}
 /* ================= LOAD EXCEL ================= */
 function loadExcel() {
   fetch("./GrantRadar_Calls.xlsx")
