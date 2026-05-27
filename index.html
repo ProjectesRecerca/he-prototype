@@ -771,23 +771,26 @@ function updateCalls() {
   const expiredCalls = [];
 
   filtered.forEach(r => {
-      const deadlineStr = excelDateToString(r["Deadline(s)"]);
-      
-      // FIXED: Correctly parses the DD/MM/YYYY structure into a real JS Date object
-      const parts = deadlineStr.split('/');
-      let deadlineDate = null;
-      if (parts.length === 3) {
-        deadlineDate = new Date(parseInt(parts, 10), parseInt(parts, 10) - 1, parseInt(parts, 10));
-        deadlineDate.setHours(0, 0, 0, 0);
-      }
+        const deadlineStr = excelDateToString(r["Deadline(s)"]);
+        const parts = deadlineStr.split('/');
+        
+        let deadlineDate = null;
+        if (parts.length === 3) {
+          // Correctly maps array positions: Year (parts), Month (parts), Day (parts)
+          const day = parseInt(parts, 10);
+          const month = parseInt(parts, 10) - 1; // JavaScript months are 0-11
+          const year = parseInt(parts, 10);
+          
+          deadlineDate = new Date(year, month, day);
+          deadlineDate.setHours(0, 0, 0, 0);
+        }
 
-      // Allocation routing
-      if (deadlineDate && deadlineDate < today) {
-        expiredCalls.push(r);
-      } else {
-        activeCalls.push(r);
-      }
-    });
+        if (deadlineDate && deadlineDate < today) {
+          expiredCalls.push(r);
+        } else {
+          activeCalls.push(r);
+        }
+      });
 
   document.getElementById("calls-title").textContent = `Active Calls (${activeCalls.length})`;
   document.getElementById("expired-calls-title").textContent = `Expired Calls (${expiredCalls.length})`;
