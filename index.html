@@ -227,21 +227,20 @@
           </button>
         </div>
 
-        <div id="expired-calls-section" class="bg-gray-200 rounded-xl shadow p-4 opacity-75">
-          <button id="expired-calls-toggle" type="button" class="w-full flex justify-between items-center text-left focus:outline-none group" onclick="toggleExpiredCalls()">
-            <div>
-              <h3 id="expired-calls-title" class="font-bold text-gray-600 inline-block">Expired Calls (0)</h3>
-              <p class="text-xs text-gray-400 mt-1">Past opportunities for reference purposes only.</p>
-            </div>
-            <span id="expired-arrow" class="text-gray-500 font-bold text-lg transform transition-transform duration-200 mr-2 group-hover:text-gray-700" style="transform: rotate(0deg);">
-              &#9662;
-            </span>
-          </button>
-          
-          <div id="expired-calls-wrapper" class="hidden mt-4 pt-3 border-t border-gray-300">
-            <div id="expired-calls-container" class="flex flex-col gap-2"></div>
-          </div>
+      <div class="mt-6 border border-gray-200 rounded-lg bg-gray-50 overflow-hidden">
+        <button type="button" onclick="toggleExpiredCalls()" class="w-full flex items-center justify-between p-3 bg-gray-100 hover:bg-gray-200 transition-colors focus:outline-none">
+          <h3 id="expired-calls-title" class="text-xs font-bold uppercase tracking-wider text-gray-700 m-0">
+            Expired Calls (0)
+          </h3>
+          <svg id="expired-arrow" class="w-4 h-4 text-gray-500 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="transform: rotate(0deg);">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        <div id="expired-calls-wrapper" class="hidden p-3 bg-white border-t border-gray-200">
+          <div id="expired-calls-container"></div>
         </div>
+      </div>
 
       </div> 
       <div id="call-details-panel" class="lg:col-span-1 sticky top-6 h-fit">
@@ -716,15 +715,14 @@ function showNoCallsPopup() {
 
 /* ================= UPDATE CALLS INTERFACE PIPELINE ================= */
 function updateCalls() {
-  // Collapse expired panel automatically whenever filters update
   const expiredWrapper = document.getElementById("expired-calls-wrapper");
-  const expiredArrow = document.getElementById("expired-arrow");
-  if (expiredWrapper && expiredArrow) {
-    expiredWrapper.classList.add("hidden");
-    expiredArrow.style.transform = "rotate(0deg)";
-  }
+    const expiredArrow = document.getElementById("expired-arrow");
+    if (expiredWrapper && expiredArrow) {
+      expiredWrapper.classList.add("hidden");
+      expiredArrow.style.transform = "rotate(0deg)";
+    }
 
-  const container = document.getElementById("calls-container");
+    const container = document.getElementById("calls-container");
   const expiredContainer = document.getElementById("expired-calls-container");
   
   container.innerHTML = "";
@@ -774,9 +772,16 @@ function updateCalls() {
 
   filtered.forEach(r => {
       const deadlineStr = excelDateToString(r["Deadline(s)"]);
+      
+      // FIXED: Correctly parses the DD/MM/YYYY structure into a real JS Date object
       const parts = deadlineStr.split('/');
-      const deadlineDate = parts.length === 3 ? new Date(parts, parts - 1, parts) : null;
+      let deadlineDate = null;
+      if (parts.length === 3) {
+        deadlineDate = new Date(parseInt(parts, 10), parseInt(parts, 10) - 1, parseInt(parts, 10));
+        deadlineDate.setHours(0, 0, 0, 0);
+      }
 
+      // Allocation routing
       if (deadlineDate && deadlineDate < today) {
         expiredCalls.push(r);
       } else {
@@ -871,12 +876,13 @@ function toggleExpiredCalls() {
   
   if (!wrapper || !arrow) return;
 
+  // Toggle the visibility state
   if (wrapper.classList.contains("hidden")) {
     wrapper.classList.remove("hidden");
-    arrow.style.transform = "rotate(180deg)"; // Point arrow up when open
+    arrow.style.transform = "rotate(180deg)"; // Point up when open
   } else {
     wrapper.classList.add("hidden");
-    arrow.style.transform = "rotate(0deg)";   // Point arrow down when closed
+    arrow.style.transform = "rotate(0deg)";   // Point down when closed
   }
 }
 
