@@ -298,11 +298,13 @@ function handleCredentialResponse(response) {
       return;
     }
 
-    // Split and extract the JWT payload segment safely
-    const base64Url = response.credential.split(".");
-    if (!base64Url) throw new Error("Invalid JWT token format received");
-
+    // FIX: Extract the middle segment (Index 1) which holds the actual JWT Payload
+    const tokenParts = response.credential.split(".");
+    if (tokenParts.length < 2) throw new Error("Invalid JWT token format received");
+    
+    const base64Url = tokenParts; 
     const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    
     const jsonPayload = decodeURIComponent(
       atob(base64)
         .split("")
@@ -312,7 +314,7 @@ function handleCredentialResponse(response) {
 
     const payload = JSON.parse(jsonPayload);
     
-    // Target and normalize email characters safely (.trim and .toLowerCase prevents false authentication failures)
+    // Target and normalize email characters safely
     const email = (payload.email || "").trim().toLowerCase();
 
     if (!email.endsWith("@upf.edu")) {
@@ -781,16 +783,16 @@ function updateCalls() {
   const expiredCalls = [];
 
   filtered.forEach(r => {
-    const deadlineStr = excelDateToString(r["Deadline(s)"]);
-    const parts = deadlineStr.split('/');
-    const deadlineDate = parts.length === 3 ? new Date(parts, parts - 1, parts) : null;
+      const deadlineStr = excelDateToString(r["Deadline(s)"]);
+      const parts = deadlineStr.split('/');
+      const deadlineDate = parts.length === 3 ? new Date(parts, parts - 1, parts) : null;
 
-    if (deadlineDate && deadlineDate < today) {
-      expiredCalls.push(r);
-    } else {
-      activeCalls.push(r);
-    }
-  });
+      if (deadlineDate && deadlineDate < today) {
+        expiredCalls.push(r);
+      } else {
+        activeCalls.push(r);
+      }
+    });
 
   document.getElementById("calls-title").textContent = `Active Calls (${activeCalls.length})`;
   document.getElementById("expired-calls-title").textContent = `Expired Calls (${expiredCalls.length})`;
