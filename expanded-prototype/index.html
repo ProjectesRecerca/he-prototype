@@ -736,23 +736,28 @@ function updateCalls() {
   let specificTextMatchesFound = false;
 
   const filtered = excelData.filter(r => {
+    // 1. If a user typed a keyword and it doesn't match, drop it immediately
+    if (keywordInput && !keywordMatchesMulti(r, keywordInput)) return false;
+
+    // 2. Mark that a match was found (or that we are displaying the default database rows)
+    specificTextMatchesFound = true;
+
+    // 3. General calls are always shown by default unless filtered out by a keyword above
     if (r["Scientific Domain"] && r["Scientific Domain"].trim().toLowerCase() === "general") {
       return true; 
     }
 
-    // Standard structural criteria evaluation for non-general calls
+    // 4. If Broad Domain buttons are selected, verify the call matches one of them
     if (selectedDomains.size && !selectedDomains.has(r["Scientific Domain"])) return false;
     
+    // 5. If Specific Discipline buttons are selected, verify the call matches at least one
     if (selectedSpecificFields.size) {
       if (!r["Specific Disciplines"]) return false;
       const fields = r["Specific Disciplines"].split(";").map(f => f.trim());
       if (!fields.some(f => selectedSpecificFields.has(f))) return false;
     }
     
-    if (keywordInput && !keywordMatchesMulti(r, keywordInput)) return false;
-    
-    // If a non-general call survives all above criteria, we found a genuine specific match!
-    specificTextMatchesFound = true;
+    // If no filters are clicked at all, or if it passes the active filters, keep it!
     return true;
   });
 
