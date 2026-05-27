@@ -21,7 +21,7 @@
       font-size: 0.875rem; 
     }
 
-    /* Section Titles (Discipline, Research Fields, Active Calls) */
+    /* Section Titles (Domain, Specific Discipline, Active Calls) */
     h3 {
       font-size: 0.875rem !important; 
       font-weight: 700 !important;   
@@ -39,7 +39,7 @@
     }
 
     /* Standardizing Buttons */
-    #discipline-container button, 
+    #domain-container button, 
     #field-container button {
       font-size: 0.875rem !important; 
       font-weight: 500;
@@ -159,7 +159,7 @@
       <h1 class="text-lg font-bold text-gray-900 mb-1">Welcome to GrantRadar</h1>
       <div class="text-sm text-gray-600 leading-relaxed space-y-2">
         <p>Discover European and international funding opportunities aligned with your research interests.</p>
-        <p>Refine your search by scientific domains, specific disciplines, and/or keywords to find the most relevant calls.</p>
+        <p>Refine your search by scientific domains, specific fields, and/or keywords to find the most relevant calls.</p>
         <p>Select <strong>More information</strong> to explore the scope and expected outcomes.</p>
         <p>If a call matches your interest, click <strong>Visit Official Website</strong> or <strong>Contact us</strong> for further information.</p>
       </div>
@@ -170,7 +170,7 @@
         
         <div class="w-full md:w-1/4 shrink-0">
           <h3 class="font-bold text-gray-900 uppercase tracking-wide text-xs">
-            <label for="keyword-input">Type keywords here</label>
+            <label for="keyword-input">Type your keywords here</label>
           </h3>
           <span class="block text-xs text-gray-400 mt-0.5">
             Use a semicolon (;) to separate multiple terms.
@@ -208,12 +208,12 @@
         <div class="bg-white rounded-xl shadow p-4">
           <h3 class="font-bold mb-3">Scientific Domain</h3>
           <p class="text-xs text-gray-500 mb-3">Filter calls by broad scientific domains.</p>
-          <div id="discipline-container" class="flex flex-wrap gap-2"></div>
+          <div id="domain-container" class="flex flex-wrap gap-2"></div>
         </div>
 
         <div class="bg-white rounded-xl shadow p-4">
-          <h3 class="font-bold mb-3">Specific Disciplines / Areas</h3>
-          <p class="text-xs text-gray-500 mb-3">Select one or more specific domains.</p>
+          <h3 class="font-bold mb-3">Specific Disciplines</h3>
+          <p class="text-xs text-gray-500 mb-3">Select one or more specific disciplines.</p>
           <div id="field-container" class="flex flex-wrap gap-2"></div>
         </div>
 
@@ -275,8 +275,8 @@
 <script>
 /* ================= GLOBAL CONFIGURATION & STATE ================= */
 let excelData = [];
-const selectedDisciplines = new Set(); // Fixed: Double space removed
-const selectedResearchFields = new Set(); // Fixed: Double space removed
+const selectedDomains = new Set(); // Fixed: Double space removed
+const selectedSpecificFields = new Set(); // Fixed: Double space removed
 let selectedCallButton = null;
 
 /* ================= DATE FORMAT ================= */
@@ -313,19 +313,19 @@ function loadExcel() {
       // Change [0] to [1] to target the second sheet regardless of its name
       const secondSheetName = wb.SheetNames[1]; 
       excelData = XLSX.utils.sheet_to_json(wb.Sheets[secondSheetName]);
-      renderDisciplines();
-      renderResearchFields();
+      renderDomain();
+      renderSpecificFields();
       updateCalls();
     })
     .catch(err => console.error("Error loading Excel:", err));
 }
 
-/* ================= DISCIPLINES ================= */
-function renderDisciplines() {
-  const c = document.getElementById("discipline-container");
+/* ================= DOMAINS ================= */
+function renderDomain() {
+  const c = document.getElementById("domain-container");
   c.innerHTML = "";
 
-  [...new Set(excelData.map(r => r.Discipline).filter(Boolean))]
+  [...new Set(excelData.map(r => r["Scientific Domain"]).filter(Boolean))]
     .sort()
     .forEach(d => {
       const b = document.createElement("button");
@@ -333,20 +333,20 @@ function renderDisciplines() {
       b.className = "px-3 py-1 border rounded";
 
       // restaurar estado visual
-      if (selectedDisciplines.has(d)) {
+      if (selectedDomains.has(d)) {
         b.classList.add("bg-blue-600", "text-white");
       }
 
       b.onclick = () => {
-        if (selectedDisciplines.has(d)) {
-          selectedDisciplines.delete(d);
+        if (selectedDomains.has(d)) {
+          selectedDomains.delete(d);
           b.classList.remove("bg-blue-600", "text-white");
         } else {
-          selectedDisciplines.add(d);
+          selectedDomains.add(d);
           b.classList.add("bg-blue-600", "text-white");
         }
 
-        renderResearchFields();
+        renderSpecificFields();
         updateCalls();
       };
 
@@ -355,8 +355,8 @@ function renderDisciplines() {
 }
 
 
-/* ================= RESEARCH FIELDS (CATEGORIZED) ================= */
-function renderResearchFields() {
+/* ================= SPECIFIC DISCIPLINES (CATEGORIZED) ================= */
+function renderSpecificFields() {
   const container = document.getElementById("field-container");
   container.innerHTML = "";
   container.className = "flex flex-col gap-6";
@@ -385,14 +385,14 @@ function renderResearchFields() {
     }
   ];
 
-  let rows = selectedDisciplines.size
-    ? excelData.filter(r => selectedDisciplines.has(r.Discipline))
+  let rows = selectedDomains.size
+    ? excelData.filter(r => selectedDomains.has(r["Scientific Domain"]))
     : excelData;
 
   const allFields = new Set();
   rows.forEach(r => {
-    if (!r["Research Fields"]) return;
-    r["Research Fields"].split(";").map(f => f.trim()).forEach(f => allFields.add(f));
+    if (!r["Specific Disciplines"]) return;
+    r["Specific Disciplines"].split(";").map(f => f.trim()).forEach(f => allFields.add(f));
   });
 
   categories.forEach(cat => {
@@ -413,17 +413,17 @@ function renderResearchFields() {
       headerTitle.textContent = cat.label;
 
       const toggleBtn = document.createElement("button");
-      const isAllSelected = catFields.every(f => selectedResearchFields.has(f));
+      const isAllSelected = catFields.every(f => selectedSpecificFields.has(f));
       toggleBtn.textContent = isAllSelected ? "Deselect All" : "Select All";
       toggleBtn.className = `text-[6px] font-bold uppercase px-2 py-1 rounded border border-${cat.color}-300 text-${cat.color}-600 hover:bg-${cat.color}-50 transition-colors`;
       
       toggleBtn.onclick = () => {
         if (isAllSelected) {
-          catFields.forEach(f => selectedResearchFields.delete(f));
+          catFields.forEach(f => selectedSpecificFields.delete(f));
         } else {
-          catFields.forEach(f => selectedResearchFields.add(f));
+          catFields.forEach(f => selectedSpecificFields.add(f));
         }
-        renderResearchFields(); 
+        renderSpecificFields(); 
         updateCalls();
       };
 
@@ -441,19 +441,19 @@ function renderResearchFields() {
         // Consistent button styling
         b.className = `px-3 py-1.5 border rounded text-xs font-medium transition-all duration-200`;
 
-        if (selectedResearchFields.has(f)) {
+        if (selectedSpecificFields.has(f)) {
           b.classList.add(`bg-${cat.color}-600`, "text-white", `border-${cat.color}-600`, "shadow-sm");
         } else {
           b.classList.add("bg-white", "text-gray-600", "border-gray-200", `hover:border-${cat.color}-300`, `hover:text-${cat.color}-700`);
         }
 
         b.onclick = () => {
-          if (selectedResearchFields.has(f)) {
-            selectedResearchFields.delete(f);
+          if (selectedSpecificFields.has(f)) {
+            selectedSpecificFields.delete(f);
           } else {
-            selectedResearchFields.add(f);
+            selectedSpecificFields.add(f);
           }
-          renderResearchFields(); 
+          renderSpecificFields(); 
           updateCalls();
         };
 
@@ -738,20 +738,17 @@ function updateCalls() {
   let specificTextMatchesFound = false;
 
   const filtered = excelData.filter(r => {
-    const isGeneral = r.Discipline && r.Discipline.trim().toLowerCase() === "general";
-    
-    // If it's a general call, it bypasses filtering criteria completely
-    if (isGeneral) {
+    if (r["Scientific Domain"] && r["Scientific Domain"].trim().toLowerCase() === "general") {
       return true; 
     }
 
     // Standard structural criteria evaluation for non-general calls
-    if (selectedDisciplines.size && !selectedDisciplines.has(r.Discipline)) return false;
+    if (selectedDomains.size && !selectedDomains.has(r["Scientific Domain"])) return false;
     
-    if (selectedResearchFields.size) {
-      if (!r["Research Fields"]) return false;
-      const fields = r["Research Fields"].split(";").map(f => f.trim());
-      if (!fields.some(f => selectedResearchFields.has(f))) return false;
+    if (selectedSpecificFields.size) {
+      if (!r["Specific Disciplines"]) return false;
+      const fields = r["Specific Disciplines"].split(";").map(f => f.trim());
+      if (!fields.some(f => selectedSpecificFields.has(f))) return false;
     }
     
     if (keywordInput && !keywordMatchesMulti(r, keywordInput)) return false;
@@ -788,7 +785,7 @@ function updateCalls() {
   const renderCall = (r, targetContainer, isExpired) => {
       const score = countKeywordMatches(r, keywordInput);
       const btn = document.createElement("button");
-      const isGeneral = r.Discipline && r.Discipline.trim().toLowerCase() === "general";
+      const isGeneral = r["Scientific Domain"] && r["Scientific Domain"].trim().toLowerCase() === "general";
       const borderAccent = (isGeneral && !isExpired) ? 'border-l-4 border-l-purple-500 pl-2' : '';
 
       btn.className = `w-full text-left p-2 border rounded transition-all mb-2 flex justify-between items-start leading-tight ${borderAccent} 
@@ -833,13 +830,13 @@ function resetAllFilters() {
   const keywordInput = document.getElementById("keyword-input");
   if (keywordInput) keywordInput.value = "";
   
-  selectedDisciplines.clear();
-  selectedResearchFields.clear();
+  selectedDomains.clear();
+  selectedSpecificFields.clear();
   selectedCallButton = null;
 
   // 2. Re-render components and recalculate active/expired lists
-  renderDisciplines(); 
-  renderResearchFields();
+  renderDomain(); 
+  renderSpecificFields();
   updateCalls(); // This function automatically handles collapsing the expired panel
   
   // 3. Hide details panel actions if open
