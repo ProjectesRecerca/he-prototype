@@ -771,23 +771,37 @@ function updateCalls() {
   const expiredCalls = [];
 
   filtered.forEach(r => {
-        const deadlineStr = excelDateToString(r["Deadline(s)"]);
-        const parts = deadlineStr.split('/');
+        const deadlineRawStr = excelDateToString(r["Deadline(s)"]);
         
-        let deadlineDate = null;
-        if (parts.length === 3) {
-          // Correctly maps array positions: Year (parts), Month (parts), Day (parts)
-          const day = parseInt(parts, 10);
-          const month = parseInt(parts, 10) - 1; // JavaScript months are 0-11
-          const year = parseInt(parts, 10);
-          
-          deadlineDate = new Date(year, month, day);
-          deadlineDate.setHours(0, 0, 0, 0);
-        }
+        // Split by semicolon first in case there are multiple deadlines
+        const deadlineStrings = deadlineRawStr.split(';').map(s => s.trim());
+        
+        let hasUpcomingDeadline = false;
+        let hasValidDates = false;
 
-        if (deadlineDate && deadlineDate < today) {
+        deadlineStrings.forEach(str => {
+          const parts = str.split('/');
+          if (parts.length === 3) {
+            hasValidDates = true;
+            const day = parseInt(parts, 10);
+            const month = parseInt(parts, 10) - 1;
+            const year = parseInt(parts, 10);
+            
+            const deadlineDate = new Date(year, month, day);
+            deadlineDate.setHours(0, 0, 0, 0);
+
+            // If even one deadline is today or in the future, it is active
+            if (deadlineDate >= today) {
+              hasUpcomingDeadline = true;
+            }
+          }
+        });
+
+        // If it has valid dates and they are all in the past, it's expired
+        if (hasValidDates && !hasUpcomingDeadline) {
           expiredCalls.push(r);
         } else {
+          // Keeps calls active if they have future deadlines, or no specified deadlines
           activeCalls.push(r);
         }
       });
