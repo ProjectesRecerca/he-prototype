@@ -273,9 +273,10 @@
 
 
 <script>
+/* ================= GLOBAL CONFIGURATION & STATE ================= */
 let excelData = [];
-const  selectedDisciplines = new Set();
-const  selectedResearchFields = new Set();
+const selectedDisciplines = new Set(); // Fixed: Double space removed
+const selectedResearchFields = new Set(); // Fixed: Double space removed
 let selectedCallButton = null;
 
 /* ================= DATE FORMAT ================= */
@@ -289,29 +290,55 @@ function excelDateToString(value) {
   return date.toLocaleDateString("en-GB");
 }
 
-/* ================= LOGIN ================= */
+/* ================= LOG IN & TOKEN VALIDATION ================= */
 function handleCredentialResponse(response) {
-  const payload = JSON.parse(atob(response.credential.split(".")));
-  const email = payload.email || "";
+  try {
+    if (!response || !response.credential) {
+      console.error("Google authentication response was missing a credential token.");
+      return;
+    }
 
-  if (!email.endsWith("@upf.edu")) {
-    alert("Restricted access to institutional personnel");
-    return;
+    // Split and extract the JWT payload segment safely
+    const base64Url = response.credential.split(".");
+    if (!base64Url) throw new Error("Invalid JWT token format received");
+
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map(c => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join("")
+    );
+
+    const payload = JSON.parse(jsonPayload);
+    
+    // Target and normalize email characters safely (.trim and .toLowerCase prevents false authentication failures)
+    const email = (payload.email || "").trim().toLowerCase();
+
+    if (!email.endsWith("@upf.edu")) {
+      alert("Access Denied: Restrictive portal validation rules require an institutional @upf.edu credential.");
+      return;
+    }
+
+    // Dynamic View Transitions
+    document.getElementById("login").style.display = "none";
+    document.getElementById("private").style.display = "block";
+    
+    // Populate application datasets
+    loadExcel();
+
+  } catch (error) {
+    console.error("Critical failure parsing the Google Authentication Payload: ", error);
+    alert("Authentication validation failed. Check browser console logs for details.");
   }
-
-  document.getElementById("login").style.display = "none";
-  document.getElementById("private").style.display = "block";
-  loadExcel();
 }
-
 /* ================= LOAD EXCEL ================= */
 function loadExcel() {
   fetch("./GrantRadar_Calls.xlsx")
     .then(r => r.arrayBuffer())
     .then(data => {
       const wb = XLSX.read(data, { type: "array" });
-      // Change [0] to [1] to target the second sheet regardless of its name
-      const secondSheetName = wb.SheetNames[1]; 
+      const secondSheetName = wb.SheetNames; 
       excelData = XLSX.utils.sheet_to_json(wb.Sheets[secondSheetName]);
       renderDisciplines();
       renderResearchFields();
@@ -320,7 +347,7 @@ function loadExcel() {
     .catch(err => console.error("Error loading Excel:", err));
 }
 
-/* ================= DISCIPLINES ================= */
+/* ================= DISCIPLINES (SCIENTIFIC DOMAINS) ================= */
 function renderDisciplines() {
   const c = document.getElementById("discipline-container");
   c.innerHTML = "";
@@ -330,20 +357,19 @@ function renderDisciplines() {
     .forEach(d => {
       const b = document.createElement("button");
       b.textContent = d;
-      b.className = "px-3 py-1 border rounded";
+      b.className = "px-3 py-1 border rounded transition-colors duration-150";
 
-      // restaurar estado visual
       if (selectedDisciplines.has(d)) {
-        b.classList.add("bg-blue-600", "text-white");
+        b.classList.add("bg-blue-600", "text-white", "border-blue-600");
+      } else {
+        b.classList.add("bg-white", "text-gray-700", "border-gray-300", "hover:border-blue-400");
       }
 
       b.onclick = () => {
         if (selectedDisciplines.has(d)) {
           selectedDisciplines.delete(d);
-          b.classList.remove("bg-blue-600", "text-white");
         } else {
           selectedDisciplines.add(d);
-          b.classList.add("bg-blue-600", "text-white");
         }
 
         renderResearchFields();
@@ -354,17 +380,34 @@ function renderDisciplines() {
     });
 }
 
-
-/* ================= RESEARCH FIELDS (CATEGORIZED) ================= */
+/* ================= RESEARCH FIELDS (SPECIFIC DISCIPLINES) ================= */
 function renderResearchFields() {
   const container = document.getElementById("field-container");
   container.innerHTML = "";
   container.className = "flex flex-col gap-6";
 
+  // Taxonomy mapping mapping arrays instead of string prefixes
   const categories = [
-    { label: "Physical Sciences & Engineering", prefix: "PE", color: "blue" },
-    { label: "Life Sciences", prefix: "LS", color: "green" },
-    { label: "Social Sciences & Humanities", prefix: "SH", color: "indigo" }
+    { 
+      label: "Physical Sciences & Engineering", 
+      allowed: ["Math", "Physics", "Chemistry", "Computer Science & AI", "ICT & Web Engineering", "Materials", "Earth Sciences"], 
+      color: "blue" 
+    },
+    { 
+      label: "Life Sciences", 
+      allowed: ["Biomedicine", "Molecular & Cell Biology", "Genetics", "Neurosciences", "Public Health", "Biotechnology"], 
+      color: "green" 
+    },
+    { 
+      label: "Social Sciences & Humanities", 
+      allowed: ["Economics", "Business & Markets", "Law", "Regulation & Justice", "Political Science & Public Policy", "Sociology & Social Structures", "Media & Communication", "Language, Linguistics & Translation", "History", "Philosophy & Cultural Studies"], 
+      color: "indigo" 
+    },
+    {
+      label: "General",
+      allowed: [],
+      color: "purple"
+    }
   ];
 
   let rows = selectedDisciplines.size
@@ -378,15 +421,15 @@ function renderResearchFields() {
   });
 
   categories.forEach(cat => {
+    // Check if fields map explicitly within our new taxonomy lists
     const catFields = [...allFields]
-      .filter(f => f.startsWith(cat.prefix))
-      .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+      .filter(f => cat.allowed.includes(f))
+      .sort((a, b) => a.localeCompare(b));
 
     if (catFields.length > 0) {
       const section = document.createElement("div");
       section.className = "w-full";
       
-      // Category Header with Toggle
       const headerFlex = document.createElement("div");
       headerFlex.className = `flex justify-between items-center mb-3 pb-1 border-b border-${cat.color}-200`;
 
@@ -397,7 +440,7 @@ function renderResearchFields() {
       const toggleBtn = document.createElement("button");
       const isAllSelected = catFields.every(f => selectedResearchFields.has(f));
       toggleBtn.textContent = isAllSelected ? "Deselect All" : "Select All";
-      toggleBtn.className = `text-[6px] font-bold uppercase px-2 py-1 rounded border border-${cat.color}-300 text-${cat.color}-600 hover:bg-${cat.color}-50 transition-colors`;
+      toggleBtn.className = `text-[10px] font-bold uppercase px-2 py-1 rounded border border-${cat.color}-300 text-${cat.color}-600 hover:bg-${cat.color}-50 transition-colors`;
       
       toggleBtn.onclick = () => {
         if (isAllSelected) {
@@ -418,9 +461,7 @@ function renderResearchFields() {
 
       catFields.forEach(f => {
         const b = document.createElement("button");
-        const cleanLabel = f.replace(/^[A-Z]{2,3}\d+\s*/, ""); 
-        b.textContent = cleanLabel;
-        // Consistent button styling
+        b.textContent = f; // No alphanumeric prefixes regex slice needed anymore
         b.className = `px-3 py-1.5 border rounded text-xs font-medium transition-all duration-200`;
 
         if (selectedResearchFields.has(f)) {
@@ -448,14 +489,13 @@ function renderResearchFields() {
   });
 }
 
-
 /* ================= KEYWORD SEARCH ================= */
 function keywordMatchesMulti(call, userInput) {
   if (!userInput) return true;
 
   const haystack = [
-    call["Call ID"] || "",      // Added
-    call["Call Title"] || "",    // Added
+    call["Call ID"] || "",      
+    call["Call Title"] || "",    
     call["Keywords"] || "",
     call["SSH Keywords"] || "",
     call["Summary"] || "",
@@ -488,26 +528,20 @@ function highlightKeywords(text, userInput) {
     .filter(Boolean);
 
   terms.forEach(term => {
-    // Escapar caracteres regex
     const safeTerm = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
     const regex = new RegExp(`(${safeTerm})`, "gi");
-    result = result.replace(
-      regex,
-      `<mark class="bg-yellow-200 px-1 rounded">$1</mark>`
-    );
+    result = result.replace(regex, `<mark class="bg-yellow-200 px-1 rounded">$1</mark>`);
   });
 
   return result;
 }
 
-
 function countKeywordMatches(call, userInput) {
   if (!userInput) return 0;
 
   const haystack = [
-    call["Call ID"] || "",      // Added for consistency
-    call["Call Title"] || "",    // Added for consistency
+    call["Call ID"] || "",      
+    call["Call Title"] || "",    
     call["Keywords"] || "",
     call["SSH Keywords"] || "",
     call["Summary"] || "",
@@ -524,7 +558,6 @@ function countKeywordMatches(call, userInput) {
     .filter(Boolean);
 
   let count = 0;
-
   terms.forEach(term => {
     const matches = haystack.match(new RegExp(term, "g"));
     if (matches) count += matches.length;
@@ -533,21 +566,18 @@ function countKeywordMatches(call, userInput) {
   return count;
 }
 
-
 document.getElementById("search-btn").addEventListener("click", () => {
   updateCalls();
   scrollToCalls();
 });
 
-document
-  .getElementById("keyword-input")
-  .addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      updateCalls();
-      scrollToCalls();
-    }
-  });
+document.getElementById("keyword-input").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    updateCalls();
+    scrollToCalls();
+  }
+});
 
 function scrollToCalls() {
   const callsBlock = document.getElementById("calls-section");
@@ -556,16 +586,13 @@ function scrollToCalls() {
   }
 }
 
-// Helper to remove references like [1], [1,2], [10, 15]
 function cleanText(text) {
   if (!text) return "";
-  // Regex looks for brackets containing numbers and commas
   return text.replace(/\[\s*\d+(?:,\s*\d+)*\s*\]/g, "");
 }
 
 /* ================= SHOW CALL DETAILS ================= */
 function resetDetailsPanel(message = "Select a call to see its details.") {
-  // Use optional chaining (?.) or check if exists to prevent crashes
   const container = document.getElementById("dynamic-details-container");
   if (container) container.innerHTML = ""; 
 
@@ -595,9 +622,8 @@ function showCallDetails(r, buttonElement) {
   selectedCallButton = buttonElement;
   selectedCallButton.classList.add("bg-blue-100", "border-blue-500", "text-blue-800");
   const container = document.getElementById("dynamic-details-container");
-  container.innerHTML = ""; // Clear panel
+  container.innerHTML = ""; 
 
-  // Define fields to show 
   const fields = [
     { label: "Call ID", val: r["Call ID"] },
     { label: "Call Title", val: r["Call Title"] },
@@ -612,7 +638,6 @@ function showCallDetails(r, buttonElement) {
   const keywordInput = document.getElementById("keyword-input").value.trim();
 
   fields.forEach(field => {
-    // Check if info is available (Point 3)
     if (field.val && String(field.val).trim() !== "" && field.val !== "undefined") {
       const div = document.createElement("div");
       const highlightedVal = highlightKeywords(String(field.val), keywordInput);
@@ -622,15 +647,10 @@ function showCallDetails(r, buttonElement) {
   });
 
   const summaryElem = document.getElementById("detail-summary");
-  const sshElem = document.getElementById("detail-ssh-keywords");
-
   summaryElem.innerHTML = r["Summary"] ? highlightKeywords(r["Summary"], keywordInput) : "No summary available.";
 
-  // Get SSH Keywords and format them
   const sshRaw = r["SSH Keywords"] || ""; 
-  // Only display if data exists
   const sshText = sshRaw ? `SSH Keywords: ${sshRaw}` : "";
-  // Apply highlighting (reuses your existing keyword highlighter)
   document.getElementById("detail-ssh-keywords").innerHTML = highlightKeywords(sshText, keywordInput);
 
   const moreInfoBtn = document.getElementById("more-info-btn");
@@ -643,7 +663,6 @@ function openMoreInfoModal(call) {
   const webBtn = document.getElementById("modal-website-btn");
   modal.classList.remove("hidden");
 
-  // Logic to hide the modal and the website button (cleanup)
   const hideModal = () => {
     modal.classList.add("hidden");
     webBtn.classList.add("hidden");
@@ -656,7 +675,6 @@ function openMoreInfoModal(call) {
     openMoreInfoEmail(call["Call ID"]);
   };
 
-  // Point 4: Show the button JUST when the link is available
   const url = call["Call Website"];
   if (url && String(url).trim().startsWith("http")) {
     webBtn.href = url;
@@ -667,11 +685,9 @@ function openMoreInfoModal(call) {
 
   const keywordInput = document.getElementById("keyword-input").value.trim();
 
-  // 1. Clean the text (remove [1] refs)
   const rawOutcomes = cleanText(call["Expected Outcomes"] || "");
   const rawScope = cleanText(call["Scope"] || "");
 
-  // 2. Highlight keywords in the clean text
   document.getElementById("modal-expected-outcomes").innerHTML =
     highlightKeywords(rawOutcomes, keywordInput) || "Not available";
 
@@ -688,9 +704,7 @@ function openMoreInfoModal(call) {
 function showNoCallsPopup() {
   const popup = document.getElementById("no-calls-popup");
   if (!popup) return;
-
   popup.classList.remove("hidden");
-
   document.getElementById("close-popup-btn").onclick = () => {
     popup.classList.add("hidden");
   };
@@ -698,7 +712,6 @@ function showNoCallsPopup() {
 
 /* ================= UPDATE CALLS INTERFACE PIPELINE ================= */
 function updateCalls() {
-  // Collapse expired panel automatically whenever filters update
   const expiredWrapper = document.getElementById("expired-calls-wrapper");
   const expiredArrow = document.getElementById("expired-arrow");
   if (expiredWrapper && expiredArrow) {
@@ -715,31 +728,32 @@ function updateCalls() {
   resetDetailsPanel();
 
   const keywordInput = document.getElementById("keyword-input").value.trim();
-
-  // Boolean flag tracking if a genuine, specific domain/keyword match occurs
   let specificTextMatchesFound = false;
 
   const filtered = excelData.filter(r => {
     const isGeneral = r.Discipline && r.Discipline.trim().toLowerCase() === "general";
     
-    // If it's a general call, it bypasses filtering criteria completely
-    if (isGeneral) {
-      return true; 
+    // Logic constraint matching rule #4:
+    // If a user has active filters selected, show general data ONLY if they intentionally checked 'General'
+    if (selectedDisciplines.size || selectedResearchFields.size) {
+      if (isGeneral && !selectedDisciplines.has(r.Discipline)) return false;
     }
 
-    // Standard structural criteria evaluation for non-general calls
-    if (selectedDisciplines.size && !selectedDisciplines.has(r.Discipline)) return false;
-    
-    if (selectedResearchFields.size) {
-      if (!r["Research Fields"]) return false;
-      const fields = r["Research Fields"].split(";").map(f => f.trim());
-      if (!fields.some(f => selectedResearchFields.has(f))) return false;
+    if (!isGeneral) {
+      if (selectedDisciplines.size && !selectedDisciplines.has(r.Discipline)) return false;
+      
+      if (selectedResearchFields.size) {
+        if (!r["Research Fields"]) return false;
+        const fields = r["Research Fields"].split(";").map(f => f.trim());
+        if (!fields.some(f => selectedResearchFields.has(f))) return false;
+      }
     }
     
     if (keywordInput && !keywordMatchesMulti(r, keywordInput)) return false;
     
-    // If a non-general call survives all above criteria, we found a genuine specific match!
-    specificTextMatchesFound = true;
+    if (!isGeneral) {
+      specificTextMatchesFound = true;
+    }
     return true;
   });
 
@@ -755,6 +769,7 @@ function updateCalls() {
   filtered.forEach(r => {
     const deadlineStr = excelDateToString(r["Deadline(s)"]);
     const parts = deadlineStr.split('/');
+    // Year 2026 Context Execution Safe Fallback Date Parsing
     const deadlineDate = parts.length === 3 ? new Date(parts, parts - 1, parts) : null;
 
     if (deadlineDate && deadlineDate < today) {
@@ -803,7 +818,6 @@ function updateCalls() {
   activeCalls.forEach(r => renderCall(r, container, false));
   expiredCalls.forEach(r => renderCall(r, expiredContainer, true));
 
-  // POP-UP TRIGGER: If a user typed a keyword but NO specific matching calls were caught, show the pop-up alert
   if (keywordInput && !specificTextMatchesFound) {
     showNoCallsPopup();
   }
@@ -811,7 +825,6 @@ function updateCalls() {
 
 /* ================= FILTER RESET LOGIC ================= */
 function resetAllFilters() {
-  // 1. Reset input states
   const keywordInput = document.getElementById("keyword-input");
   if (keywordInput) keywordInput.value = "";
   
@@ -819,12 +832,10 @@ function resetAllFilters() {
   selectedResearchFields.clear();
   selectedCallButton = null;
 
-  // 2. Re-render components and recalculate active/expired lists
   renderDisciplines(); 
   renderResearchFields();
-  updateCalls(); // This function automatically handles collapsing the expired panel
+  updateCalls(); 
   
-  // 3. Hide details panel actions if open
   const moreInfoBtn = document.getElementById("more-info-btn");
   if (moreInfoBtn) moreInfoBtn.classList.add("hidden");
 }
@@ -833,15 +844,8 @@ window.addEventListener("DOMContentLoaded", () => {
   const sidebarClearBtn = document.getElementById("clear-btn");
   const topClearBtn = document.getElementById("search-clear-btn");
 
-  // Bind the global reset function to the sidebar clear button
-  if (sidebarClearBtn) {
-    sidebarClearBtn.addEventListener("click", resetAllFilters);
-  }
-
-  // Bind the global reset function to the new top search-bar clear button
-  if (topClearBtn) {
-    topClearBtn.addEventListener("click", resetAllFilters);
-  }
+  if (sidebarClearBtn) sidebarClearBtn.addEventListener("click", resetAllFilters);
+  if (topClearBtn) topClearBtn.addEventListener("click", resetAllFilters);
 });
 
 /* ================= TOGGLE EXPIRED CALLS ================= */
@@ -853,15 +857,14 @@ function toggleExpiredCalls() {
 
   if (wrapper.classList.contains("hidden")) {
     wrapper.classList.remove("hidden");
-    arrow.style.transform = "rotate(180deg)"; // Point arrow up when open
+    arrow.style.transform = "rotate(180deg)"; 
   } else {
     wrapper.classList.add("hidden");
-    arrow.style.transform = "rotate(0deg)";   // Point arrow down when closed
+    arrow.style.transform = "rotate(0deg)";   
   }
 }
 
 /* ================= MORE INFORMATION WINDOW ================= */
-
 function openMoreInfoEmail(callId) {
   const accepted = confirm(
     "A new window will open to compose an email from your active Gmail account.\n\n" +
@@ -871,7 +874,7 @@ function openMoreInfoEmail(callId) {
 
   if (!accepted) return;
 
-  const to = "projectes.recerca@upf.edu"; //
+  const to = "projectes.recerca@upf.edu"; 
   const subject = `[${callId}] Request for more information`;
   const body =
     "Dear Research Service,\n\n" +
@@ -889,51 +892,16 @@ function openMoreInfoEmail(callId) {
   window.open(mailtoLink, "_blank");
 }
 
-  const scrollTopBtn = document.getElementById("scroll-top-btn");
+const scrollTopBtn = document.getElementById("scroll-top-btn");
+scrollTopBtn.addEventListener("click", () => {
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
 
-  scrollTopBtn.addEventListener("click", () => {
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth"
-    });
-  });
-
-  window.addEventListener("scroll", () => {
+window.addEventListener("scroll", () => {
   if (window.scrollY > 200) {
     scrollTopBtn.classList.remove("hidden");
   } else {
     scrollTopBtn.classList.add("hidden");
   }
 });
-
-/* window.addEventListener("DOMContentLoaded", () => {
-  const moreInfoBtn = document.getElementById("more-info-btn");
-
-  moreInfoBtn.addEventListener("click", () => {
-    if (!selectedCallButton) return;
-
-    const callId = document.getElementById("detail-id").textContent;
-    const callTitle = document.getElementById("detail-title").textContent;
-
-    const toEmail = "projectes.recerca@upf.edu"; // 
-
-    const subject = encodeURIComponent(`[${callId}] Request for more information`);
-    const body = encodeURIComponent(
-        `Dear Research Service,
-
-        I am interested in the following Horizon Europe call:
-
-        Call ID: ${callId}
-        Title: ${callTitle}
-
-        I would appreciate more information and guidance on this opportunity.
-
-        Best regards,`
-    );
-
-    const gmailURL = `https://mail.google.com/mail/?view=cm&fs=1&to=${toEmail}&su=${subject}&body=${body}`;
-
-    window.open(gmailURL, "_blank");
-  });
-}); */
 </script>
