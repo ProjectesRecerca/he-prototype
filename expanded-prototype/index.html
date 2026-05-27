@@ -290,55 +290,7 @@ function excelDateToString(value) {
   return date.toLocaleDateString("en-GB");
 }
 
-/* ================= LOG IN &  VALIDATION ================= */
-function handleCredentialResponse(response) {
-  try {
-    if (!response || !response.credential) {
-      console.error("Google authentication response was missing a credential token.");
-      return;
-    }
 
-    // Isolate the payload segment safely
-    const tokenParts = response.credential.split(".");
-    if (tokenParts.length < 2) throw new Error("Invalid JWT token format received");
-    
-    // FIX: Extract index 1 explicitly to ensure base64Url is a String, not an Array
-    const base64Url = tokenParts; 
-    let base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-    
-    // Pad out the base64 string safely if it lacks alignment padding
-    while (base64.length % 4) {
-      base64 += '=';
-    }
-    
-    // Decode handling multi-byte UTF-8 configurations smoothly
-    const jsonPayload = decodeURIComponent(
-      atob(base64)
-        .split("")
-        .map(c => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-        .join("")
-    );
-
-    const payload = JSON.parse(jsonPayload);
-    const email = (payload.email || "").trim().toLowerCase();
-
-    if (!email.endsWith("@upf.edu")) {
-      alert("Access Denied: Restrictive portal validation rules require an institutional @upf.edu credential.");
-      return;
-    }
-
-    // Toggle View State Layouts
-    document.getElementById("login").style.display = "none";
-    document.getElementById("private").style.display = "block";
-    
-    // Fire analytical database parsing pipelines
-    loadExcel();
-
-  } catch (error) {
-    console.error("Critical failure parsing the Google Authentication Payload: ", error);
-    alert("Authentication validation failed. Check browser console logs for details.");
-  }
-}
 /* ================= LOAD EXCEL ================= */
 function loadExcel() {
   fetch("./GrantRadar_Calls.xlsx")
