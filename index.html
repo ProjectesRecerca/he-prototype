@@ -771,37 +771,50 @@ function updateCalls() {
   const expiredCalls = [];
 
   filtered.forEach(r => {
-        const deadlineRawStr = excelDateToString(r["Deadline(s)"]);
-        
-        // Split by semicolon first in case there are multiple deadlines
-        const deadlineStrings = deadlineRawStr.split(';').map(s => s.trim());
-        
+        // 1. Grab the raw cell data directly from Excel
+        const rawDeadline = r["Deadline(s)"];
+        if (!rawDeadline) {
+          activeCalls.push(r); // Safely keep rolling basis/blank active
+          return;
+        }
+
         let hasUpcomingDeadline = false;
         let hasValidDates = false;
 
+        // 2. Standardize target tokens into an array of strings
+        let deadlineStrings = [];
+        if (rawDeadline instanceof Date) {
+          // If it's already a single real date object, extract it cleanly
+          deadlineStrings.push(rawDeadline.toLocaleDateString("en-GB"));
+        } else {
+          // Otherwise treat it as a semicolon-separated string
+          deadlineStrings = String(rawDeadline).split(';').map(s => s.trim());
+        }
+
+        // 3. Process each date string item
         deadlineStrings.forEach(str => {
           const parts = str.split('/');
           if (parts.length === 3) {
             hasValidDates = true;
             const day = parseInt(parts, 10);
-            const month = parseInt(parts, 10) - 1;
+            const month = parseInt(parts, 10) - 1; // JS months are 0-11
             const year = parseInt(parts, 10);
             
+            // Create explicit timestamp matching midnight absolute
             const deadlineDate = new Date(year, month, day);
             deadlineDate.setHours(0, 0, 0, 0);
 
-            // If even one deadline is today or in the future, it is active
-            if (deadlineDate >= today) {
+            // Absolute timestamp numerical comparison
+            if (deadlineDate.getTime() >= today.getTime()) {
               hasUpcomingDeadline = true;
             }
           }
         });
 
-        // If it has valid dates and they are all in the past, it's expired
+        // 4. Final routing assignment
         if (hasValidDates && !hasUpcomingDeadline) {
           expiredCalls.push(r);
         } else {
-          // Keeps calls active if they have future deadlines, or no specified deadlines
           activeCalls.push(r);
         }
       });
