@@ -313,6 +313,8 @@ function loadExcel() {
       // Change [0] to [1] to target the second sheet regardless of its name
       const secondSheetName = wb.SheetNames[1]; 
       excelData = XLSX.utils.sheet_to_json(wb.Sheets[secondSheetName]);
+      console.log("Excel Raw Data Object:", excelData);
+      console.log("Total rows imported:", excelData.length);
       renderDomain();
       renderSpecificFields();
       updateCalls();
