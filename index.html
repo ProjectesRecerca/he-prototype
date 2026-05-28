@@ -677,6 +677,7 @@ function showNoCallsPopup() {
 }
 
 /* ================= UPDATE CALLS INTERFACE PIPELINE ================= */
+/* ================= UPDATE CALLS INTERFACE PIPELINE ================= */
 function updateCalls() {
   const expiredWrapper = document.getElementById("expired-calls-wrapper");
   const expiredArrow = document.getElementById("expired-arrow");
@@ -695,17 +696,11 @@ function updateCalls() {
 
   const keywordInput = document.getElementById("keyword-input").value.trim();
   
-  // Fetch active checked radio value from deadline control
   const deadlineRadio = document.querySelector('input[name="deadline-filter"]:checked');
   const deadlineFilterValue = deadlineRadio ? deadlineRadio.value : "all";
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-
-  // Compute time boundaries
-  const threeMonthsOut = new Date(today.getTime() + (3 * 30 * 24 * 60 * 60 * 1000));
-  const sixMonthsOut = new Date(today.getTime() + (6 * 30 * 24 * 60 * 60 * 1000));
-  const twelveMonthsOut = new Date(today.getTime() + (12 * 30 * 24 * 60 * 60 * 1000));
 
   let specificTextMatchesFound = false;
 
@@ -729,27 +724,26 @@ function updateCalls() {
       }
     }
 
-    // 4. Dynamic Deadline Evaluation Check (Robust Parsing Fixed)
+    // 4. Hybrid Adaptive Deadline Interpreter Engine
     const rawDeadline = r["Deadline(s)"] || r["deadline(s)"] || r["Deadline"];
     if (deadlineFilterValue !== "all") {
       if (!rawDeadline) return false;
 
       let targetDate = null;
+
       if (rawDeadline instanceof Date) {
         targetDate = new Date(rawDeadline);
       } else {
         const cleanString = String(rawDeadline).split(';').trim();
         
         if (cleanString.includes('-')) {
-          // Handles YYYY-MM-DD
           targetDate = new Date(cleanString);
         } else if (cleanString.includes('/')) {
-          // Handles DD/MM/YYYY
-          const dateParts = cleanString.split('/');
-          if (dateParts.length === 3) {
-            const day = parseInt(dateParts, 10);
-            const month = parseInt(dateParts, 10) - 1;
-            const year = parseInt(dateParts, 10);
+          const dateBits = cleanString.split('/');
+          if (dateBits.length === 3) {
+            const day = parseInt(dateBits, 10);
+            const month = parseInt(dateBits, 10) - 1;
+            const year = parseInt(dateBits, 10);
             targetDate = new Date(year, month, day);
           }
         }
@@ -758,19 +752,22 @@ function updateCalls() {
       if (!targetDate || isNaN(targetDate.getTime())) return false;
       targetDate.setHours(0, 0, 0, 0);
 
-      // Chronological range calculations relative to current baseline
       const msDifference = targetDate.getTime() - today.getTime();
-
-      if (deadlineFilterValue === "3m" && msDifference > (3 * 30 * 24 * 60 * 60 * 1000)) return false;
-      if (deadlineFilterValue === "6m" && msDifference > (6 * 30 * 24 * 60 * 60 * 1000)) return false;
-      if (deadlineFilterValue === "6-12m" && (msDifference <= (6 * 30 * 24 * 60 * 60 * 1000) || msDifference > (12 * 30 * 24 * 60 * 60 * 1000))) return false;
-      if (deadlineFilterValue === "1y" && msDifference <= (12 * 30 * 24 * 60 * 60 * 1000)) return false;
+      
+      if (deadlineFilterValue === "3m") {
+        if (msDifference > (3 * 30 * 24 * 60 * 60 * 1000)) return false;
+      } else if (deadlineFilterValue === "6m") {
+        if (msDifference > (6 * 30 * 24 * 60 * 60 * 1000)) return false;
+      } else if (deadlineFilterValue === "6-12m") {
+        if (msDifference <= (6 * 30 * 24 * 60 * 60 * 1000) || msDifference > (12 * 30 * 24 * 60 * 60 * 1000)) return false;
+      } else if (deadlineFilterValue === "1y") {
+        if (msDifference <= (12 * 30 * 24 * 60 * 60 * 1000)) return false;
+      }
     }
 
     return true;
   });
 
-  // Sort and distribute to Active/Expired lists downstream...
   filtered.sort((a, b) => countKeywordMatches(b, keywordInput) - countKeywordMatches(a, keywordInput));
 
   const activeCalls = [];
@@ -813,7 +810,6 @@ function updateCalls() {
       }
     });
 
-    // Routed safely to active list for smooth filter testing
     if (hasValidDates && !hasUpcomingDeadline && deadlineFilterValue === "all") {
       expiredCalls.push(r);
     } else {
@@ -824,14 +820,16 @@ function updateCalls() {
   document.getElementById("calls-title").textContent = `Active Opportunities (${activeCalls.length})`;
   document.getElementById("expired-calls-title").textContent = `Expired Calls Archive (${expiredCalls.length})`;
 
-  const renderCall = (r, targetContainer, isExpired) => {
+  // LINE-BY-LINE FIXED PARAMETER INTERFACE
+  const renderCall = (r, targetContainer, isExpiredCard) => {
     const score = countKeywordMatches(r, keywordInput);
     const btn = document.createElement("button");
     const isGeneral = r["Scientific Domain"] && r["Scientific Domain"].trim().toLowerCase() === "general";
     
+    // Corrected isExpiredCard references below to prevent runtime crashes
     btn.className = `w-full text-left p-3.5 border rounded-xl transition shadow-sm mb-2.5 flex flex-col sm:flex-row justify-between sm:items-center gap-3 leading-normal focus:outline-none
-      ${isGeneral && !isExpired ? 'border-l-4 border-l-purple-500' : ''} 
-      ${isExpired ? 'bg-slate-50 border-slate-200 text-slate-400' : 'bg-white border-slate-200/80 hover:border-slate-300 text-slate-700'}`;
+      ${isGeneral && !isExpiredCard ? 'border-l-4 border-l-purple-500' : ''} 
+      ${isExpiredCard ? 'bg-slate-50 border-slate-200 text-slate-400' : 'bg-white border-slate-200/80 hover:border-slate-300 text-slate-700'}`;
 
     const callId = r["Call ID"] ? `<span class="font-bold text-slate-400 text-[10px] block tracking-tight uppercase">${r["Call ID"]}</span>` : "";
     
@@ -840,13 +838,12 @@ function updateCalls() {
       if (score > 0) {
         badgeHTML = `<span class="text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-100 px-2 py-0.5 rounded-md whitespace-nowrap">Hits: ${score}</span>`;
       } else if (isGeneral) {
-        badgeHTML = `<span class="text-[10px] bg-purple-50 text-purple-600 border border-purple-100 font-bold px-2 py-0.5 rounded-md whitespace-nowrap">General</span>`;
+        badgeHTML = `<span class="text-[10px] bg-purple-50 text-purple-600 border border-purple-100 font-bold px-2 py-0.5 rounded-md whitespace-nowrap font-sans">General</span>`;
       }
     } else if (isGeneral) {
       badgeHTML = `<span class="text-[10px] bg-purple-50 text-purple-600 border border-purple-100 font-bold px-2 py-0.5 rounded-md whitespace-nowrap font-sans">General</span>`;
     }
 
-    // Dynamic Glance Inline Label Generation
     let deadlineGlanceHTML = "";
     const rawDeadline = r["Deadline(s)"] || r["deadline(s)"] || r["Deadline"];
     if (rawDeadline) {
@@ -899,6 +896,7 @@ function updateCalls() {
     targetContainer.appendChild(btn);
   };
 
+  // Fixed execution scope mapping
   activeCalls.forEach(r => renderCall(r, container, false));
   expiredCalls.forEach(r => renderCall(r, expiredContainer, true));
 
