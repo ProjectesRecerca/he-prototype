@@ -702,11 +702,6 @@ function updateCalls() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // Compute time boundaries
-  const threeMonthsOut = new Date(today.getTime() + (3 * 30 * 24 * 60 * 60 * 1000));
-  const sixMonthsOut = new Date(today.getTime() + (6 * 30 * 24 * 60 * 60 * 1000));
-  const twelveMonthsOut = new Date(today.getTime() + (12 * 30 * 24 * 60 * 60 * 1000));
-
   let specificTextMatchesFound = false;
 
   const filtered = excelData.filter(r => {
@@ -729,8 +724,8 @@ function updateCalls() {
       }
     }
 
-    // 4. Hybrid Adaptive Deadline Interpreter Engine
-    const rawDeadline = r["Deadline(s)"];
+    // 4. Hybrid Adaptive Deadline Interpreter Engine (Safe Fallback for lower/upper case)
+    const rawDeadline = r["Deadline(s)"] || r["deadline(s)"] || r["Deadline"];
     if (deadlineFilterValue !== "all") {
       if (!rawDeadline) return false;
 
@@ -739,14 +734,11 @@ function updateCalls() {
       if (rawDeadline instanceof Date) {
         targetDate = new Date(rawDeadline);
       } else {
-        // Clear multiple multi-stage delimiters
         const cleanString = String(rawDeadline).split(';').trim();
         
         if (cleanString.includes('-')) {
-          // Process standard ISO configurations: YYYY-MM-DD
           targetDate = new Date(cleanString);
         } else if (cleanString.includes('/')) {
-          // Process Euro configurations: DD/MM/YYYY
           const dateBits = cleanString.split('/');
           if (dateBits.length === 3) {
             const day = parseInt(dateBits, 10);
@@ -760,7 +752,6 @@ function updateCalls() {
       if (!targetDate || isNaN(targetDate.getTime())) return false;
       targetDate.setHours(0, 0, 0, 0);
 
-      // Chronological calculations relative to current date baseline
       const msDifference = targetDate.getTime() - today.getTime();
       
       if (deadlineFilterValue === "3m") {
@@ -783,7 +774,7 @@ function updateCalls() {
   const expiredCalls = [];
 
   filtered.forEach(r => {
-    const rawDeadline = r["Deadline(s)"];
+    const rawDeadline = r["Deadline(s)"] || r["deadline(s)"] || r["Deadline"];
     if (!rawDeadline) {
       activeCalls.push(r);
       return;
@@ -819,8 +810,6 @@ function updateCalls() {
       }
     });
 
-    // To prevent empty lists during testing with old database files,
-    // we route everything to active calls unless it is clearly expired outside filters.
     if (hasValidDates && !hasUpcomingDeadline && deadlineFilterValue === "all") {
       expiredCalls.push(r);
     } else {
@@ -831,14 +820,14 @@ function updateCalls() {
   document.getElementById("calls-title").textContent = `Active Opportunities (${activeCalls.length})`;
   document.getElementById("expired-calls-title").textContent = `Expired Calls Archive (${expiredCalls.length})`;
 
-  const renderCall = (r, targetContainer, isExpired) => {
+  const renderCall = (r, targetContainer, isExpiredCard) => {
     const score = countKeywordMatches(r, keywordInput);
     const btn = document.createElement("button");
     const isGeneral = r["Scientific Domain"] && r["Scientific Domain"].trim().toLowerCase() === "general";
     
     btn.className = `w-full text-left p-3.5 border rounded-xl transition shadow-sm mb-2.5 flex flex-col sm:flex-row justify-between sm:items-center gap-3 leading-normal focus:outline-none
-      ${isGeneral && !isExpired ? 'border-l-4 border-l-purple-500' : ''} 
-      ${isExpired ? 'bg-slate-50 border-slate-200 text-slate-400' : 'bg-white border-slate-200/80 hover:border-slate-300 text-slate-700'}`;
+      ${isGeneral && !isExpiredCard ? 'border-l-4 border-l-purple-500' : ''} 
+      ${isExpiredCard ? 'bg-slate-50 border-slate-200 text-slate-400' : 'bg-white border-slate-200/80 hover:border-slate-300 text-slate-700'}`;
 
     const callId = r["Call ID"] ? `<span class="font-bold text-slate-400 text-[10px] block tracking-tight uppercase">${r["Call ID"]}</span>` : "";
     
@@ -854,7 +843,7 @@ function updateCalls() {
     }
 
     let deadlineGlanceHTML = "";
-    const rawDeadline = r["Deadline(s)"];
+    const rawDeadline = r["Deadline(s)"] || r["deadline(s)"] || r["Deadline"];
     if (rawDeadline) {
       let deadlineString = "";
       if (rawDeadline instanceof Date) {
@@ -925,7 +914,8 @@ function updateCalls() {
     targetContainer.appendChild(btn);
   };
 
-  activeCalls.forEach(r => renderCall(r, container, isExpired));
+  // Fixed scope variables here to avoid engine execution halt
+  activeCalls.forEach(r => renderCall(r, container, false));
   expiredCalls.forEach(r => renderCall(r, expiredContainer, true));
 
   if (keywordInput && !specificTextMatchesFound) {
