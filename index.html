@@ -695,7 +695,6 @@ function showNoCallsPopup() {
 }
 
 /* ================= UPDATE CALLS INTERFACE PIPELINE ================= */
-/* ================= UPDATE CALLS INTERFACE PIPELINE ================= */
 function updateCalls() {
   const expiredWrapper = document.getElementById("expired-calls-wrapper");
   const expiredArrow = document.getElementById("expired-arrow");
@@ -717,196 +716,72 @@ function updateCalls() {
   const deadlineRadio = document.querySelector('input[name="deadline-filter"]:checked');
   const deadlineFilterValue = deadlineRadio ? deadlineRadio.value : "all";
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
   let specificTextMatchesFound = false;
 
+  // STEP 1: Keep filtering completely open for "all" until we verify raw values
   const filtered = excelData.filter(r => {
-    // 1. Keyword Check
     if (keywordInput && !keywordMatchesMulti(r, keywordInput)) return false;
     specificTextMatchesFound = true;
 
-    // Skip taxonomy restrictions entirely if it is an explicit global 'General' call
     const isGeneralCall = r["Scientific Domain"] && r["Scientific Domain"].trim().toLowerCase() === "general";
-    
     if (!isGeneralCall) {
-      // 2. Domain Taxonomy Check
       if (selectedDomains.size && !selectedDomains.has(r["Scientific Domain"])) return false;
-      
-      // 3. Discipline Sub-Taxonomy Check
       if (selectedSpecificFields.size) {
         if (!r["Specific Disciplines"]) return false;
         const fields = r["Specific Disciplines"].split(";").map(f => f.trim());
         if (!fields.some(f => selectedSpecificFields.has(f))) return false;
       }
     }
-
-    // 4. Hybrid Adaptive Deadline Interpreter Engine
-    const rawDeadline = r["Deadline(s)"] || r["deadline(s)"] || r["Deadline"];
-    if (deadlineFilterValue !== "all") {
-      if (!rawDeadline) return false;
-
-      let targetDate = null;
-
-      if (rawDeadline instanceof Date) {
-        targetDate = new Date(rawDeadline);
-      } else {
-        const cleanString = String(rawDeadline).split(';').trim();
-        
-        if (cleanString.includes('-')) {
-          targetDate = new Date(cleanString);
-        } else if (cleanString.includes('/')) {
-          const dateBits = cleanString.split('/');
-          if (dateBits.length === 3) {
-            const day = parseInt(dateBits, 10);
-            const month = parseInt(dateBits, 10) - 1;
-            const year = parseInt(dateBits, 10);
-            targetDate = new Date(year, month, day);
-          }
-        }
-      }
-
-      if (!targetDate || isNaN(targetDate.getTime())) return false;
-      targetDate.setHours(0, 0, 0, 0);
-
-      const msDifference = targetDate.getTime() - today.getTime();
-      
-      if (deadlineFilterValue === "3m") {
-        if (msDifference > (3 * 30 * 24 * 60 * 60 * 1000)) return false;
-      } else if (deadlineFilterValue === "6m") {
-        if (msDifference > (6 * 30 * 24 * 60 * 60 * 1000)) return false;
-      } else if (deadlineFilterValue === "6-12m") {
-        if (msDifference <= (6 * 30 * 24 * 60 * 60 * 1000) || msDifference > (12 * 30 * 24 * 60 * 60 * 1000)) return false;
-      } else if (deadlineFilterValue === "1y") {
-        if (msDifference <= (12 * 30 * 24 * 60 * 60 * 1000)) return false;
-      }
-    }
-
     return true;
   });
 
   filtered.sort((a, b) => countKeywordMatches(b, keywordInput) - countKeywordMatches(a, keywordInput));
 
-  const activeCalls = [];
-  const expiredCalls = [];
-
-  filtered.forEach(r => {
-    const rawDeadline = r["Deadline(s)"] || r["deadline(s)"] || r["Deadline"];
-    if (!rawDeadline) {
-      activeCalls.push(r);
-      return;
-    }
-
-    let hasUpcomingDeadline = false;
-    let hasValidDates = false;
-    let deadlineStrings = [];
-    
-    if (rawDeadline instanceof Date) {
-      deadlineStrings.push(rawDeadline.toLocaleDateString("en-GB"));
-    } else {
-      deadlineStrings = String(rawDeadline).split(';').map(s => s.trim());
-    }
-
-    deadlineStrings.forEach(str => {
-      let deadlineDate = null;
-      if (str.includes('-')) {
-        deadlineDate = new Date(str);
-      } else if (str.includes('/')) {
-        const parts = str.split('/');
-        if (parts.length === 3) {
-          deadlineDate = new Date(parseInt(parts, 10), parseInt(parts, 10) - 1, parseInt(parts, 10));
-        }
-      }
-
-      if (deadlineDate && !isNaN(deadlineDate.getTime())) {
-        hasValidDates = true;
-        deadlineDate.setHours(0, 0, 0, 0);
-        if (deadlineDate.getTime() >= today.getTime()) {
-          hasUpcomingDeadline = true;
-        }
-      }
-    });
-
-    if (hasValidDates && !hasUpcomingDeadline && deadlineFilterValue === "all") {
-      expiredCalls.push(r);
-    } else {
-      activeCalls.push(r);
-    }
-  });
-
-  document.getElementById("calls-title").textContent = `Active Opportunities (${activeCalls.length})`;
-  document.getElementById("expired-calls-title").textContent = `Expired Calls Archive (${expiredCalls.length})`;
-
-  // LINE-BY-LINE FIXED PARAMETER INTERFACE
-  const renderCall = (r, targetContainer, isExpiredCard) => {
+  // STEP 2: Pure Text Deadline Normalizer Engine
+  const renderCall = (r, targetContainer) => {
     const score = countKeywordMatches(r, keywordInput);
     const btn = document.createElement("button");
     const isGeneral = r["Scientific Domain"] && r["Scientific Domain"].trim().toLowerCase() === "general";
     
-    // Corrected isExpiredCard references below to prevent runtime crashes
-    btn.className = `w-full text-left p-3.5 border rounded-xl transition shadow-sm mb-2.5 flex flex-col sm:flex-row justify-between sm:items-center gap-3 leading-normal focus:outline-none
-      ${isGeneral && !isExpiredCard ? 'border-l-4 border-l-purple-500' : ''} 
-      ${isExpiredCard ? 'bg-slate-50 border-slate-200 text-slate-400' : 'bg-white border-slate-200/80 hover:border-slate-300 text-slate-700'}`;
+    // Clean, plain border style with NO color urgency variables to break
+    btn.className = `w-full text-left p-3.5 bg-white border border-slate-200 rounded-xl transition shadow-sm mb-2.5 flex flex-col justify-between items-start gap-1 focus:outline-none hover:border-slate-300 text-slate-700`;
 
-    const callId = r["Call ID"] ? `<span class="font-bold text-slate-400 text-[10px] block tracking-tight uppercase">${r["Call ID"]}</span>` : "";
+    const callId = r["Call ID"] ? `<span class="font-bold text-slate-400 text-[10px] tracking-tight uppercase">${r["Call ID"]}</span>` : "";
     
     let badgeHTML = "";
-    if (keywordInput) {
-      if (score > 0) {
-        badgeHTML = `<span class="text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-100 px-2 py-0.5 rounded-md whitespace-nowrap">Hits: ${score}</span>`;
-      } else if (isGeneral) {
-        badgeHTML = `<span class="text-[10px] bg-purple-50 text-purple-600 border border-purple-100 font-bold px-2 py-0.5 rounded-md whitespace-nowrap font-sans">General</span>`;
-      }
+    if (keywordInput && score > 0) {
+      badgeHTML = `<span class="text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-100 px-2 py-0.5 rounded-md">Hits: ${score}</span>`;
     } else if (isGeneral) {
-      badgeHTML = `<span class="text-[10px] bg-purple-50 text-purple-600 border border-purple-100 font-bold px-2 py-0.5 rounded-md whitespace-nowrap font-sans">General</span>`;
+      badgeHTML = `<span class="text-[10px] bg-purple-50 text-purple-600 border border-purple-100 font-bold px-2 py-0.5 rounded-md">General</span>`;
     }
 
-    let deadlineGlanceHTML = "";
-    const rawDeadline = r["Deadline(s)"] || r["deadline(s)"] || r["Deadline"];
-    if (rawDeadline) {
-      let deadlineString = (rawDeadline instanceof Date) ? rawDeadline.toLocaleDateString("en-GB") : String(rawDeadline).split(';').trim();
-      let finalDateObject = null;
-
-      if (deadlineString.includes('-')) {
-        finalDateObject = new Date(deadlineString);
-      } else if (deadlineString.includes('/')) {
-        const bits = deadlineString.split('/');
-        if (bits.length === 3) {
-          finalDateObject = new Date(parseInt(bits, 10), parseInt(bits, 10) - 1, parseInt(bits, 10));
-        }
-      }
-
-      if (finalDateObject && !isNaN(finalDateObject.getTime())) {
-        finalDateObject.setHours(0,0,0,0);
-        const currentDay = new Date();
-        currentDay.setHours(0,0,0,0);
-        
-        const msGap = finalDateObject.getTime() - currentDay.getTime();
-        const daysLeft = Math.ceil(msGap / (1000 * 60 * 60 * 24));
-
-        if (daysLeft >= 0 && daysLeft <= 30) {
-          deadlineGlanceHTML = `<div class="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded mt-1 w-fit">Urgent: ${daysLeft} days left (${deadlineString})</div>`;
-        } else if (daysLeft > 30) {
-          deadlineGlanceHTML = `<div class="text-[10px] text-slate-500 font-medium bg-slate-50 border border-slate-100 px-2 py-0.5 rounded mt-1 w-fit">Deadline: ${deadlineString}</div>`;
-        } else {
-          deadlineGlanceHTML = `<div class="text-[10px] text-rose-700 bg-rose-50 border border-rose-100 font-bold px-2 py-0.5 rounded mt-1 w-fit">Closed (${deadlineString})</div>`;
-        }
+    // SAFE RAW STRING EXTRACTION: Grabs whatever text is in your cell safely
+    let deadlineRawString = "";
+    const lookForField = r["Deadline(s)"] || r["deadline(s)"] || r["Deadline"] || r["deadline"];
+    
+    if (lookForField) {
+      if (lookForField instanceof Date) {
+        deadlineRawString = lookForField.toLocaleDateString("en-GB");
       } else {
-        deadlineGlanceHTML = `<div class="text-[10px] text-slate-500 font-medium bg-slate-50 border border-slate-100 px-2 py-0.5 rounded mt-1 w-fit">Deadline: ${deadlineString}</div>`;
+        deadlineRawString = String(lookForField).trim();
       }
     } else {
-      deadlineGlanceHTML = `<div class="text-[10px] text-slate-400 italic mt-1">Continuous / Open</div>`;
+      deadlineRawString = "Continuous / Open";
     }
 
+    // Build plain visual elements safely
     btn.innerHTML = `
-      <div class="space-y-0.5 flex-1">
-        ${callId}
-        <div class="text-xs font-semibold text-slate-800 tracking-tight">${r["Call Title"] || ""}</div>
-        ${deadlineGlanceHTML}
+      <div class="w-full flex items-center justify-between gap-2 border-b border-slate-50 pb-1 mb-1">
+        <div class="flex items-center gap-2">
+          ${callId}
+          <span class="text-[10px] font-mono font-bold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">
+            [Deadline: ${deadlineRawString}]
+          </span>
+        </div>
+        <div>${badgeHTML}</div>
       </div>
-      <div class="flex items-center justify-end self-center">
-        ${badgeHTML}
+      <div class="text-xs font-semibold text-slate-800 tracking-tight leading-snug">
+        ${r["Call Title"] || ""}
       </div>
     `;
 
@@ -914,13 +789,11 @@ function updateCalls() {
     targetContainer.appendChild(btn);
   };
 
-  // Fixed execution scope mapping
-  activeCalls.forEach(r => renderCall(r, container, false));
-  expiredCalls.forEach(r => renderCall(r, expiredContainer, true));
+  // Draw directly to container list
+  filtered.forEach(r => renderCall(r, container));
 
-  if (keywordInput && !specificTextMatchesFound) {
-    showNoCallsPopup();
-  }
+  document.getElementById("calls-title").textContent = `Opportunities Available (${filtered.length})`;
+  document.getElementById("expired-calls-title").textContent = `Archive Records (0)`;
 }
 
 /* ================= FILTER RESET LOGIC ================= */
