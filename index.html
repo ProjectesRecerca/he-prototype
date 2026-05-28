@@ -695,6 +695,7 @@ function showNoCallsPopup() {
 }
 
 /* ================= UPDATE CALLS INTERFACE PIPELINE ================= */
+/* ================= UPDATE CALLS INTERFACE PIPELINE ================= */
 function updateCalls() {
   const expiredWrapper = document.getElementById("expired-calls-wrapper");
   const expiredArrow = document.getElementById("expired-arrow");
@@ -706,6 +707,8 @@ function updateCalls() {
   const container = document.getElementById("calls-container");
   const expiredContainer = document.getElementById("expired-calls-container");
   
+  if (!container || !expiredContainer) return;
+
   container.innerHTML = "";
   expiredContainer.innerHTML = "";
   selectedCallButton = null;
@@ -713,59 +716,53 @@ function updateCalls() {
 
   const keywordInput = document.getElementById("keyword-input").value.trim();
   
+  // Safe extraction matching the newly added radio buttons
   const deadlineRadio = document.querySelector('input[name="deadline-filter"]:checked');
   const deadlineFilterValue = deadlineRadio ? deadlineRadio.value : "all";
 
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   let specificTextMatchesFound = false;
 
+  // STEP 1: Main Filter Loop
   const filtered = excelData.filter(r => {
-    // 1. If a user typed a keyword and it doesn't match, drop it immediately
     if (keywordInput && !keywordMatchesMulti(r, keywordInput)) return false;
-
-    // 2. Mark that a match was found (or that we are displaying the default database rows)
     specificTextMatchesFound = true;
 
-    // 3. General calls are always shown by default unless filtered out by a keyword above
-    if (r["Scientific Domain"] && r["Scientific Domain"].trim().toLowerCase() === "general") {
-      // NOTE: If you want general calls to also be filtered by deadlines, 
-      // replace "return true;" with a blank spacer so it falls down into the deadline logic below!
-      return true; 
+    // Isolate structural domains
+    const isGeneralCall = r["Scientific Domain"] && r["Scientific Domain"].trim().toLowerCase() === "general";
+    if (!isGeneralCall) {
+      if (selectedDomains.size && !selectedDomains.has(r["Scientific Domain"])) return false;
+      if (selectedSpecificFields.size) {
+        if (!r["Specific Disciplines"]) return false;
+        const fields = r["Specific Disciplines"].split(";").map(f => f.trim());
+        if (!fields.some(f => selectedSpecificFields.has(f))) return false;
+      }
     }
 
-    // 4. If Broad Domain buttons are selected, verify the call matches one of them
-    if (selectedDomains.size && !selectedDomains.has(r["Scientific Domain"])) return false;
-    
-    // 5. If Specific Discipline buttons are selected, verify the call matches at least one
-    if (selectedSpecificFields.size) {
-      if (!r["Specific Disciplines"]) return false;
-      const fields = r["Specific Disciplines"].split(";").map(f => f.trim());
-      if (!fields.some(f => selectedSpecificFields.has(f))) return false;
-    }
-    
-    // 6. Dynamic Deadline Evaluation Check (Adaptive Multi-Date Engine)
+    // STEP 2: Chronological Deadline Filtering Engine
     const rawDeadline = r["Deadline(s)"] || r["deadline(s)"] || r["Deadline"] || r["deadline"];
     if (deadlineFilterValue !== "all") {
-      if (!rawDeadline) return false;
+      if (!rawDeadline) return false; // Hide open/continuous when looking for explicit ranges
 
       let validDatesFound = [];
-      
-      // Split by semicolon to support calls with multiple deadlines
-      const deadlineStrings = String(rawDeadline).split(';').map(s => s.trim());
+      let deadlineStrings = [];
+
+      if (rawDeadline instanceof Date) {
+        deadlineStrings.push(rawDeadline.toLocaleDateString("en-GB"));
+      } else {
+        deadlineStrings = String(rawDeadline).split(';').map(s => s.trim());
+      }
 
       deadlineStrings.forEach(str => {
         let parsedDate = null;
-        
         if (str.includes('-')) {
-          // Handles YYYY-MM-DD
           parsedDate = new Date(str);
         } else if (str.includes('/')) {
-          // Handles DD/MM/YYYY with corrected index positioning
-          const dateParts = str.split('/');
-          if (dateParts.length === 3) {
-            const day = parseInt(dateParts, 10);
-            const month = parseInt(dateParts, 10) - 1; // JS months are 0-11
-            const year = parseInt(dateParts, 10);
-            parsedDate = new Date(year, month, day);
+          const bits = str.split('/');
+          if (bits.length === 3) {
+            parsedDate = new Date(parseInt(bits, 10), parseInt(bits, 10) - 1, parseInt(bits, 10));
           }
         }
 
@@ -775,63 +772,108 @@ function updateCalls() {
         }
       });
 
-      // Filter out past dates so we only evaluate active upcoming deadlines
+      // Isolate active milestones
       const upcomingDates = validDatesFound.filter(d => d.getTime() >= today.getTime());
       if (upcomingDates.length === 0) return false;
 
-      // Find the closest target deadline
-      const targetDate = new Date(Math.min(...upcomingDates.map(d => d.getTime())));
-      const msDifference = targetDate.getTime() - today.getTime();
+      const closestDate = new Date(Math.min(...upcomingDates.map(d => d.getTime())));
+      const msDifference = closestDate.getTime() - today.getTime();
+      const threeMonths = 3 * 30 * 24 * 60 * 60 * 1000;
+      const sixMonths = 6 * 30 * 24 * 60 * 60 * 1000;
+      const twelveMonths = 12 * 30 * 24 * 60 * 60 * 1000;
 
-      // Apply chronological conditional ranges
-      if (deadlineFilterValue === "3m" && msDifference > (3 * 30 * 24 * 60 * 60 * 1000)) return false;
-      if (deadlineFilterValue === "6m" && msDifference > (6 * 30 * 24 * 60 * 60 * 1000)) return false;
-      if (deadlineFilterValue === "6-12m" && (msDifference <= (6 * 30 * 24 * 60 * 60 * 1000) || msDifference > (12 * 30 * 24 * 60 * 60 * 1000))) return false;
-      if (deadlineFilterValue === "1y" && msDifference <= (12 * 30 * 24 * 60 * 60 * 1000)) return false;
+      if (deadlineFilterValue === "3m" && msDifference > threeMonths) return false;
+      if (deadlineFilterValue === "6m" && msDifference > sixMonths) return false;
+      if (deadlineFilterValue === "6-12m" && (msDifference <= sixMonths || msDifference > twelveMonths)) return false;
+      if (deadlineFilterValue === "1y" && msDifference <= twelveMonths) return false;
     }
 
     return true;
   });
 
+  // Sort components by hit score matching keywords
   filtered.sort((a, b) => countKeywordMatches(b, keywordInput) - countKeywordMatches(a, keywordInput));
 
-  const renderCall = (r, targetContainer) => {
+  const activeCalls = [];
+  const expiredCalls = [];
+
+  // STEP 3: Route Active vs Expired Rows
+  filtered.forEach(r => {
+    const rawDeadline = r["Deadline(s)"] || r["deadline(s)"] || r["Deadline"];
+    if (!rawDeadline) {
+      activeCalls.push(r);
+      return;
+    }
+
+    let hasUpcomingDeadline = false;
+    let hasValidDates = false;
+    let deadlineStrings = [];
+    
+    if (rawDeadline instanceof Date) {
+      deadlineStrings.push(rawDeadline.toLocaleDateString("en-GB"));
+    } else {
+      deadlineStrings = String(rawDeadline).split(';').map(s => s.trim());
+    }
+
+    deadlineStrings.forEach(str => {
+      let deadlineDate = null;
+      if (str.includes('-')) {
+        deadlineDate = new Date(str);
+      } else if (str.includes('/')) {
+        const parts = str.split('/');
+        if (parts.length === 3) {
+          deadlineDate = new Date(parseInt(parts, 10), parseInt(parts, 10) - 1, parseInt(parts, 10));
+        }
+      }
+
+      if (deadlineDate && !isNaN(deadlineDate.getTime())) {
+        hasValidDates = true;
+        deadlineDate.setHours(0, 0, 0, 0);
+        if (deadlineDate.getTime() >= today.getTime()) {
+          hasUpcomingDeadline = true;
+        }
+      }
+    });
+
+    if (hasValidDates && !hasUpcomingDeadline) {
+      expiredCalls.push(r);
+    } else {
+      activeCalls.push(r);
+    }
+  });
+
+  document.getElementById("calls-title").textContent = `Active Calls (${activeCalls.length})`;
+  document.getElementById("expired-calls-title").textContent = `Expired Calls (${expiredCalls.length})`;
+
+  // STEP 4: Render Thin Cards
+  const renderCall = (r, targetContainer, isExpired) => {
     const score = countKeywordMatches(r, keywordInput);
     const btn = document.createElement("button");
     const isGeneral = r["Scientific Domain"] && r["Scientific Domain"].trim().toLowerCase() === "general";
-    
-    // Clean, compact button design
-    btn.className = `w-full text-left p-3 bg-white border border-slate-200/80 rounded-xl transition shadow-sm mb-2 flex flex-col gap-1 focus:outline-none hover:border-slate-300 hover:bg-slate-50/50 text-slate-700`;
+    const borderAccent = (isGeneral && !isExpired) ? 'border-l-4 border-l-purple-500 pl-2' : '';
 
-    // Process Call ID or fallback space to keep structure intact
+    btn.className = `w-full text-left p-3 bg-white border border-slate-200/80 rounded-xl transition shadow-sm mb-2 flex flex-col gap-1 focus:outline-none hover:border-slate-300 hover:bg-slate-50/50 text-slate-700 ${borderAccent}
+      ${isExpired ? 'bg-gray-50 border-gray-200 text-gray-400' : ''}`;
+
     const callIdHTML = r["Call ID"] 
       ? `<span class="font-bold text-slate-400 text-[10px] tracking-tight uppercase">${r["Call ID"]}</span>` 
       : `<span></span>`;
     
     let badgeHTML = "";
     if (keywordInput && score > 0) {
-      badgeHTML = `<span class="text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-100 px-2 py-0.5 rounded-md whitespace-nowrap">Hits: ${score}</span>`;
+      badgeHTML = `<span class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full whitespace-nowrap">Matches: ${score}</span>`;
     } else if (isGeneral) {
-      badgeHTML = `<span class="text-[10px] bg-purple-50 text-purple-600 border border-purple-100 font-bold px-2 py-0.5 rounded-md whitespace-nowrap">General</span>`;
+      badgeHTML = `<span class="text-[10px] bg-purple-100 text-purple-700 font-semibold px-2 py-0.5 rounded-full whitespace-nowrap">General Call</span>`;
     }
 
-    // Capture column fields strings safely (supports multi-deadlines)
     let deadlineRawString = "";
     const lookForField = r["Deadline(s)"] || r["deadline(s)"] || r["Deadline"] || r["deadline"];
-    
     if (lookForField) {
-      if (lookForField instanceof Date) {
-        deadlineRawString = lookForField.toLocaleDateString("en-GB");
-      } else {
-        deadlineRawString = String(lookForField).trim();
-      }
+      deadlineRawString = (lookForField instanceof Date) ? lookForField.toLocaleDateString("en-GB") : String(lookForField).trim();
     } else {
       deadlineRawString = "Continuous / Open";
     }
 
-    // NEW ULTRA-COMPACT 2-LINE LAYOUT
-    // Row 1: Call ID on the left, Muted Deadline string on the right
-    // Row 2: Call Title on the left, Badge hits on the right
     btn.innerHTML = `
       <div class="w-full flex justify-between items-center gap-4 border-b border-slate-50 pb-0.5">
         ${callIdHTML}
@@ -854,10 +896,12 @@ function updateCalls() {
     targetContainer.appendChild(btn);
   };
 
-  filtered.forEach(r => renderCall(r, container));
+  activeCalls.forEach(r => renderCall(r, container, false));
+  expiredCalls.forEach(r => renderCall(r, expiredContainer, true));
 
-  document.getElementById("calls-title").textContent = `Opportunities Available (${filtered.length})`;
-  document.getElementById("expired-calls-title").textContent = `Archive Records (0)`;
+  if (keywordInput && !specificTextMatchesFound) {
+    showNoCallsPopup();
+  }
 }
 
 /* ================= FILTER RESET LOGIC ================= */
