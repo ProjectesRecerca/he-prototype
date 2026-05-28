@@ -9,9 +9,7 @@
   <title>GrantRadar</title>
 
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-
   <script src="https://cdn.tailwindcss.com"></script>
-
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
   <style>
@@ -21,255 +19,240 @@
       font-size: 0.875rem; 
     }
 
-    /* Section Titles (Domain, Specific Discipline, Active Calls) */
+    /* Section Titles Hierarchy Optimization */
     h3 {
-      font-size: 0.875rem !important; 
+      font-size: 0.75rem !important; 
       font-weight: 700 !important;   
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      color: #111827; 
+      color: #4b5563; 
     }
 
-    /* Right Panel "Call details" Header */
+    /* Sticky Details Specific Typography overrides */
     #call-details-panel h3 {
       font-size: 1.125rem !important; 
       font-weight: 800 !important;   
       text-transform: none !important; 
-      color: #000000 !important;      
+      color: #111827 !important;      
     }
 
-    /* Standardizing Buttons */
-    #domain-container button, 
-    #field-container button {
-      font-size: 0.875rem !important; 
-      font-weight: 500;
-      padding: 0.375rem 0.75rem;
+    /* Smooth custom scrollbars for intense content modules */
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
     }
-
-    /* Standardizing Labels in the Detail Panel */
-    #dynamic-details-container strong,
-    #summary-section strong {
-      font-size: 0.875rem !important;
-      font-weight: 700;
-      color: #111827;
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
     }
-    
-    #detail-summary {
-      font-size: 0.875rem;
-      line-height: 1.5;
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background-color: #cbd5e1;
+      border-radius: 3px;
     }
   </style>
 </head>
 
-<body class="bg-gray-100 min-h-screen">
+<body class="bg-slate-50 min-h-screen text-slate-700 antialiased">
 
-  <div id="more-info-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
-    <div class="bg-white rounded-xl shadow-lg max-w-3xl w-full max-h-[85vh] flex flex-col">
-      <div class="px-6 py-4 border-b">
-        <h3 class="text-lg font-bold">Call information</h3>
+  <div id="more-info-modal" class="fixed inset-0 bg-slate-900/50 hidden z-50 flex items-center justify-center backdrop-blur-sm">
+    <div class="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[85vh] flex flex-col border border-slate-200">
+      <div class="px-6 py-4 border-b border-slate-100">
+        <h3 class="text-lg font-bold text-slate-900 normal-case tracking-normal">Call Information</h3>
       </div>
-
-      <div class="px-6 py-4 overflow-y-auto space-y-6 flex-1">
+      <div class="px-6 py-4 overflow-y-auto space-y-6 flex-1 custom-scrollbar">
         <div>
-          <h4 class="font-semibold text-base mb-2">Expected Outcomes</h4>
-          <p id="modal-expected-outcomes" class="text-sm text-gray-700 leading-relaxed text-justify"></p>
+          <h4 class="font-semibold text-slate-900 text-sm mb-1.5">Expected Outcomes</h4>
+          <p id="modal-expected-outcomes" class="text-xs text-slate-600 leading-relaxed text-justify"></p>
         </div>
-
         <div>
-          <h4 class="font-semibold text-base mb-2">Scope</h4>
-          <p id="modal-scope" class="text-sm text-gray-700 leading-relaxed text-justify"></p>
+          <h4 class="font-semibold text-slate-900 text-sm mb-1.5">Scope</h4>
+          <p id="modal-scope" class="text-xs text-slate-600 leading-relaxed text-justify"></p>
         </div>
-
-        <div id="modal-keywords" class="text-gray-500 italic text-xs mt-2 mb-4"></div>
+        <div id="modal-keywords" class="text-slate-400 italic text-xs pt-2 border-t border-slate-100"></div>
       </div>
-
-      <div class="px-6 py-4 border-t flex flex-wrap gap-2 justify-between items-center bg-white">
-        <button id="close-modal-btn" class="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400">
+      <div class="px-6 py-4 border-t border-slate-100 flex flex-wrap gap-2 justify-between items-center bg-slate-50 rounded-b-xl">
+        <button id="close-modal-btn" class="px-4 py-2 bg-white border border-slate-200 text-slate-700 text-xs font-semibold rounded-lg hover:bg-slate-100 transition shadow-sm">
           Close
         </button>
-
         <div class="flex gap-2">
-          <a id="modal-website-btn" target="_blank" class="hidden px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 transition">
+          <a id="modal-website-btn" target="_blank" class="hidden px-4 py-2 bg-emerald-600 text-white text-xs font-semibold rounded-lg hover:bg-emerald-700 transition shadow-sm">
             Visit Official Website Call
           </a>
-          <button id="contact-us-btn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-            Contact us
+          <button id="contact-us-btn" class="px-4 py-2 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition shadow-sm">
+            Contact Us
           </button>
         </div>
       </div>
     </div>
   </div>
 
-  <div
-    id="no-calls-popup"
-    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50"
-  >
-    <div class="bg-white p-6 rounded-xl shadow-xl w-96 text-center border border-gray-100">
-      <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl font-bold">
+  <div id="no-calls-popup" class="fixed inset-0 bg-slate-900/50 flex items-center justify-center hidden z-50 backdrop-blur-sm">
+    <div class="bg-white p-6 rounded-xl shadow-xl w-96 text-center border border-slate-100">
+      <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl font-bold">
         !
       </div>
-      <h4 class="font-bold text-gray-900 text-base mb-1">No Direct Matches Found</h4>
-      <p class="text-sm text-gray-600 mb-4 leading-relaxed">
+      <h4 class="font-bold text-slate-900 text-base mb-1">No Direct Matches Found</h4>
+      <p class="text-xs text-slate-600 mb-4 leading-relaxed">
         No specific calls match your chosen keyword(s). However, you can still browse the <strong>"General" calls</strong> displayed in your list, as they are open to all domains.
       </p>
-      <button
-        id="close-popup-btn"
-        class="w-full px-4 py-2 bg-blue-600 text-white font-medium text-sm rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
-      >
+      <button id="close-popup-btn" class="w-full px-4 py-2 bg-blue-600 text-white font-semibold text-xs rounded-lg hover:bg-blue-700 transition shadow-sm">
         OK
       </button>
     </div>
   </div>
 
-
-  <div id="login" class="min-h-screen flex items-center justify-center">
-    <div class="bg-white p-10 rounded-xl shadow-lg text-center w-full max-w-md">
-      <img src="./logo.png" class="mx-auto mb-6 h-60" alt="Logo" />
-      <p class="text-sm text-gray-400 mb-6">Developed by the Research Service</p>
-
+  <div id="login" class="min-h-screen flex items-center justify-center bg-slate-50">
+    <div class="bg-white p-10 rounded-2xl shadow-sm border border-slate-200 text-center w-full max-w-md">
+      <img src="./logo.png" class="mx-auto mb-6 h-48 object-contain" alt="Logo" />
+      <p class="text-xs font-medium text-slate-400 uppercase tracking-wider mb-6">Developed by the Research Service</p>
       <div id="g_id_onload"
            data-client_id="871231787095-ug0o6pu89sn0t6i97s0nagakohighot8.apps.googleusercontent.com"
            data-callback="handleCredentialResponse"
            data-auto_prompt="false">
       </div>
-
       <div class="flex justify-center">
         <div class="g_id_signin" data-size="large"></div>
       </div>
     </div>
   </div>
 
+  <div id="private" class="hidden max-w-[1600px] mx-auto p-4 lg:p-6">
 
-  <div id="private" class="hidden max-w-7xl mx-auto p-6">
-
-    <div class="flex items-center justify-between mb-8 border-b pb-4">
+    <header class="flex items-center justify-between mb-6 bg-white border border-slate-200/80 rounded-2xl px-6 py-4 shadow-sm">
       <div class="flex items-center">
-        <img src="./LogoGrantRadar.png" class="h-28 object-contain" alt="Grant Radar Logo" />
+        <img src="./LogoGrantRadar.png" class="h-16 object-contain" alt="Grant Radar Logo" />
       </div>
+      <div class="flex items-center gap-4 text-right">
+        <div class="flex flex-col">
+          <h2 class="text-slate-900 font-bold text-sm tracking-tight">Research Service</h2>
+          <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400">Universitat Pompeu Fabra</span>
+        </div>
+        <img src="./logoUPF.png" class="h-12 object-contain border-l pl-4 border-slate-100" alt="UPF Logo" />
+      </div>
+    </header>
 
-      <div class="flex flex-col items-end text-right">
-        <img src="./logoUPF.png" class="h-20 object-contain mb-1" alt="UPF Logo" />
-        <h2 class="text-gray-500 font-small tracking-wide text-[10px] uppercase">
-          Research Service
-        </h2>
-      </div>
-    </div>
-
-    <div class="bg-white rounded-xl shadow p-6 mb-6">
-      <h1 class="text-lg font-bold text-gray-900 mb-1">Welcome to GrantRadar</h1>
-      <div class="text-sm text-gray-600 leading-relaxed space-y-2">
-        <p>Discover European and international funding opportunities aligned with your research interests.</p>
-        <p>Refine your search by scientific domains, specific fields, and/or keywords to find the most relevant calls.</p>
-        <p>Select <strong>More information</strong> to explore the scope and expected outcomes.</p>
-        <p>If a call matches your interest, click <strong>Visit Official Website</strong> or <strong>Contact us</strong> for further information.</p>
-      </div>
+    <div class="bg-gradient-to-r from-slate-900 to-slate-800 rounded-2xl p-6 text-white mb-6 shadow-sm border border-slate-950">
+      <h1 class="text-base font-bold mb-1 tracking-tight text-white">Welcome to GrantRadar Workspace</h1>
+      <p class="text-xs text-slate-300 leading-relaxed max-w-3xl">
+        Discover and monitor European/international funding opportunities aligned with your scientific domain profiles. Refine calls dynamically by selecting disciplines, typing explicit search keys, or exploring cross-cutting general calls.
+      </p>
     </div>                 
-
-    <div class="bg-white rounded-xl shadow p-4 mb-6">
-      <div class="flex flex-col md:flex-row md:items-center gap-4">
-        
-        <div class="w-full md:w-1/4 shrink-0">
-          <h3 class="font-bold text-gray-900 uppercase tracking-wide text-xs">
-            <label for="keyword-input">Type your keywords here</label>
-          </h3>
-          <span class="block text-xs text-gray-400 mt-0.5">
-            Use a semicolon (;) to separate multiple terms.
-          </span>
-        </div>
-
-        <div class="flex flex-1 gap-2 w-full">
-          <input
-            id="keyword-input"
-            type="text"
-            placeholder="e.g., Climate change; Biodiversity; Machine Learning"
-            class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-          />
-          <button
-            id="search-btn"
-            class="px-5 py-2 bg-blue-600 text-white font-medium text-sm rounded-lg hover:bg-blue-700 transition-colors shrink-0 shadow-sm"
-          >
-            Search
-          </button>
-          <button
-            id="search-clear-btn"
-            class="px-5 py-2 bg-gray-200 text-gray-700 font-medium text-sm rounded-lg hover:bg-gray-300 transition-colors shrink-0"
-          >
-            Clear
-          </button>
-        </div>
-
-      </div>
-    </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
 
-      <div class="lg:col-span-3 flex flex-col gap-6">
+      <div class="lg:col-span-1 flex flex-col gap-4">
+        
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-4">
+          <div>
+            <h3 class="font-bold text-xs text-slate-900 uppercase tracking-wider mb-2">Keyword Search</h3>
+            <div class="flex flex-col gap-2">
+              <input
+                id="keyword-input"
+                type="text"
+                placeholder="Climate change; Machine Learning..."
+                class="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-slate-50/50"
+              />
+              <span class="text-[10px] text-slate-400 leading-tight">Separate keys with a semicolon (;).</span>
+              <div class="grid grid-cols-2 gap-2 mt-1">
+                <button id="search-btn" class="w-full py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-md transition shadow-sm">
+                  Run Query
+                </button>
+                <button id="search-clear-btn" class="w-full py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium text-xs rounded-md transition">
+                  Reset Form
+                </button>
+              </div>
+            </div>
+          </div>
 
-        <div class="bg-white rounded-xl shadow p-4">
-          <h3 class="font-bold mb-3">Scientific Domain</h3>
-          <p class="text-xs text-gray-500 mb-3">Filter calls by broad scientific domains.</p>
-          <div id="domain-container" class="flex flex-wrap gap-2"></div>
+          <hr class="border-slate-100" />
+
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <h3 class="font-bold text-xs text-slate-900 uppercase tracking-wider">Filter by Deadline</h3>
+              <span class="text-[9px] font-bold uppercase bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">Future Plugin</span>
+            </div>
+            <div class="p-3 bg-slate-50 border border-dashed border-slate-200 rounded-lg text-center">
+              <span class="text-[11px] text-slate-400 italic">Deadline range configuration framework mapped here.</span>
+            </div>
+          </div>
+
+          <hr class="border-slate-100" />
+
+          <div>
+            <h3 class="font-bold text-xs text-slate-900 uppercase tracking-wider mb-1">Scientific Domains</h3>
+            <p class="text-[11px] text-slate-400 mb-2">Select broad parent parameters.</p>
+            <div id="domain-container" class="flex flex-col gap-1"></div>
+          </div>
         </div>
 
-        <div class="bg-white rounded-xl shadow p-4">
-          <h3 class="font-bold mb-3"> Disciplines</h3>
-          <p class="text-xs text-gray-500 mb-3">Select one or more specific disciplines.</p>
-          <div id="field-container" class="flex flex-wrap gap-2"></div>
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+          <h3 class="font-bold text-xs text-slate-900 uppercase tracking-wider mb-1">Target Disciplines</h3>
+          <p class="text-[11px] text-slate-400 mb-3">Refine taxonomy sub-categories dynamically.</p>
+          <div id="field-container" class="space-y-4"></div>
         </div>
+      </div>
 
-        <div id="calls-section" class="bg-white rounded-xl shadow p-4 relative">
-          <h3 id="calls-title" class="font-bold mb-3">Active Calls (0)</h3>
-          <p class="text-xs mb-3 text-gray-500">Browse available funding opportunities matching your current filters.</p>
-          <div id="calls-container" class="flex flex-col gap-2"></div>
+      <div class="lg:col-span-2 flex flex-col gap-4">
+        
+        <div id="calls-section" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 min-h-[500px] flex flex-col">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
+            <div>
+              <h3 id="calls-title" class="font-bold text-sm text-slate-900 uppercase tracking-normal normal-case">Active Calls (0)</h3>
+              <p class="text-[11px] text-slate-400">Select an item below to track granular metadata in your sidebar workspace.</p>
+            </div>
+          </div>
+
+          <div id="calls-container" class="flex-1 space-y-2"></div>
           
-          <button id="scroll-top-btn" class="hidden fixed bottom-8 right-8 w-10 h-10 bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-700 transition" title="Scroll to top">
+          <button id="scroll-top-btn" class="hidden fixed bottom-6 right-6 w-10 h-10 bg-slate-900 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-slate-800 transition z-40 border border-slate-800" title="Scroll to top">
             &#8679;
           </button>
         </div>
 
-      <div class="mt-6 border border-gray-200 rounded-lg bg-gray-50 overflow-hidden">
-        <button type="button" onclick="toggleExpiredCalls()" class="w-full flex items-center justify-between p-3 bg-gray-100 hover:bg-gray-200 transition-colors focus:outline-none">
-          <h3 id="expired-calls-title" class="text-xs font-bold uppercase tracking-wider text-gray-700 m-0">
-            Expired Calls (0)
-          </h3>
-          <svg id="expired-arrow" class="w-4 h-4 text-gray-500 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="transform: rotate(0deg);">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-
-        <div id="expired-calls-wrapper" class="hidden p-3 bg-white border-t border-gray-200">
-          <div id="expired-calls-container"></div>
+        <div class="border border-slate-200 rounded-2xl bg-slate-50 overflow-hidden shadow-sm">
+          <button type="button" onclick="toggleExpiredCalls()" class="w-full flex items-center justify-between p-3.5 bg-slate-100/60 hover:bg-slate-100 transition focus:outline-none">
+            <h3 id="expired-calls-title" class="text-xs font-bold uppercase tracking-wider text-slate-600 m-0">
+              Expired Archive Records (0)
+            </h3>
+            <svg id="expired-arrow" class="w-4 h-4 text-slate-400 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          <div id="expired-calls-wrapper" class="hidden p-3 bg-white border-t border-slate-100">
+            <div id="expired-calls-container" class="space-y-2"></div>
+          </div>
         </div>
-      </div>
-
       </div> 
-      <div id="call-details-panel" class="lg:col-span-1 sticky top-6 h-fit">
-        <div class="bg-white rounded-xl shadow p-4">
-          <h3 class="text-lg font-semibold mb-2">Call details</h3>
-          
-          <div id="dynamic-details-container" class="text-sm space-y-1 mb-4"></div>
 
-          <div id="summary-section" class="mt-4 border-t pt-2">
-            <strong class="text-sm">Summary</strong>
-            <p id="detail-summary" class="mt-1 text-justify text-sm text-gray-700"></p>
-            <p id="detail-ssh-keywords" class="mt-2 text-justify text-xs italic text-gray-500"></p>
+      <aside id="call-details-panel" class="lg:col-span-1 lg:sticky lg:top-6 max-h-[calc(100vh-3rem)] overflow-y-auto custom-scrollbar">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex flex-col">
+          <h3 class="text-base font-bold text-slate-900 border-b border-slate-100 pb-2 mb-3">Call Inspector</h3>
+          
+          <div id="dynamic-details-container" class="text-xs space-y-2.5 mb-4 text-slate-600">
+            <div class="p-4 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-center text-slate-400 italic">
+              Select any call card from the center row pipeline to examine administrative records, schedules, eligibility fields, and programmatic scopes.
+            </div>
           </div>
 
-          <div class="flex flex-col gap-2 pt-4">
-            <button id="more-info-btn" class="hidden px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-              More information
+          <div id="summary-section" class="hidden border-t border-slate-100 pt-3">
+            <strong class="text-xs font-bold text-slate-900 uppercase tracking-wider block mb-1">Abstract Summary</strong>
+            <p id="detail-summary" class="text-xs text-slate-600 leading-relaxed text-justify bg-slate-50 p-3 rounded-xl border border-slate-100 max-h-60 overflow-y-auto custom-scrollbar"></p>
+            <p id="detail-ssh-keywords" class="mt-2 text-justify text-[11px] italic font-medium text-slate-400 leading-normal"></p>
+          </div>
+
+          <div class="flex flex-col gap-2 mt-4 pt-3 border-t border-slate-100">
+            <button id="more-info-btn" class="hidden w-full px-4 py-2 bg-blue-600 text-white font-semibold text-xs rounded-lg hover:bg-blue-700 transition shadow-sm">
+              Explore Internal Scope Details
             </button>
-            <button id="clear-btn" class="px-4 py-1 bg-gray-300 text-gray-800 rounded hover:bg-gray-400">
-              Clear
+            <button id="clear-btn" class="w-full px-4 py-1.5 bg-slate-100 text-slate-600 hover:bg-slate-200 font-medium text-xs rounded-lg transition">
+              Clear Workspace Selection
             </button>
           </div>
         </div>
-      </div>
+      </aside>
+
      </div> 
     </div> 
   </body>
 </html>
-
 
 <script>
 /* ================= GLOBAL CONFIGURATION & STATE ================= */
@@ -329,62 +312,58 @@ function renderDomain() {
   [...new Set(excelData.map(r => r["Scientific Domain"]).filter(Boolean))]
     .sort()
     .forEach(d => {
-      const b = document.createElement("button");
-      b.textContent = d;
-      b.className = "px-3 py-1 border rounded";
+      const label = document.createElement("label");
+      label.className = "flex items-center gap-2 px-2.5 py-1.5 hover:bg-slate-50 rounded-lg cursor-pointer transition text-xs font-medium text-slate-700";
 
-      // restaurar estado visual
-      if (selectedDomains.has(d)) {
-        b.classList.add("bg-blue-600", "text-white");
-      }
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.className = "rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5";
+      cb.checked = selectedDomains.has(d);
 
-      b.onclick = () => {
-        if (selectedDomains.has(d)) {
-          selectedDomains.delete(d);
-          b.classList.remove("bg-blue-600", "text-white");
-        } else {
+      cb.onchange = () => {
+        if (cb.checked) {
           selectedDomains.add(d);
-          b.classList.add("bg-blue-600", "text-white");
+        } else {
+          selectedDomains.delete(d);
         }
-
         renderSpecificFields();
         updateCalls();
       };
 
-      c.appendChild(b);
+      label.appendChild(cb);
+      label.appendChild(document.createTextNode(d));
+      c.appendChild(label);
     });
 }
-
 
 /* ================= SPECIFIC DISCIPLINES (CATEGORIZED) ================= */
 function renderSpecificFields() {
   const container = document.getElementById("field-container");
   container.innerHTML = "";
-  container.className = "flex flex-col gap-6";
+  container.className = "space-y-4";
 
-// Replace the old categories prefix array with this:
   const categories = [
-      { 
-        label: "Physical Sciences & Engineering", 
-        allowed: ["Math", "Physics", "Chemistry", "Computer Science & AI", "ICT & Web Engineering", "Materials", "Earth Sciences"], 
-        borderClass: "border-green-200", textClass: "text-green-700", btnBorder: "hover:border-green-300", btnText: "hover:text-green-700", bgActive: "bg-green-600", borderActive: "border-green-600", btnToggle: "border-green-300 text-green-600 hover:bg-green-50"
-      },
-      { 
-        label: "Life Sciences", 
-        allowed: ["Biomedicine", "Molecular & Cell Biology", "Genetics", "Neurosciences", "Public Health", "Biotechnology"], 
-        borderClass: "border-blue-200", textClass: "text-blue-700", btnBorder: "hover:border-blue-300", btnText: "hover:text-blue-700", bgActive: "bg-blue-600", borderActive: "border-blue-600", btnToggle: "border-blue-300 text-blue-600 hover:bg-blue-50"
-      },
-      { 
-        label: "Social Sciences & Humanities", 
-        allowed: ["Economics", "Business & Markets", "Law", "Regulation & Justice", "Political Science & Public Policy", "Sociology & Social Structures", "Media & Communication", "Language, Linguistics & Translation", "History", "Philosophy & Cultural Studies"], 
-        borderClass: "border-indigo-200", textClass: "text-indigo-700", btnBorder: "hover:border-indigo-300", btnText: "hover:text-indigo-700", bgActive: "bg-indigo-600", borderActive: "border-indigo-600", btnToggle: "border-indigo-300 text-indigo-600 hover:bg-indigo-50"
-      },
-      {
-        label: "General",
-        allowed: [],
-        borderClass: "border-purple-200", textClass: "text-purple-700", btnBorder: "hover:border-purple-300", btnText: "hover:text-purple-700", bgActive: "bg-purple-600", borderActive: "border-purple-600", btnToggle: "border-purple-300 text-purple-600 hover:bg-purple-50"
-      }
-    ];
+    { 
+      label: "Physical Sciences & Engineering", 
+      allowed: ["Math", "Physics", "Chemistry", "Computer Science & AI", "ICT & Web Engineering", "Materials", "Earth Sciences"], 
+      textClass: "text-emerald-700 bg-emerald-50 border-emerald-100", borderActive: "border-emerald-600 bg-emerald-600 text-white"
+    },
+    { 
+      label: "Life Sciences", 
+      allowed: ["Biomedicine", "Molecular & Cell Biology", "Genetics", "Neurosciences", "Public Health", "Biotechnology"], 
+      textClass: "text-blue-700 bg-blue-50 border-blue-100", borderActive: "border-blue-600 bg-blue-600 text-white"
+    },
+    { 
+      label: "Social Sciences & Humanities", 
+      allowed: ["Economics", "Business & Markets", "Law", "Regulation & Justice", "Political Science & Public Policy", "Sociology & Social Structures", "Media & Communication", "Language, Linguistics & Translation", "History", "Philosophy & Cultural Studies"], 
+      textClass: "text-indigo-700 bg-indigo-50 border-indigo-100", borderActive: "border-indigo-600 bg-indigo-600 text-white"
+    },
+    {
+      label: "General",
+      allowed: [],
+      textClass: "text-purple-700 bg-purple-50 border-purple-100", borderActive: "border-purple-600 bg-purple-600 text-white"
+    }
+  ];
 
   let rows = selectedDomains.size
     ? excelData.filter(r => selectedDomains.has(r["Scientific Domain"]))
@@ -403,19 +382,19 @@ function renderSpecificFields() {
 
     if (catFields.length > 0) {
       const section = document.createElement("div");
-      section.className = "w-full";
+      section.className = "space-y-2";
       
-      // Category Header with Toggle
       const headerFlex = document.createElement("div");
-      headerFlex.className = `flex justify-between items-center mb-3 pb-1 border-b ${cat.borderClass}`;
+      headerFlex.className = `flex justify-between items-center pb-1 border-b border-slate-100`;
+      
       const headerTitle = document.createElement("h4");
-      headerTitle.className = `text-xs font-bold uppercase tracking-wider ${cat.textClass}`;
+      headerTitle.className = `text-[10px] font-bold uppercase tracking-wider text-slate-500`;
       headerTitle.textContent = cat.label;
 
       const toggleBtn = document.createElement("button");
       const isAllSelected = catFields.every(f => selectedSpecificFields.has(f));
-      toggleBtn.textContent = isAllSelected ? "Deselect All" : "Select All";
-      toggleBtn.className = `text-[10px] font-bold uppercase px-2 py-1 rounded border ${cat.btnToggle} transition-colors`;      
+      toggleBtn.textContent = isAllSelected ? "Clear All" : "Select All";
+      toggleBtn.className = `text-[9px] font-bold uppercase text-slate-400 hover:text-blue-600 transition`;      
       toggleBtn.onclick = () => {
         if (isAllSelected) {
           catFields.forEach(f => selectedSpecificFields.delete(f));
@@ -430,49 +409,46 @@ function renderSpecificFields() {
       headerFlex.appendChild(toggleBtn);
       section.appendChild(headerFlex);
 
-      const buttonWrapper = document.createElement("div");
-      buttonWrapper.className = "flex flex-wrap gap-2";
+      const fieldList = document.createElement("div");
+      fieldList.className = "space-y-1 max-h-32 overflow-y-auto custom-scrollbar pr-1";
 
       catFields.forEach(f => {
-        const b = document.createElement("button");
-        const cleanLabel = f.replace(/^[A-Z]{2,3}\d+\s*/, ""); 
-        b.textContent = cleanLabel;
-        // Consistent button styling
-        b.className = `px-3 py-1.5 border rounded text-xs font-medium transition-all duration-200`;
+        const label = document.createElement("label");
+        label.className = "flex items-center gap-2 px-1.5 py-1 text-xs hover:bg-slate-50 rounded cursor-pointer text-slate-600";
 
-        if (selectedSpecificFields.has(f)) {
-          b.classList.add(cat.bgActive, "text-white", cat.borderActive, "shadow-sm");
-        } else {
-          b.classList.add("bg-white", "text-gray-600", "border-gray-200", cat.btnBorder, cat.btnText);
-        }
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.className = "rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-3 h-3";
+        cb.checked = selectedSpecificFields.has(f);
 
-        b.onclick = () => {
-          if (selectedSpecificFields.has(f)) {
-            selectedSpecificFields.delete(f);
-          } else {
+        cb.onchange = () => {
+          if (cb.checked) {
             selectedSpecificFields.add(f);
+          } else {
+            selectedSpecificFields.delete(f);
           }
-          renderSpecificFields(); 
           updateCalls();
         };
 
-        buttonWrapper.appendChild(b);
+        label.appendChild(cb);
+        const cleanLabel = f.replace(/^[A-Z]{2,3}\d+\s*/, "");
+        label.appendChild(document.createTextNode(cleanLabel));
+        fieldList.appendChild(label);
       });
 
-      section.appendChild(buttonWrapper);
+      section.appendChild(fieldList);
       container.appendChild(section);
     }
   });
 }
-
 
 /* ================= KEYWORD SEARCH ================= */
 function keywordMatchesMulti(call, userInput) {
   if (!userInput) return true;
 
   const haystack = [
-    call["Call ID"] || "",      // Added
-    call["Call Title"] || "",    // Added
+    call["Call ID"] || "",
+    call["Call Title"] || "",
     call["Keywords"] || "",
     call["SSH Keywords"] || "",
     call["Summary"] || "",
@@ -505,26 +481,23 @@ function highlightKeywords(text, userInput) {
     .filter(Boolean);
 
   terms.forEach(term => {
-    // Escapar caracteres regex
     const safeTerm = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
     const regex = new RegExp(`(${safeTerm})`, "gi");
     result = result.replace(
       regex,
-      `<mark class="bg-yellow-200 px-1 rounded">$1</mark>`
+      `<mark class="bg-yellow-200 px-0.5 rounded text-slate-900">$1</mark>`
     );
   });
 
   return result;
 }
 
-
 function countKeywordMatches(call, userInput) {
   if (!userInput) return 0;
 
   const haystack = [
-    call["Call ID"] || "",      // Added for consistency
-    call["Call Title"] || "",    // Added for consistency
+    call["Call ID"] || "",
+    call["Call Title"] || "",
     call["Keywords"] || "",
     call["SSH Keywords"] || "",
     call["Summary"] || "",
@@ -541,7 +514,6 @@ function countKeywordMatches(call, userInput) {
     .filter(Boolean);
 
   let count = 0;
-
   terms.forEach(term => {
     const matches = haystack.match(new RegExp(term, "g"));
     if (matches) count += matches.length;
@@ -550,21 +522,18 @@ function countKeywordMatches(call, userInput) {
   return count;
 }
 
-
 document.getElementById("search-btn").addEventListener("click", () => {
   updateCalls();
   scrollToCalls();
 });
 
-document
-  .getElementById("keyword-input")
-  .addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      updateCalls();
-      scrollToCalls();
-    }
-  });
+document.getElementById("keyword-input").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    updateCalls();
+    scrollToCalls();
+  }
+});
 
 function scrollToCalls() {
   const callsBlock = document.getElementById("calls-section");
@@ -573,48 +542,44 @@ function scrollToCalls() {
   }
 }
 
-// Helper to remove references like [1], [1,2], [10, 15]
 function cleanText(text) {
   if (!text) return "";
-  // Regex looks for brackets containing numbers and commas
   return text.replace(/\[\s*\d+(?:,\s*\d+)*\s*\]/g, "");
 }
 
 /* ================= SHOW CALL DETAILS ================= */
-function resetDetailsPanel(message = "Select a call to see its details.") {
-  // Use optional chaining (?.) or check if exists to prevent crashes
+function resetDetailsPanel(message = "Select any call card from the center row pipeline to examine administrative records.") {
   const container = document.getElementById("dynamic-details-container");
-  if (container) container.innerHTML = ""; 
-
-  const summary = document.getElementById("detail-summary");
-  if (summary) summary.textContent = message;
-
-  const ssh = document.getElementById("detail-ssh-keywords");
-  if (ssh) ssh.textContent = "";
+  if (container) {
+    container.innerHTML = `<div class="p-4 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-center text-slate-400 italic">${message}</div>`;
+  }
+  const summarySect = document.getElementById("summary-section");
+  if (summarySect) summarySect.classList.add("hidden");
 
   const infoBtn = document.getElementById("more-info-btn");
   if (infoBtn) infoBtn.classList.add("hidden");
 }
 
 function showCallDetails(r, buttonElement) {
+  const activeClass = ["bg-blue-50/80", "border-blue-400", "ring-1", "ring-blue-400"];
+  
   if (selectedCallButton === buttonElement) {
-    buttonElement.classList.remove("bg-blue-100", "border-blue-500", "text-blue-800");
+    buttonElement.classList.remove(...activeClass);
     selectedCallButton = null;
     resetDetailsPanel();
     return;
   }
 
   if (selectedCallButton) {
-    selectedCallButton.classList.remove("bg-blue-100", "border-blue-500", "text-blue-800");
-    document.getElementById("more-info-btn").classList.add("hidden");
+    selectedCallButton.classList.remove(...activeClass);
   }
 
   selectedCallButton = buttonElement;
-  selectedCallButton.classList.add("bg-blue-100", "border-blue-500", "text-blue-800");
+  selectedCallButton.classList.add(...activeClass);
+  
   const container = document.getElementById("dynamic-details-container");
-  container.innerHTML = ""; // Clear panel
+  container.innerHTML = "";
 
-  // Define fields to show 
   const fields = [
     { label: "Call ID", val: r["Call ID"] },
     { label: "Call Title", val: r["Call Title"] },
@@ -629,25 +594,23 @@ function showCallDetails(r, buttonElement) {
   const keywordInput = document.getElementById("keyword-input").value.trim();
 
   fields.forEach(field => {
-    // Check if info is available (Point 3)
     if (field.val && String(field.val).trim() !== "" && field.val !== "undefined") {
       const div = document.createElement("div");
+      div.className = "pb-1.5 border-b border-slate-100 last:border-0";
       const highlightedVal = highlightKeywords(String(field.val), keywordInput);
-      div.innerHTML = `<strong>${field.label}:</strong> <em>${highlightedVal}</em>`;
+      div.innerHTML = `<span class="text-slate-400 font-semibold uppercase text-[10px] block tracking-wider">${field.label}</span><span class="text-slate-800 text-xs font-medium">${highlightedVal}</span>`;
       container.appendChild(div);
     }
   });
 
-  const summaryElem = document.getElementById("detail-summary");
-  const sshElem = document.getElementById("detail-ssh-keywords");
+  const summarySect = document.getElementById("summary-section");
+  summarySect.classList.remove("hidden");
 
+  const summaryElem = document.getElementById("detail-summary");
   summaryElem.innerHTML = r["Summary"] ? highlightKeywords(r["Summary"], keywordInput) : "No summary available.";
 
-  // Get SSH Keywords and format them
   const sshRaw = r["SSH Keywords"] || ""; 
-  // Only display if data exists
   const sshText = sshRaw ? `SSH Keywords: ${sshRaw}` : "";
-  // Apply highlighting (reuses your existing keyword highlighter)
   document.getElementById("detail-ssh-keywords").innerHTML = highlightKeywords(sshText, keywordInput);
 
   const moreInfoBtn = document.getElementById("more-info-btn");
@@ -660,20 +623,17 @@ function openMoreInfoModal(call) {
   const webBtn = document.getElementById("modal-website-btn");
   modal.classList.remove("hidden");
 
-  // Logic to hide the modal and the website button (cleanup)
   const hideModal = () => {
     modal.classList.add("hidden");
     webBtn.classList.add("hidden");
   };
 
   document.getElementById("close-modal-btn").onclick = hideModal;
-
   document.getElementById("contact-us-btn").onclick = () => {
     hideModal();
     openMoreInfoEmail(call["Call ID"]);
   };
 
-  // Point 4: Show the button JUST when the link is available
   const url = call["Call Website"];
   if (url && String(url).trim().startsWith("http")) {
     webBtn.href = url;
@@ -683,46 +643,31 @@ function openMoreInfoModal(call) {
   }
 
   const keywordInput = document.getElementById("keyword-input").value.trim();
-
-  // 1. Clean the text (remove [1] refs)
   const rawOutcomes = cleanText(call["Expected Outcomes"] || "");
   const rawScope = cleanText(call["Scope"] || "");
 
-  // 2. Highlight keywords in the clean text
-  document.getElementById("modal-expected-outcomes").innerHTML =
-    highlightKeywords(rawOutcomes, keywordInput) || "Not available";
-
-  document.getElementById("modal-scope").innerHTML =
-    highlightKeywords(rawScope, keywordInput) || "Not available";
-
-  document.getElementById("modal-keywords").innerHTML =
-    `<strong>Call Keywords:</strong> ` + highlightKeywords(
-      call["Keywords"] || "No keywords available",
-      keywordInput
-    );
+  document.getElementById("modal-expected-outcomes").innerHTML = highlightKeywords(rawOutcomes, keywordInput) || "Not available";
+  document.getElementById("modal-scope").innerHTML = highlightKeywords(rawScope, keywordInput) || "Not available";
+  document.getElementById("modal-keywords").innerHTML = `<strong>Call Keywords:</strong> ` + highlightKeywords(call["Keywords"] || "No keywords available", keywordInput);
 }
 
 function showNoCallsPopup() {
   const popup = document.getElementById("no-calls-popup");
   if (!popup) return;
-
   popup.classList.remove("hidden");
-
-  document.getElementById("close-popup-btn").onclick = () => {
-    popup.classList.add("hidden");
-  };
+  document.getElementById("close-popup-btn").onclick = () => { popup.classList.add("hidden"); };
 }
 
 /* ================= UPDATE CALLS INTERFACE PIPELINE ================= */
 function updateCalls() {
   const expiredWrapper = document.getElementById("expired-calls-wrapper");
-    const expiredArrow = document.getElementById("expired-arrow");
-    if (expiredWrapper && expiredArrow) {
-      expiredWrapper.classList.add("hidden");
-      expiredArrow.style.transform = "rotate(0deg)";
-    }
+  const expiredArrow = document.getElementById("expired-arrow");
+  if (expiredWrapper && expiredArrow) {
+    expiredWrapper.classList.add("hidden");
+    expiredArrow.style.transform = "rotate(0deg)";
+  }
 
-    const container = document.getElementById("calls-container");
+  const container = document.getElementById("calls-container");
   const expiredContainer = document.getElementById("expired-calls-container");
   
   container.innerHTML = "";
@@ -731,37 +676,26 @@ function updateCalls() {
   resetDetailsPanel();
 
   const keywordInput = document.getElementById("keyword-input").value.trim();
-
-  // Boolean flag tracking if a genuine, specific domain/keyword match occurs
   let specificTextMatchesFound = false;
 
   const filtered = excelData.filter(r => {
-    // 1. If a user typed a keyword and it doesn't match, drop it immediately
     if (keywordInput && !keywordMatchesMulti(r, keywordInput)) return false;
-
-    // 2. Mark that a match was found (or that we are displaying the default database rows)
     specificTextMatchesFound = true;
 
-    // 3. General calls are always shown by default unless filtered out by a keyword above
     if (r["Scientific Domain"] && r["Scientific Domain"].trim().toLowerCase() === "general") {
       return true; 
     }
 
-    // 4. If Broad Domain buttons are selected, verify the call matches one of them
     if (selectedDomains.size && !selectedDomains.has(r["Scientific Domain"])) return false;
     
-    // 5. If Specific Discipline buttons are selected, verify the call matches at least one
     if (selectedSpecificFields.size) {
       if (!r["Specific Disciplines"]) return false;
       const fields = r["Specific Disciplines"].split(";").map(f => f.trim());
       if (!fields.some(f => selectedSpecificFields.has(f))) return false;
     }
-    
-    // If no filters are clicked at all, or if it passes the active filters, keep it!
     return true;
   });
 
-  // Sort by highest keyword hits
   filtered.sort((a, b) => countKeywordMatches(b, keywordInput) - countKeywordMatches(a, keywordInput));
 
   const today = new Date();
@@ -771,94 +705,87 @@ function updateCalls() {
   const expiredCalls = [];
 
   filtered.forEach(r => {
-        // 1. Grab the raw cell data directly from Excel
-        const rawDeadline = r["Deadline(s)"];
-        if (!rawDeadline) {
-          activeCalls.push(r); // Safely keep rolling basis/blank active
-          return;
+    const rawDeadline = r["Deadline(s)"];
+    if (!rawDeadline) {
+      activeCalls.push(r);
+      return;
+    }
+
+    let hasUpcomingDeadline = false;
+    let hasValidDates = false;
+    let deadlineStrings = [];
+    
+    if (rawDeadline instanceof Date) {
+      deadlineStrings.push(rawDeadline.toLocaleDateString("en-GB"));
+    } else {
+      deadlineStrings = String(rawDeadline).split(';').map(s => s.trim());
+    }
+
+    deadlineStrings.forEach(str => {
+      const parts = str.split('/');
+      if (parts.length === 3) {
+        hasValidDates = true;
+        const day = parseInt(parts, 10);
+        const month = parseInt(parts, 10) - 1;
+        const year = parseInt(parts, 10);
+        
+        const deadlineDate = new Date(year, month, day);
+        deadlineDate.setHours(0, 0, 0, 0);
+
+        if (deadlineDate.getTime() >= today.getTime()) {
+          hasUpcomingDeadline = true;
         }
+      }
+    });
 
-        let hasUpcomingDeadline = false;
-        let hasValidDates = false;
+    if (hasValidDates && !hasUpcomingDeadline) {
+      expiredCalls.push(r);
+    } else {
+      activeCalls.push(r);
+    }
+  });
 
-        // 2. Standardize target tokens into an array of strings
-        let deadlineStrings = [];
-        if (rawDeadline instanceof Date) {
-          // If it's already a single real date object, extract it cleanly
-          deadlineStrings.push(rawDeadline.toLocaleDateString("en-GB"));
-        } else {
-          // Otherwise treat it as a semicolon-separated string
-          deadlineStrings = String(rawDeadline).split(';').map(s => s.trim());
-        }
-
-        // 3. Process each date string item
-        deadlineStrings.forEach(str => {
-          const parts = str.split('/');
-          if (parts.length === 3) {
-            hasValidDates = true;
-            const day = parseInt(parts, 10);
-            const month = parseInt(parts, 10) - 1; // JS months are 0-11
-            const year = parseInt(parts, 10);
-            
-            // Create explicit timestamp matching midnight absolute
-            const deadlineDate = new Date(year, month, day);
-            deadlineDate.setHours(0, 0, 0, 0);
-
-            // Absolute timestamp numerical comparison
-            if (deadlineDate.getTime() >= today.getTime()) {
-              hasUpcomingDeadline = true;
-            }
-          }
-        });
-
-        // 4. Final routing assignment
-        if (hasValidDates && !hasUpcomingDeadline) {
-          expiredCalls.push(r);
-        } else {
-          activeCalls.push(r);
-        }
-      });
-
-  document.getElementById("calls-title").textContent = `Active Calls (${activeCalls.length})`;
-  document.getElementById("expired-calls-title").textContent = `Expired Calls (${expiredCalls.length})`;
+  document.getElementById("calls-title").textContent = `Active Opportunities (${activeCalls.length})`;
+  document.getElementById("expired-calls-title").textContent = `Expired Calls Archive (${expiredCalls.length})`;
 
   const renderCall = (r, targetContainer, isExpired) => {
-      const score = countKeywordMatches(r, keywordInput);
-      const btn = document.createElement("button");
-      const isGeneral = r["Scientific Domain"] && r["Scientific Domain"].trim().toLowerCase() === "general";
-      const borderAccent = (isGeneral && !isExpired) ? 'border-l-4 border-l-purple-500 pl-2' : '';
+    const score = countKeywordMatches(r, keywordInput);
+    const btn = document.createElement("button");
+    const isGeneral = r["Scientific Domain"] && r["Scientific Domain"].trim().toLowerCase() === "general";
+    
+    // Polished custom styling framework for list elements
+    btn.className = `w-full text-left p-3 border rounded-xl transition shadow-sm mb-2 flex justify-between items-center gap-4 leading-normal focus:outline-none
+      ${isGeneral && !isExpired ? 'border-l-4 border-l-purple-500' : ''} 
+      ${isExpired ? 'bg-slate-50 border-slate-200 text-slate-400' : 'bg-white border-slate-200/80 hover:border-slate-300 text-slate-700'}`;
 
-      btn.className = `w-full text-left p-2 border rounded transition-all mb-2 flex justify-between items-start leading-tight ${borderAccent} 
-        ${isExpired ? 'bg-gray-50 border-gray-200 text-gray-400' : 'bg-white border-gray-200 text-gray-700 hover:border-blue-400'}`;
-
-      const callId = r["Call ID"] ? `<span class="font-normal text-gray-500">${r["Call ID"]}:</span> ` : "";
-      
-      let badgeHTML = "";
-      if (keywordInput) {
-        if (score > 0) {
-          badgeHTML = `<span class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full whitespace-nowrap">Matches: ${score}</span>`;
-        } else if (isGeneral) {
-          badgeHTML = `<span class="text-[10px] bg-purple-100 text-purple-700 font-semibold px-2 py-0.5 rounded-full whitespace-nowrap">General Call</span>`;
-        }
+    const callId = r["Call ID"] ? `<span class="font-bold text-slate-400 text-xs block tracking-tight uppercase">${r["Call ID"]}</span>` : "";
+    
+    let badgeHTML = "";
+    if (keywordInput) {
+      if (score > 0) {
+        badgeHTML = `<span class="text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-100 px-2 py-0.5 rounded-md whitespace-nowrap">Hits: ${score}</span>`;
       } else if (isGeneral) {
-        badgeHTML = `<span class="text-[10px] bg-purple-100 text-purple-700 font-semibold px-2 py-0.5 rounded-full whitespace-nowrap">General Call</span>`;
+        badgeHTML = `<span class="text-[10px] bg-purple-50 text-purple-600 border border-purple-100 font-bold px-2 py-0.5 rounded-md whitespace-nowrap font-sans">General</span>`;
       }
+    } else if (isGeneral) {
+      badgeHTML = `<span class="text-[10px] bg-purple-50 text-purple-600 border border-purple-100 font-bold px-2 py-0.5 rounded-md whitespace-nowrap font-sans">General</span>`;
+    }
 
-      btn.innerHTML = `
-        <div class="text-sm font-medium pr-4">
-          ${callId} ${r["Call Title"] || ""}
-        </div>
-        ${badgeHTML}
-      `;
+    btn.innerHTML = `
+      <div class="space-y-0.5">
+        ${callId}
+        <div class="text-xs font-semibold text-slate-800 tracking-tight">${r["Call Title"] || ""}</div>
+      </div>
+      ${badgeHTML}
+    `;
 
-      btn.onclick = () => showCallDetails(r, btn);
-      targetContainer.appendChild(btn);
-    };
+    btn.onclick = () => showCallDetails(r, btn);
+    targetContainer.appendChild(btn);
+  };
 
   activeCalls.forEach(r => renderCall(r, container, false));
   expiredCalls.forEach(r => renderCall(r, expiredContainer, true));
 
-  // POP-UP TRIGGER: If a user typed a keyword but NO specific matching calls were caught, show the pop-up alert
   if (keywordInput && !specificTextMatchesFound) {
     showNoCallsPopup();
   }
@@ -866,7 +793,6 @@ function updateCalls() {
 
 /* ================= FILTER RESET LOGIC ================= */
 function resetAllFilters() {
-  // 1. Reset input states
   const keywordInput = document.getElementById("keyword-input");
   if (keywordInput) keywordInput.value = "";
   
@@ -874,12 +800,10 @@ function resetAllFilters() {
   selectedSpecificFields.clear();
   selectedCallButton = null;
 
-  // 2. Re-render components and recalculate active/expired lists
   renderDomain(); 
   renderSpecificFields();
-  updateCalls(); // This function automatically handles collapsing the expired panel
+  updateCalls();
   
-  // 3. Hide details panel actions if open
   const moreInfoBtn = document.getElementById("more-info-btn");
   if (moreInfoBtn) moreInfoBtn.classList.add("hidden");
 }
@@ -888,15 +812,8 @@ window.addEventListener("DOMContentLoaded", () => {
   const sidebarClearBtn = document.getElementById("clear-btn");
   const topClearBtn = document.getElementById("search-clear-btn");
 
-  // Bind the global reset function to the sidebar clear button
-  if (sidebarClearBtn) {
-    sidebarClearBtn.addEventListener("click", resetAllFilters);
-  }
-
-  // Bind the global reset function to the new top search-bar clear button
-  if (topClearBtn) {
-    topClearBtn.addEventListener("click", resetAllFilters);
-  }
+  if (sidebarClearBtn) sidebarClearBtn.addEventListener("click", resetAllFilters);
+  if (topClearBtn) topClearBtn.addEventListener("click", resetAllFilters);
 });
 
 /* ================= TOGGLE EXPIRED CALLS ================= */
@@ -906,18 +823,16 @@ function toggleExpiredCalls() {
   
   if (!wrapper || !arrow) return;
 
-  // Toggle the visibility state
   if (wrapper.classList.contains("hidden")) {
     wrapper.classList.remove("hidden");
-    arrow.style.transform = "rotate(180deg)"; // Point up when open
+    arrow.style.transform = "rotate(180deg)";
   } else {
     wrapper.classList.add("hidden");
-    arrow.style.transform = "rotate(0deg)";   // Point down when closed
+    arrow.style.transform = "rotate(0deg)";
   }
 }
 
 /* ================= MORE INFORMATION WINDOW ================= */
-
 function openMoreInfoEmail(callId) {
   const accepted = confirm(
     "A new window will open to compose an email from your active Gmail account.\n\n" +
@@ -927,7 +842,7 @@ function openMoreInfoEmail(callId) {
 
   if (!accepted) return;
 
-  const to = "projectes.recerca@upf.edu"; //
+  const to = "projectes.recerca@upf.edu";
   const subject = `[${callId}] Request for more information`;
   const body =
     "Dear Research Service,\n\n" +
@@ -945,51 +860,16 @@ function openMoreInfoEmail(callId) {
   window.open(mailtoLink, "_blank");
 }
 
-  const scrollTopBtn = document.getElementById("scroll-top-btn");
+const scrollTopBtn = document.getElementById("scroll-top-btn");
+scrollTopBtn.addEventListener("click", () => {
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
 
-  scrollTopBtn.addEventListener("click", () => {
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth"
-    });
-  });
-
-  window.addEventListener("scroll", () => {
+window.addEventListener("scroll", () => {
   if (window.scrollY > 200) {
     scrollTopBtn.classList.remove("hidden");
   } else {
     scrollTopBtn.classList.add("hidden");
   }
 });
-
-/* window.addEventListener("DOMContentLoaded", () => {
-  const moreInfoBtn = document.getElementById("more-info-btn");
-
-  moreInfoBtn.addEventListener("click", () => {
-    if (!selectedCallButton) return;
-
-    const callId = document.getElementById("detail-id").textContent;
-    const callTitle = document.getElementById("detail-title").textContent;
-
-    const toEmail = "projectes.recerca@upf.edu"; // 
-
-    const subject = encodeURIComponent(`[${callId}] Request for more information`);
-    const body = encodeURIComponent(
-        `Dear Research Service,
-
-        I am interested in the following Horizon Europe call:
-
-        Call ID: ${callId}
-        Title: ${callTitle}
-
-        I would appreciate more information and guidance on this opportunity.
-
-        Best regards,`
-    );
-
-    const gmailURL = `https://mail.google.com/mail/?view=cm&fs=1&to=${toEmail}&su=${subject}&body=${body}`;
-
-    window.open(gmailURL, "_blank");
-  });
-}); */
 </script>
