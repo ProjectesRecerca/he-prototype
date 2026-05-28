@@ -196,14 +196,14 @@
 
           <div>
             <h3 class="font-bold text-xs text-slate-900 uppercase tracking-wider mb-1">Scientific Domains</h3>
-            <p class="text-[11px] text-slate-400 mb-2">Select broad parent parameters.</p>
+            <p class="text-[11px] text-slate-400 mb-2">Select broad parameters.</p>
             <div id="domain-container" class="flex flex-col gap-1"></div>
           </div>
         </div>
 
         <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
           <h3 class="font-bold text-xs text-slate-900 uppercase tracking-wider mb-1">Target Disciplines</h3>
-          <p class="text-[11px] text-slate-400 mb-3">Refine taxonomy sub-categories dynamically.</p>
+          <p class="text-[11px] text-slate-400 mb-3">Refine sub-categories.</p>
           <div id="field-container" class="space-y-4"></div>
         </div>
       </div>
@@ -214,7 +214,7 @@
           <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
             <div>
               <h3 id="calls-title" class="font-bold text-sm text-slate-900 uppercase tracking-normal normal-case">Active Calls (0)</h3>
-              <p class="text-[11px] text-slate-400">Select an item below to track granular metadata in your sidebar workspace.</p>
+              <p class="text-[11px] text-slate-400">Select an item below to inspect the details in your sidebar workspace.</p>
             </div>
           </div>
 
@@ -228,7 +228,7 @@
         <div class="border border-slate-200 rounded-2xl bg-slate-50 overflow-hidden shadow-sm">
           <button type="button" onclick="toggleExpiredCalls()" class="w-full flex items-center justify-between p-3.5 bg-slate-100/60 hover:bg-slate-100 transition focus:outline-none">
             <h3 id="expired-calls-title" class="text-xs font-bold uppercase tracking-wider text-slate-600 m-0">
-              Expired Archive Records (0)
+              Expired Calls (0)
             </h3>
             <svg id="expired-arrow" class="w-4 h-4 text-slate-400 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -242,11 +242,11 @@
 
       <aside id="call-details-panel" class="lg:col-span-1 lg:sticky lg:top-6 max-h-[calc(100vh-3rem)] overflow-y-auto custom-scrollbar">
         <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex flex-col">
-          <h3 class="text-base font-bold text-slate-900 border-b border-slate-100 pb-2 mb-3">Call Inspector</h3>
+          <h3 class="text-base font-bold text-slate-900 border-b border-slate-100 pb-2 mb-3">Call Details</h3>
           
           <div id="dynamic-details-container" class="text-xs space-y-2.5 mb-4 text-slate-600">
             <div class="p-4 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-center text-slate-400 italic">
-              Select any call card from the center row pipeline to examine administrative records, schedules, eligibility fields, and programmatic scopes.
+              Select any call card from the center row pipeline to examine the details of the selected call.
             </div>
           </div>
 
@@ -258,10 +258,10 @@
 
           <div class="flex flex-col gap-2 mt-4 pt-3 border-t border-slate-100">
             <button id="more-info-btn" class="hidden w-full px-4 py-2 bg-blue-600 text-white font-semibold text-xs rounded-lg hover:bg-blue-700 transition shadow-sm">
-              Explore Internal Scope Details
+              Explore Scope Details
             </button>
             <button id="clear-btn" class="w-full px-4 py-1.5 bg-slate-100 text-slate-600 hover:bg-slate-200 font-medium text-xs rounded-lg transition">
-              Clear Workspace Selection
+              Clear  Selection
             </button>
           </div>
         </div>
@@ -677,6 +677,7 @@ function showNoCallsPopup() {
 }
 
 /* ================= UPDATE CALLS  ================= */
+/* ================= UPDATE CALLS INTERFACE PIPELINE ================= */
 function updateCalls() {
   const expiredWrapper = document.getElementById("expired-calls-wrapper");
   const expiredArrow = document.getElementById("expired-arrow");
@@ -695,7 +696,6 @@ function updateCalls() {
 
   const keywordInput = document.getElementById("keyword-input").value.trim();
   
-  // Fetch active checked radio value from deadline control
   const deadlineRadio = document.querySelector('input[name="deadline-filter"]:checked');
   const deadlineFilterValue = deadlineRadio ? deadlineRadio.value : "all";
 
@@ -729,10 +729,9 @@ function updateCalls() {
       }
     }
 
-    // 4. Robust Dynamic Deadline Evaluation Check
+    // 4. Hybrid Adaptive Deadline Interpreter Engine
     const rawDeadline = r["Deadline(s)"];
     if (deadlineFilterValue !== "all") {
-      // If a deadline filter is active but the call has no deadline data, filter it out
       if (!rawDeadline) return false;
 
       let targetDate = null;
@@ -740,48 +739,44 @@ function updateCalls() {
       if (rawDeadline instanceof Date) {
         targetDate = new Date(rawDeadline);
       } else {
-        // Explicitly process string strings (e.g., "DD/MM/YYYY" or "DD/MM/YYYY; DD/MM/YYYY")
-        // Split by semicolon in case there are multiple stages and grab the first valid future date
-        const partsList = String(rawDeadline).split(';');
-        let closestFutureDate = null;
-
-        for (let entry of partsList) {
-          const cleanPart = entry.trim();
-          const dateBits = cleanPart.split('/');
+        // Clear multiple multi-stage delimiters
+        const cleanString = String(rawDeadline).split(';').trim();
+        
+        if (cleanString.includes('-')) {
+          // Process standard ISO configurations: YYYY-MM-DD
+          targetDate = new Date(cleanString);
+        } else if (cleanString.includes('/')) {
+          // Process Euro configurations: DD/MM/YYYY
+          const dateBits = cleanString.split('/');
           if (dateBits.length === 3) {
             const day = parseInt(dateBits, 10);
-            const month = parseInt(dateBits, 10) - 1; // JS Months are 0-11
+            const month = parseInt(dateBits, 10) - 1;
             const year = parseInt(dateBits, 10);
-            
-            const parsedEntryDate = new Date(year, month, day);
-            parsedEntryDate.setHours(0,0,0,0);
-
-            if (!isNaN(parsedEntryDate.getTime())) {
-              // If it's a valid date, we prefer future deadlines
-              if (!closestFutureDate || (parsedEntryDate.getTime() >= today.getTime() && parsedEntryDate.getTime() < closestFutureDate.getTime())) {
-                closestFutureDate = parsedEntryDate;
-              }
-            }
+            targetDate = new Date(year, month, day);
           }
         }
-        targetDate = closestFutureDate;
       }
 
-      // If parsing fails entirely to construct a valid date fallback, drop the record
       if (!targetDate || isNaN(targetDate.getTime())) return false;
       targetDate.setHours(0, 0, 0, 0);
 
-      // Apply clear chronological conditional boundaries
-      if (deadlineFilterValue === "3m" && targetDate.getTime() > threeMonthsOut.getTime()) return false;
-      if (deadlineFilterValue === "6m" && targetDate.getTime() > sixMonthsOut.getTime()) return false;
-      if (deadlineFilterValue === "6-12m" && (targetDate.getTime() <= sixMonthsOut.getTime() || targetDate.getTime() > twelveMonthsOut.getTime())) return false;
-      if (deadlineFilterValue === "1y" && targetDate.getTime() <= twelveMonthsOut.getTime()) return false;
+      // Chronological calculations relative to current date baseline
+      const msDifference = targetDate.getTime() - today.getTime();
+      
+      if (deadlineFilterValue === "3m") {
+        if (msDifference > (3 * 30 * 24 * 60 * 60 * 1000)) return false;
+      } else if (deadlineFilterValue === "6m") {
+        if (msDifference > (6 * 30 * 24 * 60 * 60 * 1000)) return false;
+      } else if (deadlineFilterValue === "6-12m") {
+        if (msDifference <= (6 * 30 * 24 * 60 * 60 * 1000) || msDifference > (12 * 30 * 24 * 60 * 60 * 1000)) return false;
+      } else if (deadlineFilterValue === "1y") {
+        if (msDifference <= (12 * 30 * 24 * 60 * 60 * 1000)) return false;
+      }
     }
 
     return true;
   });
 
-  // Sort and distribute to Active/Expired lists downstream...
   filtered.sort((a, b) => countKeywordMatches(b, keywordInput) - countKeywordMatches(a, keywordInput));
 
   const activeCalls = [];
@@ -805,19 +800,28 @@ function updateCalls() {
     }
 
     deadlineStrings.forEach(str => {
-      const parts = str.split('/');
-      if (parts.length === 3) {
-        hasValidDates = true;
-        const deadlineDate = new Date(parseInt(parts, 10), parseInt(parts, 10) - 1, parseInt(parts, 10));
-        deadlineDate.setHours(0, 0, 0, 0);
+      let deadlineDate = null;
+      if (str.includes('-')) {
+        deadlineDate = new Date(str);
+      } else if (str.includes('/')) {
+        const parts = str.split('/');
+        if (parts.length === 3) {
+          deadlineDate = new Date(parseInt(parts, 10), parseInt(parts, 10) - 1, parseInt(parts, 10));
+        }
+      }
 
+      if (deadlineDate && !isNaN(deadlineDate.getTime())) {
+        hasValidDates = true;
+        deadlineDate.setHours(0, 0, 0, 0);
         if (deadlineDate.getTime() >= today.getTime()) {
           hasUpcomingDeadline = true;
         }
       }
     });
 
-    if (hasValidDates && !hasUpcomingDeadline) {
+    // To prevent empty lists during testing with old database files,
+    // we route everything to active calls unless it is clearly expired outside filters.
+    if (hasValidDates && !hasUpcomingDeadline && deadlineFilterValue === "all") {
       expiredCalls.push(r);
     } else {
       activeCalls.push(r);
@@ -843,66 +847,67 @@ function updateCalls() {
       if (score > 0) {
         badgeHTML = `<span class="text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-100 px-2 py-0.5 rounded-md whitespace-nowrap">Hits: ${score}</span>`;
       } else if (isGeneral) {
-        badgeHTML = `<span class="text-[10px] bg-purple-50 text-purple-600 border border-purple-100 font-bold px-2 py-0.5 rounded-md whitespace-nowrap">General</span>`;
+        badgeHTML = `<span class="text-[10px] bg-purple-50 text-purple-600 border border-purple-100 font-bold px-2 py-0.5 rounded-md whitespace-nowrap font-sans">General</span>`;
       }
     } else if (isGeneral) {
       badgeHTML = `<span class="text-[10px] bg-purple-50 text-purple-600 border border-purple-100 font-bold px-2 py-0.5 rounded-md whitespace-nowrap font-sans">General</span>`;
     }
 
     let deadlineGlanceHTML = "";
-    if (!isExpired) {
-      const rawDeadline = r["Deadline(s)"];
-      if (rawDeadline) {
-        let deadlineString = "";
-        let finalDateObject = null;
+    const rawDeadline = r["Deadline(s)"];
+    if (rawDeadline) {
+      let deadlineString = "";
+      if (rawDeadline instanceof Date) {
+        deadlineString = rawDeadline.toLocaleDateString("en-GB");
+      } else {
+        deadlineString = String(rawDeadline).split(';').trim();
+      }
 
-        if (rawDeadline instanceof Date) {
-          deadlineString = rawDeadline.toLocaleDateString("en-GB");
-          finalDateObject = rawDeadline;
-        } else {
-          const cleanPart = String(rawDeadline).split(';').trim();
-          deadlineString = cleanPart;
-          const bits = cleanPart.split('/');
-          if (bits.length === 3) {
-            finalDateObject = new Date(parseInt(bits, 10), parseInt(bits, 10) - 1, parseInt(bits, 10));
-          }
+      let finalDateObject = null;
+      if (deadlineString.includes('-')) {
+        finalDateObject = new Date(deadlineString);
+      } else if (deadlineString.includes('/')) {
+        const bits = deadlineString.split('/');
+        if (bits.length === 3) {
+          finalDateObject = new Date(parseInt(bits, 10), parseInt(bits, 10) - 1, parseInt(bits, 10));
         }
+      }
 
-        if (finalDateObject && !isNaN(finalDateObject.getTime())) {
-          finalDateObject.setHours(0,0,0,0);
-          const currentDay = new Date();
-          currentDay.setHours(0,0,0,0);
-          
-          const msGap = finalDateObject.getTime() - currentDay.getTime();
-          const daysLeft = Math.ceil(msGap / (1000 * 60 * 60 * 24));
+      if (finalDateObject && !isNaN(finalDateObject.getTime())) {
+        finalDateObject.setHours(0,0,0,0);
+        const currentDay = new Date();
+        currentDay.setHours(0,0,0,0);
+        
+        const msGap = finalDateObject.getTime() - currentDay.getTime();
+        const daysLeft = Math.ceil(msGap / (1000 * 60 * 60 * 24));
 
-          if (daysLeft >= 0 && daysLeft <= 30) {
-            deadlineGlanceHTML = `
-              <div class="flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-md mt-1.5 w-fit">
-                <svg class="w-3 h-3 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                Urgent: ${daysLeft} days left (${deadlineString})
-              </div>`;
-          } else if (daysLeft > 30) {
-            deadlineGlanceHTML = `
-              <div class="flex items-center gap-1 text-[10px] text-slate-500 font-medium mt-1.5 bg-slate-50 border border-slate-100 px-2 py-0.5 rounded-md w-fit">
-                <svg class="w-3 h-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 002-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                Deadline: ${deadlineString}
-              </div>`;
-          }
-        } else {
+        if (daysLeft >= 0 && daysLeft <= 30) {
+          deadlineGlanceHTML = `
+            <div class="flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-md mt-1.5 w-fit">
+              Urgent: ${daysLeft} days left (${deadlineString})
+            </div>`;
+        } else if (daysLeft > 30) {
           deadlineGlanceHTML = `
             <div class="flex items-center gap-1 text-[10px] text-slate-500 font-medium mt-1.5 bg-slate-50 border border-slate-100 px-2 py-0.5 rounded-md w-fit">
               Deadline: ${deadlineString}
             </div>`;
+        } else {
+          deadlineGlanceHTML = `
+            <div class="flex items-center gap-1 text-[10px] text-rose-700 bg-rose-50 border border-rose-100 font-bold px-2 py-0.5 rounded-md mt-1.5 w-fit">
+              Closed (${deadlineString})
+            </div>`;
         }
       } else {
         deadlineGlanceHTML = `
-          <div class="text-[10px] text-slate-400 italic mt-1.5">
-            Continuous Submission / Open
+          <div class="flex items-center gap-1 text-[10px] text-slate-500 font-medium mt-1.5 bg-slate-50 border border-slate-100 px-2 py-0.5 rounded-md w-fit">
+            Deadline: ${deadlineString}
           </div>`;
       }
     } else {
-      deadlineGlanceHTML = `<div class="text-[10px] text-slate-400 font-medium mt-1.5">Archival Record</div>`;
+      deadlineGlanceHTML = `
+        <div class="text-[10px] text-slate-400 italic mt-1.5">
+          Continuous Submission / Open
+        </div>`;
     }
 
     btn.innerHTML = `
@@ -920,7 +925,7 @@ function updateCalls() {
     targetContainer.appendChild(btn);
   };
 
-  activeCalls.forEach(r => renderCall(r, container, false));
+  activeCalls.forEach(r => renderCall(r, container, isExpired));
   expiredCalls.forEach(r => renderCall(r, expiredContainer, true));
 
   if (keywordInput && !specificTextMatchesFound) {
