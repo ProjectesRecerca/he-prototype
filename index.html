@@ -116,25 +116,44 @@
 
   <div id="private" class="hidden max-w-[1600px] mx-auto p-4 lg:p-6">
 
-    <header class="flex items-center justify-between mb-6 bg-white border border-slate-200/80 rounded-2xl px-6 py-4 shadow-sm">
-      <div class="flex items-center">
-        <img src="./LogoGrantRadar.png" class="h-16 object-contain" alt="Grant Radar Logo" />
-      </div>
-      <div class="flex items-center gap-4 text-right">
-        <div class="flex flex-col">
-          <h2 class="text-slate-900 font-bold text-sm tracking-tight">Research Service</h2>
-          <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400">Universitat Pompeu Fabra</span>
-        </div>
-        <img src="./logoUPF.png" class="h-12 object-contain border-l pl-4 border-slate-100" alt="UPF Logo" />
-      </div>
-    </header>
+    <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 bg-white border border-slate-200/80 rounded-2xl px-6 py-4 shadow-sm">
+    
+    <div class="flex items-center justify-between md:justify-start">
+      <img src="./LogoGrantRadar.png" class="h-12 md:h-14 object-contain" alt="Grant Radar Logo" />
+      
+      <button class="md:hidden text-slate-400 hover:text-slate-600">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 111.063 1.06l-.041.02a.75.75 0 01-1.063-1.06zm0 4.5h.008v.008h-.008v-.008zm1.35-9a2.1 2.1 0 11-4.2 0 2.1 2.1 0 014.2 0zM21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+      </button>
+    </div>
 
-    <div class="bg-gradient-to-r from-slate-900 to-slate-800 rounded-2xl p-6 text-white mb-6 shadow-sm border border-slate-950">
-      <h1 class="text-base font-bold mb-1 tracking-tight text-white">Welcome to GrantRadar Workspace</h1>
-      <p class="text-xs text-slate-300 leading-relaxed max-w-3xl">
-        Discover European/International funding opportunities aligned with your research interests. Refine calls dynamically by selecting disciplines, typing explicit search keys, or exploring cross-cutting general calls.
-      </p>
-    </div>  
+    <div class="flex flex-col items-center text-center max-w-xl mx-auto px-2 group relative">
+      <div class="flex items-center gap-2">
+        <h1 class="text-sm md:text-base font-bold text-slate-800 tracking-tight">
+          Welcome to <span class="text-indigo-600">GrantRadar</span> Workspace
+        </h1>
+        <div class="relative cursor-help text-slate-400 hover:text-indigo-500 transition-colors hidden md:block">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+          </svg>
+          <div class="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 bg-slate-900 text-white text-[11px] p-3 rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none font-normal text-left leading-relaxed">
+            Discover European/International funding opportunities aligned with your research interests. Refine calls dynamically by selecting disciplines or exploring cross-cutting general calls.
+          </div>
+        </div>
+      </div>
+      <span class="text-[11px] text-slate-400 hidden lg:inline-block mt-0.5">
+        Explore & refine European / International funding opportunities
+      </span>
+    </div>
+
+    <div class="flex items-center justify-end gap-3 text-right">
+      <div class="flex flex-col">
+        <h2 class="text-slate-900 font-bold text-xs md:text-sm tracking-tight">Research Service</h2>
+        <span class="text-[9px] md:text-[10px] uppercase font-bold tracking-wider text-slate-400">Universitat Pompeu Fabra</span>
+      </div>
+      <img src="./logoUPF.png" class="h-10 md:h-12 object-contain border-l pl-3 border-slate-200" alt="UPF Logo" />
+    </div>
+    </header>
+  </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
 
@@ -724,10 +743,13 @@ function updateCalls() {
     const btn = document.createElement("button");
     const isGeneral = r["Scientific Domain"] && r["Scientific Domain"].trim().toLowerCase() === "general";
     
-    // Balanced background button card setup
-    btn.className = `w-full text-left p-3.5 bg-white border border-slate-200/80 rounded-xl transition shadow-sm mb-2.5 flex justify-between items-center gap-4 leading-normal focus:outline-none hover:border-slate-300 hover:bg-slate-50/50 text-slate-700`;
+    // Clean, compact button design
+    btn.className = `w-full text-left p-3 bg-white border border-slate-200/80 rounded-xl transition shadow-sm mb-2 flex flex-col gap-1 focus:outline-none hover:border-slate-300 hover:bg-slate-50/50 text-slate-700`;
 
-    const callId = r["Call ID"] ? `<span class="font-bold text-slate-400 text-[10px] tracking-tight uppercase">${r["Call ID"]}</span>` : "";
+    // Process Call ID or fallback space to keep structure intact
+    const callIdHTML = r["Call ID"] 
+      ? `<span class="font-bold text-slate-400 text-[10px] tracking-tight uppercase">${r["Call ID"]}</span>` 
+      : `<span></span>`;
     
     let badgeHTML = "";
     if (keywordInput && score > 0) {
@@ -736,7 +758,7 @@ function updateCalls() {
       badgeHTML = `<span class="text-[10px] bg-purple-50 text-purple-600 border border-purple-100 font-bold px-2 py-0.5 rounded-md whitespace-nowrap">General</span>`;
     }
 
-    // Capture column fields strings safely
+    // Capture column fields strings safely (supports multi-deadlines)
     let deadlineRawString = "";
     const lookForField = r["Deadline(s)"] || r["deadline(s)"] || r["Deadline"] || r["deadline"];
     
@@ -747,25 +769,26 @@ function updateCalls() {
         deadlineRawString = String(lookForField).trim();
       }
     } else {
-      deadlineRawString = "Continuous / Open Submission";
+      deadlineRawString = "Continuous / Open";
     }
 
-    // UI Redesign: Softened deadline text hierarchy moved to the bottom layout line
+    // NEW ULTRA-COMPACT 2-LINE LAYOUT
+    // Row 1: Call ID on the left, Muted Deadline string on the right
+    // Row 2: Call Title on the left, Badge hits on the right
     btn.innerHTML = `
-      <div class="space-y-1 flex-1 min-w-0">
-        <div class="flex items-center gap-2">
-          ${callId}
-        </div>
+      <div class="w-full flex justify-between items-center gap-4 border-b border-slate-50 pb-0.5">
+        ${callIdHTML}
+        <span class="text-[10px] text-slate-400 font-medium whitespace-nowrap">
+          📅 ${deadlineRawString}
+        </span>
+      </div>
+      <div class="w-full flex justify-between items-start gap-4 pt-0.5">
         <div class="text-xs font-semibold text-slate-800 tracking-tight leading-snug">
           ${r["Call Title"] || ""}
         </div>
-        <div class="text-[10px] text-slate-400 font-medium pt-0.5 flex items-center gap-1">
-          <svg class="w-3 h-3 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-          Deadline: <span class="font-semibold text-slate-500">${deadlineRawString}</span>
+        <div class="shrink-0 pt-0.5">
+          ${badgeHTML}
         </div>
-      </div>
-      <div class="flex items-center justify-end shrink-0 self-center">
-        ${badgeHTML}
       </div>
     `;
 
