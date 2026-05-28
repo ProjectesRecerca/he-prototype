@@ -676,8 +676,7 @@ function showNoCallsPopup() {
   document.getElementById("close-popup-btn").onclick = () => { popup.classList.add("hidden"); };
 }
 
-/* ================= UPDATE CALLS INTERFACE PIPELINE ================= */
-/* ================= UPDATE CALLS INTERFACE PIPELINE ================= */
+/* ================= UPDATE CALLS  ================= */
 function updateCalls() {
   const expiredWrapper = document.getElementById("expired-calls-wrapper");
   const expiredArrow = document.getElementById("expired-arrow");
@@ -730,27 +729,49 @@ function updateCalls() {
       }
     }
 
-    // 4. Dynamic Deadline Evaluation Check
+    // 4. Robust Dynamic Deadline Evaluation Check
     const rawDeadline = r["Deadline(s)"];
     if (deadlineFilterValue !== "all") {
       // If a deadline filter is active but the call has no deadline data, filter it out
       if (!rawDeadline) return false;
 
       let targetDate = null;
+
       if (rawDeadline instanceof Date) {
         targetDate = new Date(rawDeadline);
       } else {
-        const firstStringPart = String(rawDeadline).split(';').trim();
-        const dateParts = firstStringPart.split('/');
-        if (dateParts.length === 3) {
-          targetDate = new Date(parseInt(dateParts, 10), parseInt(dateParts, 10) - 1, parseInt(dateParts, 10));
+        // Explicitly process string strings (e.g., "DD/MM/YYYY" or "DD/MM/YYYY; DD/MM/YYYY")
+        // Split by semicolon in case there are multiple stages and grab the first valid future date
+        const partsList = String(rawDeadline).split(';');
+        let closestFutureDate = null;
+
+        for (let entry of partsList) {
+          const cleanPart = entry.trim();
+          const dateBits = cleanPart.split('/');
+          if (dateBits.length === 3) {
+            const day = parseInt(dateBits, 10);
+            const month = parseInt(dateBits, 10) - 1; // JS Months are 0-11
+            const year = parseInt(dateBits, 10);
+            
+            const parsedEntryDate = new Date(year, month, day);
+            parsedEntryDate.setHours(0,0,0,0);
+
+            if (!isNaN(parsedEntryDate.getTime())) {
+              // If it's a valid date, we prefer future deadlines
+              if (!closestFutureDate || (parsedEntryDate.getTime() >= today.getTime() && parsedEntryDate.getTime() < closestFutureDate.getTime())) {
+                closestFutureDate = parsedEntryDate;
+              }
+            }
+          }
         }
+        targetDate = closestFutureDate;
       }
 
+      // If parsing fails entirely to construct a valid date fallback, drop the record
       if (!targetDate || isNaN(targetDate.getTime())) return false;
       targetDate.setHours(0, 0, 0, 0);
 
-      // Apply chronological conditional boundaries
+      // Apply clear chronological conditional boundaries
       if (deadlineFilterValue === "3m" && targetDate.getTime() > threeMonthsOut.getTime()) return false;
       if (deadlineFilterValue === "6m" && targetDate.getTime() > sixMonthsOut.getTime()) return false;
       if (deadlineFilterValue === "6-12m" && (targetDate.getTime() <= sixMonthsOut.getTime() || targetDate.getTime() > twelveMonthsOut.getTime())) return false;
@@ -806,31 +827,28 @@ function updateCalls() {
   document.getElementById("calls-title").textContent = `Active Opportunities (${activeCalls.length})`;
   document.getElementById("expired-calls-title").textContent = `Expired Calls Archive (${expiredCalls.length})`;
 
-const renderCall = (r, targetContainer, isExpired) => {
+  const renderCall = (r, targetContainer, isExpired) => {
     const score = countKeywordMatches(r, keywordInput);
     const btn = document.createElement("button");
     const isGeneral = r["Scientific Domain"] && r["Scientific Domain"].trim().toLowerCase() === "general";
     
-    // Polished custom styling framework for list elements
     btn.className = `w-full text-left p-3.5 border rounded-xl transition shadow-sm mb-2.5 flex flex-col sm:flex-row justify-between sm:items-center gap-3 leading-normal focus:outline-none
       ${isGeneral && !isExpired ? 'border-l-4 border-l-purple-500' : ''} 
       ${isExpired ? 'bg-slate-50 border-slate-200 text-slate-400' : 'bg-white border-slate-200/80 hover:border-slate-300 text-slate-700'}`;
 
     const callId = r["Call ID"] ? `<span class="font-bold text-slate-400 text-[10px] block tracking-tight uppercase">${r["Call ID"]}</span>` : "";
     
-    // Contextual Badge Engine
     let badgeHTML = "";
     if (keywordInput) {
       if (score > 0) {
         badgeHTML = `<span class="text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-100 px-2 py-0.5 rounded-md whitespace-nowrap">Hits: ${score}</span>`;
       } else if (isGeneral) {
-        badgeHTML = `<span class="text-[10px] bg-purple-50 text-purple-600 border border-purple-100 font-bold px-2 py-0.5 rounded-md whitespace-nowrap font-sans">General</span>`;
+        badgeHTML = `<span class="text-[10px] bg-purple-50 text-purple-600 border border-purple-100 font-bold px-2 py-0.5 rounded-md whitespace-nowrap">General</span>`;
       }
     } else if (isGeneral) {
       badgeHTML = `<span class="text-[10px] bg-purple-50 text-purple-600 border border-purple-100 font-bold px-2 py-0.5 rounded-md whitespace-nowrap font-sans">General</span>`;
     }
 
-    // Dynamic Deadline Glance Indicator Logic
     let deadlineGlanceHTML = "";
     if (!isExpired) {
       const rawDeadline = r["Deadline(s)"];
@@ -842,7 +860,6 @@ const renderCall = (r, targetContainer, isExpired) => {
           deadlineString = rawDeadline.toLocaleDateString("en-GB");
           finalDateObject = rawDeadline;
         } else {
-          // Grab the primary target chronological parameter before delimiters
           const cleanPart = String(rawDeadline).split(';').trim();
           deadlineString = cleanPart;
           const bits = cleanPart.split('/');
@@ -856,19 +873,16 @@ const renderCall = (r, targetContainer, isExpired) => {
           const currentDay = new Date();
           currentDay.setHours(0,0,0,0);
           
-          // Calculate delta gap
           const msGap = finalDateObject.getTime() - currentDay.getTime();
           const daysLeft = Math.ceil(msGap / (1000 * 60 * 60 * 24));
 
           if (daysLeft >= 0 && daysLeft <= 30) {
-            // Highly critical timeline alert warning
             deadlineGlanceHTML = `
               <div class="flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-md mt-1.5 w-fit">
                 <svg class="w-3 h-3 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                 Urgent: ${daysLeft} days left (${deadlineString})
               </div>`;
           } else if (daysLeft > 30) {
-            // Standard tracking badge
             deadlineGlanceHTML = `
               <div class="flex items-center gap-1 text-[10px] text-slate-500 font-medium mt-1.5 bg-slate-50 border border-slate-100 px-2 py-0.5 rounded-md w-fit">
                 <svg class="w-3 h-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 002-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
@@ -876,7 +890,6 @@ const renderCall = (r, targetContainer, isExpired) => {
               </div>`;
           }
         } else {
-          // Fallback string literal if date structure is irregular text format
           deadlineGlanceHTML = `
             <div class="flex items-center gap-1 text-[10px] text-slate-500 font-medium mt-1.5 bg-slate-50 border border-slate-100 px-2 py-0.5 rounded-md w-fit">
               Deadline: ${deadlineString}
@@ -889,7 +902,6 @@ const renderCall = (r, targetContainer, isExpired) => {
           </div>`;
       }
     } else {
-      // Archive styling fallback handling
       deadlineGlanceHTML = `<div class="text-[10px] text-slate-400 font-medium mt-1.5">Archival Record</div>`;
     }
 
