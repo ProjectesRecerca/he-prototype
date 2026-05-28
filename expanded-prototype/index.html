@@ -102,7 +102,7 @@
   <div id="login" class="min-h-screen flex items-center justify-center bg-slate-50">
     <div class="bg-white p-10 rounded-2xl shadow-sm border border-slate-200 text-center w-full max-w-md">
       <img src="./logo.png" class="mx-auto mb-6 h-48 object-contain" alt="Logo" />
-      <p class="text-xs font-medium text-slate-400 uppercase tracking-wider mb-6">Developed by the Research Service</p>
+      <p class="text-xs font-medium text-slate-400 tracking-wider mb-6">Developed by the Research Service</p>
       <div id="g_id_onload"
            data-client_id="871231787095-ug0o6pu89sn0t6i97s0nagakohighot8.apps.googleusercontent.com"
            data-callback="handleCredentialResponse"
@@ -132,7 +132,7 @@
     <div class="bg-gradient-to-r from-slate-900 to-slate-800 rounded-2xl p-6 text-white mb-6 shadow-sm border border-slate-950">
       <h1 class="text-base font-bold mb-1 tracking-tight text-white">Welcome to GrantRadar Workspace</h1>
       <p class="text-xs text-slate-300 leading-relaxed max-w-3xl">
-        Discover and monitor European/international funding opportunities aligned with your scientific domain profiles. Refine calls dynamically by selecting disciplines, typing explicit search keys, or exploring cross-cutting general calls.
+        Discover European/International funding opportunities aligned with your scientific domain profiles. Refine calls dynamically by selecting disciplines, typing explicit search keys, or exploring cross-cutting general calls.
       </p>
     </div>                 
 
@@ -167,10 +167,28 @@
           <div>
             <div class="flex items-center justify-between mb-2">
               <h3 class="font-bold text-xs text-slate-900 uppercase tracking-wider">Filter by Deadline</h3>
-              <span class="text-[9px] font-bold uppercase bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">Future Plugin</span>
             </div>
-            <div class="p-3 bg-slate-50 border border-dashed border-slate-200 rounded-lg text-center">
-              <span class="text-[11px] text-slate-400 italic">Deadline range configuration framework mapped here.</span>
+            <div class="space-y-1.5 bg-slate-50 border border-slate-200/60 rounded-xl p-2.5">
+              <label class="flex items-center gap-2 px-1.5 py-0.5 text-xs hover:bg-white rounded cursor-pointer transition text-slate-600 font-medium">
+                <input type="radio" name="deadline-filter" value="all" checked class="rounded-full border-slate-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5" onchange="updateCalls()" />
+                Any Deadline
+              </label>
+              <label class="flex items-center gap-2 px-1.5 py-0.5 text-xs hover:bg-white rounded cursor-pointer transition text-slate-600 font-medium">
+                <input type="radio" name="deadline-filter" value="3m" class="rounded-full border-slate-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5" onchange="updateCalls()" />
+                In the next 3 months
+              </label>
+              <label class="flex items-center gap-2 px-1.5 py-0.5 text-xs hover:bg-white rounded cursor-pointer transition text-slate-600 font-medium">
+                <input type="radio" name="deadline-filter" value="6m" class="rounded-full border-slate-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5" onchange="updateCalls()" />
+                In the next 6 months
+              </label>
+              <label class="flex items-center gap-2 px-1.5 py-0.5 text-xs hover:bg-white rounded cursor-pointer transition text-slate-600 font-medium">
+                <input type="radio" name="deadline-filter" value="6-12m" class="rounded-full border-slate-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5" onchange="updateCalls()" />
+                6 to 12 months
+              </label>
+              <label class="flex items-center gap-2 px-1.5 py-0.5 text-xs hover:bg-white rounded cursor-pointer transition text-slate-600 font-medium">
+                <input type="radio" name="deadline-filter" value="1y" class="rounded-full border-slate-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5" onchange="updateCalls()" />
+                More than a year
+              </label>
             </div>
           </div>
 
@@ -659,6 +677,7 @@ function showNoCallsPopup() {
 }
 
 /* ================= UPDATE CALLS INTERFACE PIPELINE ================= */
+/* ================= UPDATE CALLS INTERFACE PIPELINE ================= */
 function updateCalls() {
   const expiredWrapper = document.getElementById("expired-calls-wrapper");
   const expiredArrow = document.getElementById("expired-arrow");
@@ -676,30 +695,73 @@ function updateCalls() {
   resetDetailsPanel();
 
   const keywordInput = document.getElementById("keyword-input").value.trim();
-  let specificTextMatchesFound = false;
-
-  const filtered = excelData.filter(r => {
-    if (keywordInput && !keywordMatchesMulti(r, keywordInput)) return false;
-    specificTextMatchesFound = true;
-
-    if (r["Scientific Domain"] && r["Scientific Domain"].trim().toLowerCase() === "general") {
-      return true; 
-    }
-
-    if (selectedDomains.size && !selectedDomains.has(r["Scientific Domain"])) return false;
-    
-    if (selectedSpecificFields.size) {
-      if (!r["Specific Disciplines"]) return false;
-      const fields = r["Specific Disciplines"].split(";").map(f => f.trim());
-      if (!fields.some(f => selectedSpecificFields.has(f))) return false;
-    }
-    return true;
-  });
-
-  filtered.sort((a, b) => countKeywordMatches(b, keywordInput) - countKeywordMatches(a, keywordInput));
+  
+  // Fetch active checked radio value from deadline control
+  const deadlineRadio = document.querySelector('input[name="deadline-filter"]:checked');
+  const deadlineFilterValue = deadlineRadio ? deadlineRadio.value : "all";
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+
+  // Compute time boundaries
+  const threeMonthsOut = new Date(today.getTime() + (3 * 30 * 24 * 60 * 60 * 1000));
+  const sixMonthsOut = new Date(today.getTime() + (6 * 30 * 24 * 60 * 60 * 1000));
+  const twelveMonthsOut = new Date(today.getTime() + (12 * 30 * 24 * 60 * 60 * 1000));
+
+  let specificTextMatchesFound = false;
+
+  const filtered = excelData.filter(r => {
+    // 1. Keyword Check
+    if (keywordInput && !keywordMatchesMulti(r, keywordInput)) return false;
+    specificTextMatchesFound = true;
+
+    // Skip taxonomy restrictions entirely if it is an explicit global 'General' call
+    const isGeneralCall = r["Scientific Domain"] && r["Scientific Domain"].trim().toLowerCase() === "general";
+    
+    if (!isGeneralCall) {
+      // 2. Domain Taxonomy Check
+      if (selectedDomains.size && !selectedDomains.has(r["Scientific Domain"])) return false;
+      
+      // 3. Discipline Sub-Taxonomy Check
+      if (selectedSpecificFields.size) {
+        if (!r["Specific Disciplines"]) return false;
+        const fields = r["Specific Disciplines"].split(";").map(f => f.trim());
+        if (!fields.some(f => selectedSpecificFields.has(f))) return false;
+      }
+    }
+
+    // 4. Dynamic Deadline Evaluation Check
+    const rawDeadline = r["Deadline(s)"];
+    if (deadlineFilterValue !== "all") {
+      // If a deadline filter is active but the call has no deadline data, filter it out
+      if (!rawDeadline) return false;
+
+      let targetDate = null;
+      if (rawDeadline instanceof Date) {
+        targetDate = new Date(rawDeadline);
+      } else {
+        const firstStringPart = String(rawDeadline).split(';').trim();
+        const dateParts = firstStringPart.split('/');
+        if (dateParts.length === 3) {
+          targetDate = new Date(parseInt(dateParts, 10), parseInt(dateParts, 10) - 1, parseInt(dateParts, 10));
+        }
+      }
+
+      if (!targetDate || isNaN(targetDate.getTime())) return false;
+      targetDate.setHours(0, 0, 0, 0);
+
+      // Apply chronological conditional boundaries
+      if (deadlineFilterValue === "3m" && targetDate.getTime() > threeMonthsOut.getTime()) return false;
+      if (deadlineFilterValue === "6m" && targetDate.getTime() > sixMonthsOut.getTime()) return false;
+      if (deadlineFilterValue === "6-12m" && (targetDate.getTime() <= sixMonthsOut.getTime() || targetDate.getTime() > twelveMonthsOut.getTime())) return false;
+      if (deadlineFilterValue === "1y" && targetDate.getTime() <= twelveMonthsOut.getTime()) return false;
+    }
+
+    return true;
+  });
+
+  // Sort and distribute to Active/Expired lists downstream...
+  filtered.sort((a, b) => countKeywordMatches(b, keywordInput) - countKeywordMatches(a, keywordInput));
 
   const activeCalls = [];
   const expiredCalls = [];
@@ -725,11 +787,7 @@ function updateCalls() {
       const parts = str.split('/');
       if (parts.length === 3) {
         hasValidDates = true;
-        const day = parseInt(parts, 10);
-        const month = parseInt(parts, 10) - 1;
-        const year = parseInt(parts, 10);
-        
-        const deadlineDate = new Date(year, month, day);
+        const deadlineDate = new Date(parseInt(parts, 10), parseInt(parts, 10) - 1, parseInt(parts, 10));
         deadlineDate.setHours(0, 0, 0, 0);
 
         if (deadlineDate.getTime() >= today.getTime()) {
@@ -753,7 +811,6 @@ function updateCalls() {
     const btn = document.createElement("button");
     const isGeneral = r["Scientific Domain"] && r["Scientific Domain"].trim().toLowerCase() === "general";
     
-    // Polished custom styling framework for list elements
     btn.className = `w-full text-left p-3 border rounded-xl transition shadow-sm mb-2 flex justify-between items-center gap-4 leading-normal focus:outline-none
       ${isGeneral && !isExpired ? 'border-l-4 border-l-purple-500' : ''} 
       ${isExpired ? 'bg-slate-50 border-slate-200 text-slate-400' : 'bg-white border-slate-200/80 hover:border-slate-300 text-slate-700'}`;
@@ -765,7 +822,7 @@ function updateCalls() {
       if (score > 0) {
         badgeHTML = `<span class="text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-100 px-2 py-0.5 rounded-md whitespace-nowrap">Hits: ${score}</span>`;
       } else if (isGeneral) {
-        badgeHTML = `<span class="text-[10px] bg-purple-50 text-purple-600 border border-purple-100 font-bold px-2 py-0.5 rounded-md whitespace-nowrap font-sans">General</span>`;
+        badgeHTML = `<span class="text-[10px] bg-purple-50 text-purple-600 border border-purple-100 font-bold px-2 py-0.5 rounded-md whitespace-nowrap">General</span>`;
       }
     } else if (isGeneral) {
       badgeHTML = `<span class="text-[10px] bg-purple-50 text-purple-600 border border-purple-100 font-bold px-2 py-0.5 rounded-md whitespace-nowrap font-sans">General</span>`;
@@ -796,6 +853,10 @@ function resetAllFilters() {
   const keywordInput = document.getElementById("keyword-input");
   if (keywordInput) keywordInput.value = "";
   
+  // Set deadline filter option back to default
+  const defaultRadio = document.querySelector('input[name="deadline-filter"][value="all"]');
+  if (defaultRadio) defaultRadio.checked = true;
+
   selectedDomains.clear();
   selectedSpecificFields.clear();
   selectedCallButton = null;
