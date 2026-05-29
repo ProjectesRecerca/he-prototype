@@ -299,13 +299,29 @@ let selectedCallButton = null;
 
 /* ================= DATE FORMAT ================= */
 function excelDateToString(value) {
-  if (!value) return "";
+  if (!value) return "Continuous / Open";
   if (value instanceof Date) return value.toLocaleDateString("en-GB");
-  if (typeof value === "string") return value;
+  
+  // Convert numerical serial codes (e.g., 42698) cleanly to DD/MM/YYYY
+  if (typeof value === "number") {
+    const date = new Date(Math.round((value - 25569) * 86400 * 1000));
+    return isNaN(date) ? String(value) : date.toLocaleDateString("en-GB");
+  }
 
-  const date = new Date(Math.round((value - 25569) * 86400 * 1000));
-  if (isNaN(date)) return "";
-  return date.toLocaleDateString("en-GB");
+  // Parse strings safely
+  if (typeof value === "string") {
+    const cleanStr = value.trim();
+    // If the data is already matching a normal standard layout, return it
+    if (cleanStr.includes("/") && cleanStr.split("/").length > 2) return cleanStr; 
+    
+    // Convert US format models (M/D/YY) or text structures smoothly
+    const matchDate = new Date(cleanStr);
+    if (!isNaN(matchDate.getTime())) {
+      return matchDate.toLocaleDateString("en-GB");
+    }
+    return cleanStr;
+  }
+  return String(value);
 }
 
 /* ================= LOG IN &  VALIDATION ================= */
@@ -329,8 +345,9 @@ function loadExcel() {
     .then(data => {
       const wb = XLSX.read(data, { type: "array" });
       // Change [0] to [1] to target the second sheet regardless of its name
-      const secondSheetName = wb.SheetNames[1]; 
-      excelData = XLSX.utils.sheet_to_json(wb.Sheets[secondSheetName],{ raw: false });
+      const secondSheetName = wb.SheetNames; 
+      // raw: true gets numbers/raw strings, rawFeatures prevents conversion overrides
+      excelData = XLSX.utils.sheet_to_json(wb.Sheets[secondSheetName], { raw: true, defval: "" });
       
       // ========================================================
       // ADVANCED DIAGNOSTICS: FIND AN ACTUAL RECORD WITH A DEADLINE
