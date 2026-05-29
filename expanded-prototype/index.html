@@ -368,19 +368,19 @@ function loadExcel() {
         };
       });
       console.log("Excel Raw Data Object:", formattedExcelData);
-      renderDomain();
-      renderSpecificFields();
-      updateCalls();
+      renderDomain(formattedExcelData);
+      renderSpecificFields(formattedExcelData);
+      updateCalls(formattedExcelData);
     })
     .catch(err => console.error("Error loading Excel:", err));
 }
 
 /* ================= DOMAINS ================= */
-function renderDomain() {
+function renderDomain(data) {
   const c = document.getElementById("domain-container");
   c.innerHTML = "";
 
-  [...new Set(formattedExcelData.map(r => r["Scientific Domain"]).filter(Boolean))]
+  [...new Set(data.map(r => r["Scientific Domain"]).filter(Boolean))]
     .sort()
     .forEach(d => {
       const label = document.createElement("label");
