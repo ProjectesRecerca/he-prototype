@@ -293,24 +293,44 @@
 <script>
 /* ================= GLOBAL CONFIGURATION & STATE ================= */
 let excelData = [];
-const selectedDomains = new Set(); // Fixed: Double space removed
-const selectedSpecificFields = new Set(); // Fixed: Double space removed
+const selectedDomains = new Set();
+const selectedSpecificFields = new Set();
 let selectedCallButton = null;
 
 /* ================= DATE FORMAT ================= */
 function excelDateToString(value) {
   if (!value) return "";
-  if (value instanceof Date) return value.toLocaleDateString("en-GB");
-  if (typeof value === "string") return value;
+  if (value instanceof Date) return value.toLocaleDateString("en-GB"); // En-GB formats as DD/MM/YYYY
+  if (typeof value === "string") {
+    // If it's a string from Excel that looks like a date, try to ensure uniform presentation
+    const parsed = Date.parse(value);
+    if (!isNaN(parsed)) {
+      return new Date(parsed).toLocaleDateString("en-GB");
+    }
+    return value;
+  }
 
   const date = new Date(Math.round((value - 25569) * 86400 * 1000));
   if (isNaN(date)) return "";
   return date.toLocaleDateString("en-GB");
 }
 
-/* ================= LOG IN &  VALIDATION ================= */
+/* ================= HELPER: PARSE DEADLINE FOR EXPIRATION CHECK ================= */
+function getDeadlineDate(value) {
+  if (!value) return null;
+  if (value instanceof Date) return value;
+  if (typeof value === "number") {
+    return new Date(Math.round((value - 25569) * 86400 * 1000));
+  }
+  // Try parsing string dates
+  const parsed = Date.parse(value);
+  if (!isNaN(parsed)) return new Date(parsed);
+  return null;
+}
+
+/* ================= LOG IN & VALIDATION ================= */
 function handleCredentialResponse(response) {
-  const payload = JSON.parse(atob(response.credential.split(".")[1]));
+  const payload = JSON.parse(atob(response.credential.split(".")));
   const email = payload.email || "";
 
   if (!email.endsWith("@upf.edu")) {
@@ -322,14 +342,14 @@ function handleCredentialResponse(response) {
   document.getElementById("private").style.display = "block";
   loadExcel();
 }
+
 /* ================= LOAD EXCEL ================= */
 function loadExcel() {
   fetch("./GrantRadar_Calls.xlsx")
     .then(r => r.arrayBuffer())
     .then(data => {
       const wb = XLSX.read(data, { type: "array" });
-      // Change [0] to [1] to target the second sheet regardless of its name
-      const secondSheetName = wb.SheetNames[1]; 
+      const secondSheetName = wb.SheetNames; 
       excelData = XLSX.utils.sheet_to_json(wb.Sheets[secondSheetName],{ raw: false });
       console.log("Excel Raw Data Object:", excelData);
       console.log("Total rows imported:", excelData.length);
@@ -624,7 +644,7 @@ function showCallDetails(r, buttonElement) {
     { label: "Subprogramme", val: r["Subprogramme"] },
     { label: "Type", val: r["Type of Action"] },
     { label: "Opening Date", val: excelDateToString(r["Opening date"]) },
-    { label: "Deadline", val: excelDateToString(r["Deadline(s)"]) }
+    { label: "Deadline", val: excelDateToString(r["Deadline(s)"] || r["deadline(s)"] || r["Deadline"] || r["deadline"]) }
   ];
 
   const keywordInput = document.getElementById("keyword-input").value.trim();
@@ -696,13 +716,6 @@ function showNoCallsPopup() {
 
 /* ================= UPDATE CALLS INTERFACE PIPELINE ================= */
 function updateCalls() {
-  const expiredWrapper = document.getElementById("expired-calls-wrapper");
-  const expiredArrow = document.getElementById("expired-arrow");
-  if (expiredWrapper && expiredArrow) {
-    expiredWrapper.classList.add("hidden");
-    expiredArrow.style.transform = "rotate(0deg)";
-  }
-
   const container = document.getElementById("calls-container");
   const expiredContainer = document.getElementById("expired-calls-container");
   
@@ -712,40 +725,50 @@ function updateCalls() {
   resetDetailsPanel();
 
   const keywordInput = document.getElementById("keyword-input").value.trim();
-  
-  const deadlineRadio = document.querySelector('input[name="deadline-filter"]:checked');
-  const deadlineFilterValue = deadlineRadio ? deadlineRadio.value : "all";
+  const now = new Date();
+  // Clear time for precise calendar day comparisons
+  now.setHours(0, 0, 0, 0);
 
-  let specificTextMatchesFound = false;
+  let activeCallsList = [];
+  let expiredCallsList = [];
 
-  // Filter pipeline remains wide open for testing
-  const filtered = excelData.filter(r => {
-    if (keywordInput && !keywordMatchesMulti(r, keywordInput)) return false;
-    specificTextMatchesFound = true;
+  // Filter pipeline wide open for evaluation
+  excelData.forEach(r => {
+    if (keywordInput && !keywordMatchesMulti(r, keywordInput)) return;
 
     const isGeneralCall = r["Scientific Domain"] && r["Scientific Domain"].trim().toLowerCase() === "general";
     if (!isGeneralCall) {
-      if (selectedDomains.size && !selectedDomains.has(r["Scientific Domain"])) return false;
+      if (selectedDomains.size && !selectedDomains.has(r["Scientific Domain"])) return;
       if (selectedSpecificFields.size) {
-        if (!r["Specific Disciplines"]) return false;
+        if (!r["Specific Disciplines"]) return;
         const fields = r["Specific Disciplines"].split(";").map(f => f.trim());
-        if (!fields.some(f => selectedSpecificFields.has(f))) return false;
+        if (!fields.some(f => selectedSpecificFields.has(f))) return;
       }
     }
-    return true;
+
+    // Determine status (Active vs Expired) based on current Date
+    const deadlineRaw = r["Deadline(s)"] || r["deadline(s)"] || r["Deadline"] || r["deadline"];
+    const deadlineDate = getDeadlineDate(deadlineRaw);
+
+    if (deadlineDate && deadlineDate < now) {
+      expiredCallsList.push(r);
+    } else {
+      activeCallsList.push(r);
+    }
   });
 
-  filtered.sort((a, b) => countKeywordMatches(b, keywordInput) - countKeywordMatches(a, keywordInput));
+  // Sort arrays based on keyword hits relevance
+  activeCallsList.sort((a, b) => countKeywordMatches(b, keywordInput) - countKeywordMatches(a, keywordInput));
+  expiredCallsList.sort((a, b) => countKeywordMatches(b, keywordInput) - countKeywordMatches(a, keywordInput));
 
+  // Render loop engine
   const renderCall = (r, targetContainer) => {
     const score = countKeywordMatches(r, keywordInput);
     const btn = document.createElement("button");
     const isGeneral = r["Scientific Domain"] && r["Scientific Domain"].trim().toLowerCase() === "general";
     
-    // Clean, compact button design
     btn.className = `w-full text-left p-3 bg-white border border-slate-200/80 rounded-xl transition shadow-sm mb-2 flex flex-col gap-1 focus:outline-none hover:border-slate-300 hover:bg-slate-50/50 text-slate-700`;
 
-    // Process Call ID or fallback space to keep structure intact
     const callIdHTML = r["Call ID"] 
       ? `<span class="font-bold text-slate-400 text-[10px] tracking-tight uppercase">${r["Call ID"]}</span>` 
       : `<span></span>`;
@@ -757,29 +780,16 @@ function updateCalls() {
       badgeHTML = `<span class="text-[10px] bg-purple-50 text-purple-600 border border-purple-100 font-bold px-2 py-0.5 rounded-md whitespace-nowrap">General</span>`;
     }
 
-    // Capture column fields strings safely (supports multi-deadlines)
-    let deadlineRawString = "";
-    const lookForField = r["Deadline(s)"] || r["deadline(s)"] || r["Deadline"] || r["deadline"];
-    
-    if (lookForField) {
-      if (lookForField instanceof Date) {
-        deadlineRawString = lookForField.toLocaleDateString("en-GB");
-      } else {
-        deadlineRawString = String(lookForField).trim();
-      }
-    } else {
-      deadlineRawString = "Continuous / Open";
-    }
+    // Capture column fields and explicitly force conversion via excelDateToString for DD/MM/YYYY
+    const deadlineRaw = r["Deadline(s)"] || r["deadline(s)"] || r["Deadline"] || r["deadline"];
+    const deadlineFormattedString = deadlineRaw ? excelDateToString(deadlineRaw) : "Continuous / Open";
 
-    // NEW ULTRA-COMPACT 2-LINE LAYOUT
-    // Row 1: Call ID on the left, Muted Deadline string on the right
-    // Row 2: Call Title on the left, Badge hits on the right
     btn.innerHTML = `
       <div class="w-full flex justify-between items-center gap-4 border-b border-slate-50 pb-0.5">
         ${callIdHTML}
         <span class="text-[10px] text-slate-400 font-medium whitespace-nowrap flex items-center gap-1">
           <svg class="w-3 h-3 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-          ${deadlineRawString}
+          ${deadlineFormattedString}
         </span>
       </div>
       <div class="w-full flex justify-between items-start gap-4 pt-0.5">
@@ -796,10 +806,13 @@ function updateCalls() {
     targetContainer.appendChild(btn);
   };
 
-  filtered.forEach(r => renderCall(r, container));
+  // Render arrays into their respective DOM nodes
+  activeCallsList.forEach(r => renderCall(r, container));
+  expiredCallsList.forEach(r => renderCall(r, expiredContainer));
 
-  document.getElementById("calls-title").textContent = `Opportunities Available (${filtered.length})`;
-  document.getElementById("expired-calls-title").textContent = `Archive Records (0)`;
+  // Dynamically update headings using template strings
+  document.getElementById("calls-title").textContent = `Opportunities Available (${activeCallsList.length})`;
+  document.getElementById("expired-calls-title").textContent = `Expired Opportunities (${expiredCallsList.length})`;
 }
 
 /* ================= FILTER RESET LOGIC ================= */
@@ -807,7 +820,6 @@ function resetAllFilters() {
   const keywordInput = document.getElementById("keyword-input");
   if (keywordInput) keywordInput.value = "";
   
-  // Set deadline filter option back to default
   const defaultRadio = document.querySelector('input[name="deadline-filter"][value="all"]');
   if (defaultRadio) defaultRadio.checked = true;
 
