@@ -16,12 +16,12 @@
     body {
       font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
       color: #374151;
-      font-size: 1rem; 
+      font-size: 0.875rem; 
     }
 
     /* Section Titles Hierarchy Optimization */
     h3 {
-      font-size: 0.9rem !important; 
+      font-size: 0.75rem !important; 
       font-weight: 700 !important;   
       text-transform: uppercase;
       letter-spacing: 0.05em;
@@ -60,23 +60,23 @@
       <div class="px-6 py-4 overflow-y-auto space-y-6 flex-1 custom-scrollbar">
         <div>
           <h4 class="font-semibold text-slate-900 text-sm mb-1.5">Expected Outcomes</h4>
-          <p id="modal-expected-outcomes" class="text-sm text-slate-600 leading-relaxed text-justify"></p>
+          <p id="modal-expected-outcomes" class="text-xs text-slate-600 leading-relaxed text-justify"></p>
         </div>
         <div>
           <h4 class="font-semibold text-slate-900 text-sm mb-1.5">Scope</h4>
-          <p id="modal-scope" class="text-sm text-slate-600 leading-relaxed text-justify"></p>
+          <p id="modal-scope" class="text-xs text-slate-600 leading-relaxed text-justify"></p>
         </div>
-        <div id="modal-keywords" class="text-slate-400 italic text-sm pt-2 border-t border-slate-100"></div>
+        <div id="modal-keywords" class="text-slate-400 italic text-xs pt-2 border-t border-slate-100"></div>
       </div>
       <div class="px-6 py-4 border-t border-slate-100 flex flex-wrap gap-2 justify-between items-center bg-slate-50 rounded-b-xl">
-        <button id="close-modal-btn" class="px-4 py-2 bg-white border border-slate-200 text-slate-700 text-sm font-semibold rounded-lg hover:bg-slate-100 transition shadow-sm">
+        <button id="close-modal-btn" class="px-4 py-2 bg-white border border-slate-200 text-slate-700 text-xs font-semibold rounded-lg hover:bg-slate-100 transition shadow-sm">
           Close
         </button>
         <div class="flex gap-2">
-          <a id="modal-website-btn" target="_blank" class="hidden px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700 transition shadow-sm">
+          <a id="modal-website-btn" target="_blank" class="hidden px-4 py-2 bg-emerald-600 text-white text-xs font-semibold rounded-lg hover:bg-emerald-700 transition shadow-sm">
             Visit Official Website Call
           </a>
-          <button id="contact-us-btn" class="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition shadow-sm">
+          <button id="contact-us-btn" class="px-4 py-2 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition shadow-sm">
             Contact Us
           </button>
         </div>
@@ -90,10 +90,10 @@
         !
       </div>
       <h4 class="font-bold text-slate-900 text-base mb-1">No Direct Matches Found</h4>
-      <p class="text-sm text-slate-600 mb-4 leading-relaxed">
+      <p class="text-xs text-slate-600 mb-4 leading-relaxed">
         No specific calls match your chosen keyword(s). However, you can still browse the <strong>"General" calls</strong> displayed in your list, as they are open to all domains.
       </p>
-      <button id="close-popup-btn" class="w-full px-4 py-2 bg-blue-600 text-white font-semibold text-sm rounded-lg hover:bg-blue-700 transition shadow-sm">
+      <button id="close-popup-btn" class="w-full px-4 py-2 bg-blue-600 text-white font-semibold text-xs rounded-lg hover:bg-blue-700 transition shadow-sm">
         OK
       </button>
     </div>
@@ -102,7 +102,7 @@
   <div id="login" class="min-h-screen flex items-center justify-center bg-slate-50">
     <div class="bg-white p-10 rounded-2xl shadow-sm border border-slate-200 text-center w-full max-w-md">
       <img src="./logo.png" class="mx-auto mb-6 h-48 object-contain" alt="Logo" />
-      <p class="text-sm font-medium text-slate-400 tracking-wider mb-6">Developed by the Research Service</p>
+      <p class="text-xs font-medium text-slate-400 tracking-wider mb-6">Developed by the Research Service</p>
       <div id="g_id_onload"
            data-client_id="871231787095-ug0o6pu89sn0t6i97s0nagakohighot8.apps.googleusercontent.com"
            data-callback="handleCredentialResponse"
@@ -262,7 +262,7 @@
         <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex flex-col">
           <h3 class="text-base font-bold text-slate-900 border-b border-slate-100 pb-2 mb-3">Call Details</h3>
           
-          <div id="dynamic-details-container" class="text-s space-y-2.5 mb-4 text-slate-600">
+          <div id="dynamic-details-container" class="text-xs space-y-2.5 mb-4 text-slate-600">
             <div class="p-4 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-center text-slate-400 italic">
               Select any call card from the center row pipeline to examine the details of the selected call.
             </div>
@@ -275,10 +275,10 @@
           </div>
 
           <div class="flex flex-col gap-2 mt-4 pt-3 border-t border-slate-100">
-            <button id="more-info-btn" class="hidden w-full px-4 py-2 bg-blue-600 text-white font-semibold text-sm rounded-lg hover:bg-blue-700 transition shadow-sm">
-              Explore More Details
+            <button id="more-info-btn" class="hidden w-full px-4 py-2 bg-blue-600 text-white font-semibold text-xs rounded-lg hover:bg-blue-700 transition shadow-sm">
+              Explore Scope Details
             </button>
-            <button id="clear-btn" class="w-full px-4 py-1.5 bg-slate-100 text-slate-600 hover:bg-slate-200 font-medium text-sm rounded-lg transition">
+            <button id="clear-btn" class="w-full px-4 py-1.5 bg-slate-100 text-slate-600 hover:bg-slate-200 font-medium text-xs rounded-lg transition">
               Clear  Selection
             </button>
           </div>
@@ -306,19 +306,6 @@ function excelDateToString(value) {
   const date = new Date(Math.round((value - 25569) * 86400 * 1000));
   if (isNaN(date)) return "";
   return date.toLocaleDateString("en-GB");
-}
-
-/* ================= HELPER: PARSE DEADLINE FOR PIPELINE COMPARISONS ================= */
-function parseDeadlineDate(value) {
-  if (!value) return null;
-  if (value instanceof Date) return value;
-  if (typeof value === "number") {
-    return new Date(Math.round((value - 25569) * 86400 * 1000));
-  }
-  // Try to parse string values
-  const parsed = Date.parse(value);
-  if (!isNaN(parsed)) return new Date(parsed);
-  return null;
 }
 
 /* ================= LOG IN &  VALIDATION ================= */
@@ -362,7 +349,7 @@ function renderDomain() {
     .sort()
     .forEach(d => {
       const label = document.createElement("label");
-      label.className = "flex items-center gap-2 px-2.5 py-1.5 hover:bg-slate-50 rounded-lg cursor-pointer transition text-sm font-medium text-slate-700";
+      label.className = "flex items-center gap-2 px-2.5 py-1.5 hover:bg-slate-50 rounded-lg cursor-pointer transition text-xs font-medium text-slate-700";
 
       const cb = document.createElement("input");
       cb.type = "checkbox";
@@ -463,7 +450,7 @@ function renderSpecificFields() {
 
       catFields.forEach(f => {
         const label = document.createElement("label");
-        label.className = "flex items-center gap-2 px-1.5 py-1 text-sm hover:bg-slate-50 rounded cursor-pointer text-slate-600";
+        label.className = "flex items-center gap-2 px-1.5 py-1 text-xs hover:bg-slate-50 rounded cursor-pointer text-slate-600";
 
         const cb = document.createElement("input");
         cb.type = "checkbox";
@@ -647,7 +634,7 @@ function showCallDetails(r, buttonElement) {
       const div = document.createElement("div");
       div.className = "pb-1.5 border-b border-slate-100 last:border-0";
       const highlightedVal = highlightKeywords(String(field.val), keywordInput);
-      div.innerHTML = `<span class="text-slate-400 font-semibold uppercase text-[10px] block tracking-wider">${field.label}</span><span class="text-slate-800 text-sm font-medium">${highlightedVal}</span>`;
+      div.innerHTML = `<span class="text-slate-400 font-semibold uppercase text-[10px] block tracking-wider">${field.label}</span><span class="text-slate-800 text-xs font-medium">${highlightedVal}</span>`;
       container.appendChild(div);
     }
   });
@@ -788,15 +775,15 @@ function updateCalls() {
     // Row 1: Call ID on the left, Muted Deadline string on the right
     // Row 2: Call Title on the left, Badge hits on the right
     btn.innerHTML = `
-      <div class="w-full flex justify-between items-center gap-4 border-b border-slate-50 pb-0.5">
-        ${callIdHTML}
-        <span class="text-[10px] text-slate-400 font-medium whitespace-nowrap flex items-center gap-1">
-          <svg class="w-3 h-3 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-          ${deadlineRawString}
-        </span>
-      </div>
+    <div class="w-full flex justify-between items-center gap-4 border-b border-slate-50 pb-0.5">
+            ${callIdHTML}
+            <span class="text-[10px] text-slate-400 font-medium whitespace-nowrap flex items-center gap-1">
+              <svg class="w-3 h-3 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              ${deadlineRawString}
+            </span>
+          </div>
       <div class="w-full flex justify-between items-start gap-4 pt-0.5">
-        <div class="text-sm font-semibold text-slate-800 tracking-tight leading-snug">
+        <div class="text-xs font-semibold text-slate-800 tracking-tight leading-snug">
           ${r["Call Title"] || ""}
         </div>
         <div class="shrink-0 pt-0.5">
@@ -812,7 +799,7 @@ function updateCalls() {
   filtered.forEach(r => renderCall(r, container));
 
   document.getElementById("calls-title").textContent = `Opportunities Available (${filtered.length})`;
-  document.getElementById("expired-calls-title").textContent = `Expired Calls (0)`;
+  document.getElementById("expired-calls-title").textContent = `Archive Records (0)`;
 }
 
 /* ================= FILTER RESET LOGIC ================= */
