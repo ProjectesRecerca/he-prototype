@@ -299,29 +299,13 @@ let selectedCallButton = null;
 
 /* ================= DATE FORMAT ================= */
 function excelDateToString(value) {
-  if (!value) return "Continuous / Open";
+  if (!value) return "";
   if (value instanceof Date) return value.toLocaleDateString("en-GB");
-  
-  // Convert numerical serial codes (e.g., 42698) cleanly to DD/MM/YYYY
-  if (typeof value === "number") {
-    const date = new Date(Math.round((value - 25569) * 86400 * 1000));
-    return isNaN(date) ? String(value) : date.toLocaleDateString("en-GB");
-  }
+  if (typeof value === "string") return value;
 
-  // Parse strings safely
-  if (typeof value === "string") {
-    const cleanStr = value.trim();
-    // If the data is already matching a normal standard layout, return it
-    if (cleanStr.includes("/") && cleanStr.split("/").length > 2) return cleanStr; 
-    
-    // Convert US format models (M/D/YY) or text structures smoothly
-    const matchDate = new Date(cleanStr);
-    if (!isNaN(matchDate.getTime())) {
-      return matchDate.toLocaleDateString("en-GB");
-    }
-    return cleanStr;
-  }
-  return String(value);
+  const date = new Date(Math.round((value - 25569) * 86400 * 1000));
+  if (isNaN(date)) return "";
+  return date.toLocaleDateString("en-GB");
 }
 
 /* ================= LOG IN &  VALIDATION ================= */
@@ -347,32 +331,34 @@ function loadExcel() {
       // Change [0] to [1] to target the second sheet regardless of its name
       const secondSheetName = wb.SheetNames; 
       // raw: true gets numbers/raw strings, rawFeatures prevents conversion overrides
-      excelData = XLSX.utils.sheet_to_json(wb.Sheets[secondSheetName], { raw: true, defval: "" });
+      excelData = XLSX.utils.sheet_to_json(wb.Sheets[secondSheetName],{ raw: false });
       
-      // ========================================================
-      // ADVANCED DIAGNOSTICS: FIND AN ACTUAL RECORD WITH A DEADLINE
-      // ========================================================
-      console.log("--- ADVANCED EXCEL DIAGNOSTICS ---");
-      console.log("Total rows successfully parsed:", excelData.length);
+      // ====================================================================
+      // DIAGNOSTICS FOR CONSOLE INSPECTION ONLY (DOES NOT RENDER TO USER)
+      // ====================================================================
+      console.log("--- EXCEL READ DIAGNOSTICS ---");
+      console.log("Total rows imported:", excelData.length);
       
-      // Find the first row where a deadline property actually exists
-      const rowWithDeadline = excelData.find(r => r["Deadline(s)"] || r["deadline(s)"] || r["Deadline"] || r["deadline"]);
-
-      if (rowWithDeadline) {
-        const targetField = rowWithDeadline["Deadline(s)"] || rowWithDeadline["deadline(s)"] || rowWithDeadline["Deadline"] || rowWithDeadline["deadline"];
-        console.log("Row Title found:", rowWithDeadline["Call Title"]);
-        console.log("Real value detected in data cell:", targetField);
-        console.log("JavaScript Data Type of this cell:", typeof targetField);
-        console.log("Is it a native JavaScript Date Object?:", targetField instanceof Date);
-        if (targetField instanceof Date) {
-          console.log("Default .toString() output:", targetField.toString());
-          console.log("Formatted with en-GB (.toLocaleDateString):", targetField.toLocaleDateString("en-GB"));
+      // Find the first row that actually contains data in a deadline column
+      const sampleRow = excelData.find(r => r["Deadline(s)"] || r["deadline(s)"] || r["Deadline"] || r["deadline"]);
+      
+      if (sampleRow) {
+        const rawValue = sampleRow["Deadline(s)"] || sampleRow["deadline(s)"] || sampleRow["Deadline"] || sampleRow["deadline"];
+        console.log("Sample Row Call Title:", sampleRow["Call Title"]);
+        console.log("Value read by SheetJS from Excel:", rawValue);
+        console.log("Data Type of value:", typeof rawValue);
+        console.log("Is value an instance of JavaScript Date object?:", rawValue instanceof Date);
+        
+        if (typeof rawValue === 'string') {
+          console.log("Raw string length:", rawValue.length);
+          console.log("Does string contain slashes?:", rawValue.includes("/"));
+          console.log("Split by slashes array:", rawValue.split("/"));
         }
       } else {
-        console.log("WARNING: No row in the entire sheet matched the column names 'Deadline(s)', 'deadline(s)', 'Deadline', or 'deadline'. Check exact casing and spaces in Excel headers!");
-        console.log("Available keys in row 0:", Object.keys(excelData || {}));
+        console.log("No deadline fields detected in any rows.");
       }
-      console.log("--------------------------------------------------");
+      console.log("----------------------------------------------------");
+      // ====================================================================
 
       console.log("Excel Raw Data Object:", excelData);
       renderDomain();
