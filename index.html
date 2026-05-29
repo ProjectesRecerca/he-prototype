@@ -323,58 +323,37 @@ function handleCredentialResponse(response) {
   loadExcel();
 }
 /* ================= LOAD EXCEL ================= */
+/* ================= LOAD EXCEL ================= */
 function loadExcel() {
   fetch("./GrantRadar_Calls.xlsx")
     .then(r => r.arrayBuffer())
     .then(data => {
       const wb = XLSX.read(data, { type: "array" });
-      // Change [0] to [1] to target the second sheet regardless of its name
-      const secondSheetName = wb.SheetNames[1]; 
+      const secondSheetName = wb.SheetNames; 
       excelData = XLSX.utils.sheet_to_json(wb.Sheets[secondSheetName],{ raw: false });
       
-      // ========================================================
-      // DEBUG DIAGNOSTICS: SEE EXACTLY WHAT JAVASCRIPT IS READING
-      // ========================================================
       console.log("--- EXCEL READ DIAGNOSTICS ---");
       console.log("Total rows parsed into excelData:", excelData.length);
-      console.log("Full First Row Object Structure:", excelData);
 
-      if (excelData.length > 0) {
-        // Look at the first row's deadline properties dynamically
-        const firstRow = excelData;
-        const lookForField = firstRow["Deadline(s)"];
-        
-        console.log("Value detected in deadline column:", lookForField);
-        console.log("JavaScript Data Type of this value:", typeof lookForField);
-        console.log("Is this value a native JavaScript Date object?:", lookForField instanceof Date);
-        
-        if (typeof lookForField === "string") {
-          console.log("Character length of the deadline string:", lookForField.length);
-          // Check for hidden spaces or carriage returns
-          console.log("String escaped representation:", JSON.stringify(lookForField));
-        }
-      }
-      console.log("-----------------------------------------");
-      // ========================================================
       const formattedExcelData = excelData.map(row => {
         const deadlineRaw = row["Deadline(s)"] || "";
         
         // Split strings by semicolon to handle multiple dates safely
         let deadlinesArray = deadlineRaw ? String(deadlineRaw).split(';').map(d => d.trim()) : [];
 
-        // Normalize each date in the array to DD/MM/YYYY format
         // Normalize each date in the array to DD/MM/YYYY format safely
         deadlinesArray = deadlinesArray.map(dateStr => {
           const parts = dateStr.split('/');
           
           // Verify it's a valid slash-separated date structure
           if (parts.length === 3) {
+            // FIX: Target elements explicitly by index before trimming
             const p0 = parts.trim();
             const p1 = parts.trim();
             const p2 = parts.trim();
 
-            // CASE 1: Native Excel format parsed as US short-date (2-digit year, e.g., '26')
-            // We know this needs conversion: Month is p0, Day is p1
+            // CASE 1: Native Excel short-date strings (2-digit year, e.g., '26')
+            // Month is p0, Day is p1. Flip and pad cleanly.
             if (p2.length === 2) {
               const day = p1.padStart(2, '0');
               const month = p0.padStart(2, '0');
@@ -382,7 +361,7 @@ function loadExcel() {
               return `${day}/${month}/${year}`;
             }
 
-            // CASE 2: 4-digit year format, but explicitly written as US layout (Month <= 12, Day > 12)
+            // CASE 2: 4-digit year format explicitly written as US layout (Month <= 12, Day > 12)
             // e.g., '4/16/2026' -> Converts to '16/04/2026'
             if (p2.length === 4 && Number(p0) <= 12 && Number(p1) > 12) {
               const day = p1.padStart(2, '0');
@@ -397,9 +376,17 @@ function loadExcel() {
               const month = p1.padStart(2, '0');
               return `${day}/${month}/${p2}`;
             }
+
+            // CASE 4: 4-digit year where both numbers are <= 12 (e.g., '4/5/2026')
+            // Keep layout order safe but enforce 2-digit structural padding
+            if (p2.length === 4) {
+              const part0 = p0.padStart(2, '0');
+              const part1 = p1.padStart(2, '0');
+              return `${part0}/${part1}/${p2}`;
+            }
           }
           
-          return dateStr; // Safe fallback for "Continuous / Open" or pre-formatted strings
+          return dateStr; // Fallback for strings like "Continuous / Open"
         });
 
         return {
@@ -407,16 +394,20 @@ function loadExcel() {
           "Deadline(s)": deadlinesArray 
         };
       });
+      
+      // FIX: Update your global application state configuration with the cleaned dates
+      excelData = formattedExcelData;
+
       console.log("Excel Raw Data Object:", formattedExcelData);
-      renderDomain(formattedExcelData);
-      renderSpecificFields(formattedExcelData);
-      updateCalls(formattedExcelData);
+      renderDomain(excelData);
+      renderSpecificFields(excelData);
+      updateCalls(excelData);
     })
     .catch(err => console.error("Error loading Excel:", err));
 }
 
 /* ================= DOMAINS ================= */
-function renderDomain(data) {
+function renderDomain(data = excelData) {
   const c = document.getElementById("domain-container");
   c.innerHTML = "";
 
@@ -448,7 +439,7 @@ function renderDomain(data) {
 }
 
 /* ================= SPECIFIC DISCIPLINES (CATEGORIZED) ================= */
-function renderSpecificFields(data) {
+function renderSpecificFields(data = excelData) {
   const container = document.getElementById("field-container");
   container.innerHTML = "";
   container.className = "space-y-4";
@@ -770,7 +761,7 @@ function showNoCallsPopup() {
 }
 
 /* ================= UPDATE CALLS INTERFACE PIPELINE ================= */
-function updateCalls(data) {
+function updateCalls(data = excelData) {
   const expiredWrapper = document.getElementById("expired-calls-wrapper");
   const expiredArrow = document.getElementById("expired-arrow");
   if (expiredWrapper && expiredArrow) {
