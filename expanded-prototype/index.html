@@ -342,7 +342,7 @@ function loadExcel() {
       if (excelData.length > 0) {
         // Look at the first row's deadline properties dynamically
         const firstRow = excelData;
-        const lookForField = firstRow["Deadline(s)"] || firstRow["deadline(s)"] || firstRow["Deadline"] || firstRow["deadline"];
+        const lookForField = firstRow["Deadline(s)"];
         
         console.log("Value detected in deadline column:", lookForField);
         console.log("JavaScript Data Type of this value:", typeof lookForField);
@@ -356,8 +356,18 @@ function loadExcel() {
       }
       console.log("-----------------------------------------");
       // ========================================================
+      const formattedExcelData = excelData.map(row => {
+        const deadlineRaw = row["Deadline(s)"] || "";
+        const deadlinesArray = deadlineRaw ? deadlineRaw.split(';').map(d => d.trim()) : [];
 
-      console.log("Excel Raw Data Object:", excelData);
+        // This returns the original row data, but swaps out the messy 
+        // string for our clean, usable array of dates.
+        return {
+          ...row,
+          "Deadline(s)": deadlinesArray 
+        };
+      });
+      console.log("Excel Raw Data Object:", formattedExcelData);
       renderDomain();
       renderSpecificFields();
       updateCalls();
@@ -370,7 +380,7 @@ function renderDomain() {
   const c = document.getElementById("domain-container");
   c.innerHTML = "";
 
-  [...new Set(excelData.map(r => r["Scientific Domain"]).filter(Boolean))]
+  [...new Set(formattedExcelData.map(r => r["Scientific Domain"]).filter(Boolean))]
     .sort()
     .forEach(d => {
       const label = document.createElement("label");
@@ -427,8 +437,8 @@ function renderSpecificFields() {
   ];
 
   let rows = selectedDomains.size
-    ? excelData.filter(r => selectedDomains.has(r["Scientific Domain"]))
-    : excelData;
+    ? formattedExcelData.filter(r => selectedDomains.has(r["Scientific Domain"]))
+    : formattedExcelData;
 
   const allFields = new Set();
   rows.forEach(r => {
@@ -744,7 +754,7 @@ function updateCalls() {
   let specificTextMatchesFound = false;
 
   // Filter pipeline remains wide open for testing
-  const filtered = excelData.filter(r => {
+  const filtered = formattedExcelData.filter(r => {
     if (keywordInput && !keywordMatchesMulti(r, keywordInput)) return false;
     specificTextMatchesFound = true;
 
@@ -784,7 +794,7 @@ function updateCalls() {
 
     // Capture column fields strings safely (supports multi-deadlines)
     let deadlineRawString = "";
-    const lookForField = r["Deadline(s)"] || r["deadline(s)"] || r["Deadline"] || r["deadline"];
+    const lookForField = r["Deadline(s)"];
     
     if (lookForField) {
       if (lookForField instanceof Date) {
