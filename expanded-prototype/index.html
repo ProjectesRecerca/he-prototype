@@ -331,8 +331,33 @@ function loadExcel() {
       // Change [0] to [1] to target the second sheet regardless of its name
       const secondSheetName = wb.SheetNames[1]; 
       excelData = XLSX.utils.sheet_to_json(wb.Sheets[secondSheetName],{ raw: false });
+      
+      // ========================================================
+      // DEBUG DIAGNOSTICS: SEE EXACTLY WHAT JAVASCRIPT IS READING
+      // ========================================================
+      console.log("--- EXCEL READ DIAGNOSTICS ---");
+      console.log("Total rows parsed into excelData:", excelData.length);
+      console.log("Full First Row Object Structure:", excelData);
+
+      if (excelData.length > 0) {
+        // Look at the first row's deadline properties dynamically
+        const firstRow = excelData;
+        const lookForField = firstRow["Deadline(s)"] || firstRow["deadline(s)"] || firstRow["Deadline"] || firstRow["deadline"];
+        
+        console.log("Value detected in deadline column:", lookForField);
+        console.log("JavaScript Data Type of this value:", typeof lookForField);
+        console.log("Is this value a native JavaScript Date object?:", lookForField instanceof Date);
+        
+        if (typeof lookForField === "string") {
+          console.log("Character length of the deadline string:", lookForField.length);
+          // Check for hidden spaces or carriage returns
+          console.log("String escaped representation:", JSON.stringify(lookForField));
+        }
+      }
+      console.log("-----------------------------------------");
+      // ========================================================
+
       console.log("Excel Raw Data Object:", excelData);
-      console.log("Total rows imported:", excelData.length);
       renderDomain();
       renderSpecificFields();
       updateCalls();
