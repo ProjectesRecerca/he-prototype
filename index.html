@@ -363,22 +363,43 @@ function loadExcel() {
         let deadlinesArray = deadlineRaw ? String(deadlineRaw).split(';').map(d => d.trim()) : [];
 
         // Normalize each date in the array to DD/MM/YYYY format
+        // Normalize each date in the array to DD/MM/YYYY format safely
         deadlinesArray = deadlinesArray.map(dateStr => {
-          // Detects standard MM/DD/YY or MM/DD/YYYY formats using a Regex check
-          if (/^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(dateStr)) {
-            const parts = dateStr.split('/');
-            const month = parts.padStart(2, '0');
-            const day = parts.padStart(2, '0');
-            let year = parts;
-            
-            // If it's a 2-digit shortcut year (e.g., '26'), expand it cleanly to '2026'
-            if (year.length === 2) {
-              year = '20' + year;
+          const parts = dateStr.split('/');
+          
+          // Verify it's a valid slash-separated date structure
+          if (parts.length === 3) {
+            const p0 = parts.trim();
+            const p1 = parts.trim();
+            const p2 = parts.trim();
+
+            // CASE 1: Native Excel format parsed as US short-date (2-digit year, e.g., '26')
+            // We know this needs conversion: Month is p0, Day is p1
+            if (p2.length === 2) {
+              const day = p1.padStart(2, '0');
+              const month = p0.padStart(2, '0');
+              const year = '20' + p2;
+              return `${day}/${month}/${year}`;
             }
-            
-            return `${day}/${month}/${year}`;
+
+            // CASE 2: 4-digit year format, but explicitly written as US layout (Month <= 12, Day > 12)
+            // e.g., '4/16/2026' -> Converts to '16/04/2026'
+            if (p2.length === 4 && Number(p0) <= 12 && Number(p1) > 12) {
+              const day = p1.padStart(2, '0');
+              const month = p0.padStart(2, '0');
+              return `${day}/${month}/${p2}`;
+            }
+
+            // CASE 3: Already an explicit European/British layout (First part > 12)
+            // e.g., '15/05/2026' -> Ensure clean 2-digit padding and return as-is
+            if (p2.length === 4 && Number(p0) > 12) {
+              const day = p0.padStart(2, '0');
+              const month = p1.padStart(2, '0');
+              return `${day}/${month}/${p2}`;
+            }
           }
-          return dateStr; // Leave it as-is if it's already DD/MM/YYYY or text
+          
+          return dateStr; // Safe fallback for "Continuous / Open" or pre-formatted strings
         });
 
         return {
