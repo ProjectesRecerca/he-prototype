@@ -333,32 +333,28 @@ function loadExcel() {
       // raw: true gets numbers/raw strings, rawFeatures prevents conversion overrides
       excelData = XLSX.utils.sheet_to_json(wb.Sheets[secondSheetName],{ raw: false });
       
-      // ====================================================================
-      // DIAGNOSTICS FOR CONSOLE INSPECTION ONLY (DOES NOT RENDER TO USER)
-      // ====================================================================
-      console.log("--- EXCEL READ DIAGNOSTICS ---");
-      console.log("Total rows imported:", excelData.length);
-      
-      // Find the first row that actually contains data in a deadline column
-      const sampleRow = excelData.find(r => r["Deadline(s)"] || r["deadline(s)"] || r["Deadline"] || r["deadline"]);
-      
-      if (sampleRow) {
-        const rawValue = sampleRow["Deadline(s)"] || sampleRow["deadline(s)"] || sampleRow["Deadline"] || sampleRow["deadline"];
-        console.log("Sample Row Call Title:", sampleRow["Call Title"]);
-        console.log("Value read by SheetJS from Excel:", rawValue);
-        console.log("Data Type of value:", typeof rawValue);
-        console.log("Is value an instance of JavaScript Date object?:", rawValue instanceof Date);
-        
-        if (typeof rawValue === 'string') {
-          console.log("Raw string length:", rawValue.length);
-          console.log("Does string contain slashes?:", rawValue.includes("/"));
-          console.log("Split by slashes array:", rawValue.split("/"));
+      // ========================================================
+      // SAFE DIAGNOSTIC LOGS: INSPECT THE "Deadline(s)" COLUMN
+      // ========================================================
+      console.log("--- COLUMN DATA INSPECTION ---");
+      console.log("Total rows successfully parsed:", excelData.length);
+
+      // Loop through the first few rows safely to print what is inside the column
+      let printedCount = 0;
+      for (let i = 0; i < excelData.length; i++) {
+        const row = excelData[i];
+        // Safely check if this row object has the 'Deadline(s)' column value
+        if (row && row["Deadline(s)"]) {
+          console.log(`Row index [${i}] | Call Title: "${row["Call Title"]}"`);
+          console.log(`  -> Exact text found in 'Deadline(s)' column:`, row["Deadline(s)"]);
+          console.log(`  -> JavaScript data type:`, typeof row["Deadline(s)"]);
+          
+          printedCount++;
+          if (printedCount >= 3) break; // Only print 3 samples so we don't flood the console
         }
-      } else {
-        console.log("No deadline fields detected in any rows.");
       }
-      console.log("----------------------------------------------------");
-      // ====================================================================
+      console.log("-----------------------------------------");
+      // ========================================================
 
       console.log("Excel Raw Data Object:", excelData);
       renderDomain();
