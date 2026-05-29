@@ -323,91 +323,60 @@ function handleCredentialResponse(response) {
   loadExcel();
 }
 /* ================= LOAD EXCEL ================= */
-/* ================= LOAD EXCEL ================= */
 function loadExcel() {
   fetch("./GrantRadar_Calls.xlsx")
     .then(r => r.arrayBuffer())
     .then(data => {
       const wb = XLSX.read(data, { type: "array" });
-      const secondSheetName = wb.SheetNames; 
+      // Change [0] to [1] to target the second sheet regardless of its name
+      const secondSheetName = wb.SheetNames[1]; 
       excelData = XLSX.utils.sheet_to_json(wb.Sheets[secondSheetName],{ raw: false });
       
+      // ========================================================
+      // DEBUG DIAGNOSTICS: SEE EXACTLY WHAT JAVASCRIPT IS READING
+      // ========================================================
       console.log("--- EXCEL READ DIAGNOSTICS ---");
       console.log("Total rows parsed into excelData:", excelData.length);
+      console.log("Full First Row Object Structure:", excelData);
 
+      if (excelData.length > 0) {
+        // Look at the first row's deadline properties dynamically
+        const firstRow = excelData;
+        const lookForField = firstRow["Deadline(s)"];
+        
+        console.log("Value detected in deadline column:", lookForField);
+        console.log("JavaScript Data Type of this value:", typeof lookForField);
+        console.log("Is this value a native JavaScript Date object?:", lookForField instanceof Date);
+        
+        if (typeof lookForField === "string") {
+          console.log("Character length of the deadline string:", lookForField.length);
+          // Check for hidden spaces or carriage returns
+          console.log("String escaped representation:", JSON.stringify(lookForField));
+        }
+      }
+      console.log("-----------------------------------------");
+      // ========================================================
       const formattedExcelData = excelData.map(row => {
         const deadlineRaw = row["Deadline(s)"] || "";
-        
-        // Split strings by semicolon to handle multiple dates safely
-        let deadlinesArray = deadlineRaw ? String(deadlineRaw).split(';').map(d => d.trim()) : [];
+        const deadlinesArray = deadlineRaw ? deadlineRaw.split(';').map(d => d.trim()) : [];
 
-        // Normalize each date in the array to DD/MM/YYYY format safely
-        deadlinesArray = deadlinesArray.map(dateStr => {
-          const parts = dateStr.split('/');
-          
-          // Verify it's a valid slash-separated date structure
-          if (parts.length === 3) {
-            // FIX: Target elements explicitly by index before trimming
-            const p0 = parts.trim();
-            const p1 = parts.trim();
-            const p2 = parts.trim();
-
-            // CASE 1: Native Excel short-date strings (2-digit year, e.g., '26')
-            // Month is p0, Day is p1. Flip and pad cleanly.
-            if (p2.length === 2) {
-              const day = p1.padStart(2, '0');
-              const month = p0.padStart(2, '0');
-              const year = '20' + p2;
-              return `${day}/${month}/${year}`;
-            }
-
-            // CASE 2: 4-digit year format explicitly written as US layout (Month <= 12, Day > 12)
-            // e.g., '4/16/2026' -> Converts to '16/04/2026'
-            if (p2.length === 4 && Number(p0) <= 12 && Number(p1) > 12) {
-              const day = p1.padStart(2, '0');
-              const month = p0.padStart(2, '0');
-              return `${day}/${month}/${p2}`;
-            }
-
-            // CASE 3: Already an explicit European/British layout (First part > 12)
-            // e.g., '15/05/2026' -> Ensure clean 2-digit padding and return as-is
-            if (p2.length === 4 && Number(p0) > 12) {
-              const day = p0.padStart(2, '0');
-              const month = p1.padStart(2, '0');
-              return `${day}/${month}/${p2}`;
-            }
-
-            // CASE 4: 4-digit year where both numbers are <= 12 (e.g., '4/5/2026')
-            // Keep layout order safe but enforce 2-digit structural padding
-            if (p2.length === 4) {
-              const part0 = p0.padStart(2, '0');
-              const part1 = p1.padStart(2, '0');
-              return `${part0}/${part1}/${p2}`;
-            }
-          }
-          
-          return dateStr; // Fallback for strings like "Continuous / Open"
-        });
-
+        // This returns the original row data, but swaps out the messy 
+        // string for our clean, usable array of dates.
         return {
           ...row,
           "Deadline(s)": deadlinesArray 
         };
       });
-      
-      // FIX: Update your global application state configuration with the cleaned dates
-      excelData = formattedExcelData;
-
       console.log("Excel Raw Data Object:", formattedExcelData);
-      renderDomain(excelData);
-      renderSpecificFields(excelData);
-      updateCalls(excelData);
+      renderDomain(formattedExcelData);
+      renderSpecificFields(formattedExcelData);
+      updateCalls(formattedExcelData);
     })
     .catch(err => console.error("Error loading Excel:", err));
 }
 
 /* ================= DOMAINS ================= */
-function renderDomain(data = excelData) {
+function renderDomain(data) {
   const c = document.getElementById("domain-container");
   c.innerHTML = "";
 
@@ -439,7 +408,7 @@ function renderDomain(data = excelData) {
 }
 
 /* ================= SPECIFIC DISCIPLINES (CATEGORIZED) ================= */
-function renderSpecificFields(data = excelData) {
+function renderSpecificFields(data) {
   const container = document.getElementById("field-container");
   container.innerHTML = "";
   container.className = "space-y-4";
@@ -761,7 +730,7 @@ function showNoCallsPopup() {
 }
 
 /* ================= UPDATE CALLS INTERFACE PIPELINE ================= */
-function updateCalls(data = excelData) {
+function updateCalls(data) {
   const expiredWrapper = document.getElementById("expired-calls-wrapper");
   const expiredArrow = document.getElementById("expired-arrow");
   if (expiredWrapper && expiredArrow) {
@@ -824,13 +793,18 @@ function updateCalls(data = excelData) {
     }
 
     // Capture column fields strings safely (supports multi-deadlines)
-  // Map individual deadlines into Tailwind UI Badges
-  let deadlineRawString = "Continuous / Open";
-  if (Array.isArray(r["Deadline(s)"]) && r["Deadline(s)"].length > 0) {
-    deadlineRawString = r["Deadline(s)"]
-      .map(d => `<span class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded border border-slate-200">${d}</span>`)
-      .join(" ");
-  }
+    let deadlineRawString = "";
+    const lookForField = r["Deadline(s)"];
+    
+    if (lookForField) {
+      if (lookForField instanceof Date) {
+        deadlineRawString = lookForField.toLocaleDateString("en-GB");
+      } else {
+        deadlineRawString = String(lookForField).trim();
+      }
+    } else {
+      deadlineRawString = "Continuous / Open";
+    }
 
     // NEW ULTRA-COMPACT 2-LINE LAYOUT
     // Row 1: Call ID on the left, Muted Deadline string on the right
@@ -868,7 +842,6 @@ function resetAllFilters() {
   const keywordInput = document.getElementById("keyword-input");
   if (keywordInput) keywordInput.value = "";
   
-  // Set deadline filter option back to default
   const defaultRadio = document.querySelector('input[name="deadline-filter"][value="all"]');
   if (defaultRadio) defaultRadio.checked = true;
 
@@ -876,6 +849,7 @@ function resetAllFilters() {
   selectedSpecificFields.clear();
   selectedCallButton = null;
 
+  // This is correct! It uses the global cleaned records:
   renderDomain(excelData); 
   renderSpecificFields(excelData);
   updateCalls(excelData);
