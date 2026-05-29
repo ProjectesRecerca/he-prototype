@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -373,7 +374,7 @@ function loadExcel() {
       const wb = XLSX.read(data, { type: "array" });
       // Change to to target the second sheet regardless of its name
       const secondSheetName = wb.SheetNames; 
-      excelData = XLSX.utils.sheet_to_json(wb.Sheets[secondSheetName],{ raw: true });
+      excelData = XLSX.utils.sheet_to_json(wb.Sheets[secondSheetName],{ raw: false });
       
       // ================= DIAGNOSTIC LOGS =================
       console.log("--- DEADLINE TYPE DIAGNOSTIC ---");
@@ -774,67 +775,23 @@ function updateCalls() {
   let specificTextMatchesFound = false;
 
   // Filter pipeline remains wide open for testing
-const today = new Date();
-  today.setHours(0, 0, 0, 0); // Normalize timestamp to midnight
-
-  let activeCallsList = [];
-  let expiredCallsList = [];
-
-  excelData.forEach(r => {
-    if (keywordInput && !keywordMatchesMulti(r, keywordInput)) return;
+  const filtered = excelData.filter(r => {
+    if (keywordInput && !keywordMatchesMulti(r, keywordInput)) return false;
+    specificTextMatchesFound = true;
 
     const isGeneralCall = r["Scientific Domain"] && r["Scientific Domain"].trim().toLowerCase() === "general";
     if (!isGeneralCall) {
-      if (selectedDomains.size && !selectedDomains.has(r["Scientific Domain"])) return;
+      if (selectedDomains.size && !selectedDomains.has(r["Scientific Domain"])) return false;
       if (selectedSpecificFields.size) {
-        if (!r["Specific Disciplines"]) return;
+        if (!r["Specific Disciplines"]) return false;
         const fields = r["Specific Disciplines"].split(";").map(f => f.trim());
-        if (!fields.some(f => selectedSpecificFields.has(f))) return;
+        if (!fields.some(f => selectedSpecificFields.has(f))) return false;
       }
     }
-
-    // --- BACKGROUND DATE EXTRACTION ---
-    const rawDeadline = r["Deadline(s)"] || r["deadline(s)"] || r["Deadline"] || r["deadline"];
-    let parsedDeadlineDate = null;
-
-    if (rawDeadline) {
-      if (rawDeadline instanceof Date) {
-        parsedDeadlineDate = rawDeadline;
-      } else if (typeof rawDeadline === "number") {
-        parsedDeadlineDate = new Date(Math.round((rawDeadline - 25569) * 86400 * 1000));
-      } else if (typeof rawDeadline === "string") {
-        // Enforce conversion structure to safely create clean instance formats
-        const cleanStr = rawDeadline.trim();
-        const parts = cleanStr.split(/[\/\-]/);
-        if (parts.length === 3) {
-          // Check if it is written as DD/MM/YYYY or MM/DD/YYYY
-          const p1 = parseInt(parts, 10);
-          const p2 = parseInt(parts, 10);
-          const p3 = parseInt(parts, 10);
-          
-          if (p1 > 12) { 
-            // Plain DD/MM/YYYY format
-            parsedDeadlineDate = new Date(p3, p2 - 1, p1);
-          } else { 
-            // Ambiguous configuration: parse as standard fallback object
-            const checkDate = new Date(cleanStr);
-            if (!isNaN(checkDate.getTime())) parsedDeadlineDate = checkDate;
-          }
-        }
-      }
-    }
-
-    // Sort into separate arrays based on expiration status
-    if (parsedDeadlineDate && parsedDeadlineDate < today) {
-      expiredCallsList.push(r);
-    } else {
-      activeCallsList.push(r);
-    }
+    return true;
   });
 
-  // Sort both arrays independently based on relevance score
-  activeCallsList.sort((a, b) => countKeywordMatches(b, keywordInput) - countKeywordMatches(a, keywordInput));
-  expiredCallsList.sort((a, b) => countKeywordMatches(b, keywordInput) - countKeywordMatches(a, keywordInput));
+  filtered.sort((a, b) => countKeywordMatches(b, keywordInput) - countKeywordMatches(a, keywordInput));
 
   const renderCall = (r, targetContainer) => {
     const score = countKeywordMatches(r, keywordInput);
@@ -894,13 +851,11 @@ const today = new Date();
     btn.onclick = () => showCallDetails(r, btn);
     targetContainer.appendChild(btn);
   };
-  // Clear lists and render cards into their respective DOM nodes
-  activeCallsList.forEach(r => renderCall(r, container));
-  expiredCallsList.forEach(r => renderCall(r, expiredContainer));
 
-  // Update headers with dynamic template literal calculations
-  document.getElementById("calls-title").textContent = `Active Calls (${activeCallsList.length})`;
-  document.getElementById("expired-calls-title").textContent = `Expired Calls (${expiredCallsList.length})`;
+  filtered.forEach(r => renderCall(r, container));
+
+  document.getElementById("calls-title").textContent = `Opportunities Available (${filtered.length})`;
+  document.getElementById("expired-calls-title").textContent = `Expired Calls (0)`;
 }
 
 /* ================= FILTER RESET LOGIC ================= */
