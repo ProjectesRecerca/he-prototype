@@ -21,7 +21,7 @@
 
     /* Section Titles Hierarchy Optimization */
     h3 {
-      font-size: 0.85rem !important; 
+      font-size: 0.9rem !important; 
       font-weight: 700 !important;   
       text-transform: uppercase;
       letter-spacing: 0.05em;
@@ -306,18 +306,6 @@ function excelDateToString(value) {
   const date = new Date(Math.round((value - 25569) * 86400 * 1000));
   if (isNaN(date)) return "";
   return date.toLocaleDateString("en-GB");
-}
-/* ================= HELPER: PARSE DEADLINE FOR PIPELINE COMPARISONS ================= */
-function parseDeadlineDate(value) {
-  if (!value) return null;
-  if (value instanceof Date) return value;
-  if (typeof value === "number") {
-    return new Date(Math.round((value - 25569) * 86400 * 1000));
-  }
-  // Try to parse string values
-  const parsed = Date.parse(value);
-  if (!isNaN(parsed)) return new Date(parsed);
-  return null;
 }
 
 /* ================= LOG IN &  VALIDATION ================= */
@@ -724,39 +712,30 @@ function updateCalls() {
   resetDetailsPanel();
 
   const keywordInput = document.getElementById("keyword-input").value.trim();
-  const now = new Date();
-  now.setHours(0, 0, 0, 0); // Clear time signature for accurate daily calculation
+  
+  const deadlineRadio = document.querySelector('input[name="deadline-filter"]:checked');
+  const deadlineFilterValue = deadlineRadio ? deadlineRadio.value : "all";
 
-  let activeCallsList = [];
-  let expiredCallsList = [];
+  let specificTextMatchesFound = false;
 
-  excelData.forEach(r => {
-    if (keywordInput && !keywordMatchesMulti(r, keywordInput)) return;
+  // Filter pipeline remains wide open for testing
+  const filtered = excelData.filter(r => {
+    if (keywordInput && !keywordMatchesMulti(r, keywordInput)) return false;
+    specificTextMatchesFound = true;
 
     const isGeneralCall = r["Scientific Domain"] && r["Scientific Domain"].trim().toLowerCase() === "general";
     if (!isGeneralCall) {
-      if (selectedDomains.size && !selectedDomains.has(r["Scientific Domain"])) return;
+      if (selectedDomains.size && !selectedDomains.has(r["Scientific Domain"])) return false;
       if (selectedSpecificFields.size) {
-        if (!r["Specific Disciplines"]) return;
+        if (!r["Specific Disciplines"]) return false;
         const fields = r["Specific Disciplines"].split(";").map(f => f.trim());
-        if (!fields.some(f => selectedSpecificFields.has(f))) return;
+        if (!fields.some(f => selectedSpecificFields.has(f))) return false;
       }
     }
-
-    // Background processing to extract validation target dates safely
-    const deadlineRaw = r["Deadline(s)"] || r["deadline(s)"] || r["Deadline"] || r["deadline"];
-    const deadlineDate = parseDeadlineDate(deadlineRaw);
-
-    if (deadlineDate && deadlineDate < now) {
-      expiredCallsList.push(r);
-    } else {
-      activeCallsList.push(r);
-    }
+    return true;
   });
 
-  // Sort components independently based on relevance score
-  activeCallsList.sort((a, b) => countKeywordMatches(b, keywordInput) - countKeywordMatches(a, keywordInput));
-  expiredCallsList.sort((a, b) => countKeywordMatches(b, keywordInput) - countKeywordMatches(a, keywordInput));
+  filtered.sort((a, b) => countKeywordMatches(b, keywordInput) - countKeywordMatches(a, keywordInput));
 
   const renderCall = (r, targetContainer) => {
     const score = countKeywordMatches(r, keywordInput);
@@ -820,7 +799,7 @@ function updateCalls() {
   filtered.forEach(r => renderCall(r, container));
 
   document.getElementById("calls-title").textContent = `Opportunities Available (${filtered.length})`;
-  document.getElementById("expired-calls-title").textContent = `Expired Calls(0)`;
+  document.getElementById("expired-calls-title").textContent = `Archive Records (0)`;
 }
 
 /* ================= FILTER RESET LOGIC ================= */
