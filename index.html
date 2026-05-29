@@ -358,10 +358,29 @@ function loadExcel() {
       // ========================================================
       const formattedExcelData = excelData.map(row => {
         const deadlineRaw = row["Deadline(s)"] || "";
-        const deadlinesArray = deadlineRaw ? deadlineRaw.split(';').map(d => d.trim()) : [];
+        
+        // Split strings by semicolon to handle multiple dates safely
+        let deadlinesArray = deadlineRaw ? String(deadlineRaw).split(';').map(d => d.trim()) : [];
 
-        // This returns the original row data, but swaps out the messy 
-        // string for our clean, usable array of dates.
+        // Normalize each date in the array to DD/MM/YYYY format
+        deadlinesArray = deadlinesArray.map(dateStr => {
+          // Detects standard MM/DD/YY or MM/DD/YYYY formats using a Regex check
+          if (/^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(dateStr)) {
+            const parts = dateStr.split('/');
+            const month = parts.padStart(2, '0');
+            const day = parts.padStart(2, '0');
+            let year = parts;
+            
+            // If it's a 2-digit shortcut year (e.g., '26'), expand it cleanly to '2026'
+            if (year.length === 2) {
+              year = '20' + year;
+            }
+            
+            return `${day}/${month}/${year}`;
+          }
+          return dateStr; // Leave it as-is if it's already DD/MM/YYYY or text
+        });
+
         return {
           ...row,
           "Deadline(s)": deadlinesArray 
