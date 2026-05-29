@@ -333,29 +333,29 @@ function loadExcel() {
       excelData = XLSX.utils.sheet_to_json(wb.Sheets[secondSheetName],{ raw: false });
       
       // ========================================================
-      // DEBUG DIAGNOSTICS: SEE EXACTLY WHAT JAVASCRIPT IS READING
+      // ADVANCED DIAGNOSTICS: FIND AN ACTUAL RECORD WITH A DEADLINE
       // ========================================================
-      console.log("--- EXCEL READ DIAGNOSTICS ---");
-      console.log("Total rows parsed into excelData:", excelData.length);
-      console.log("Full First Row Object Structure:", excelData);
+      console.log("--- ADVANCED EXCEL DIAGNOSTICS ---");
+      console.log("Total rows successfully parsed:", excelData.length);
+      
+      // Find the first row where a deadline property actually exists
+      const rowWithDeadline = excelData.find(r => r["Deadline(s)"] || r["deadline(s)"] || r["Deadline"] || r["deadline"]);
 
-      if (excelData.length > 0) {
-        // Look at the first row's deadline properties dynamically
-        const firstRow = excelData;
-        const lookForField = firstRow["Deadline(s)"] || firstRow["deadline(s)"] || firstRow["Deadline"] || firstRow["deadline"];
-        
-        console.log("Value detected in deadline column:", lookForField);
-        console.log("JavaScript Data Type of this value:", typeof lookForField);
-        console.log("Is this value a native JavaScript Date object?:", lookForField instanceof Date);
-        
-        if (typeof lookForField === "string") {
-          console.log("Character length of the deadline string:", lookForField.length);
-          // Check for hidden spaces or carriage returns
-          console.log("String escaped representation:", JSON.stringify(lookForField));
+      if (rowWithDeadline) {
+        const targetField = rowWithDeadline["Deadline(s)"] || rowWithDeadline["deadline(s)"] || rowWithDeadline["Deadline"] || rowWithDeadline["deadline"];
+        console.log("Row Title found:", rowWithDeadline["Call Title"]);
+        console.log("Real value detected in data cell:", targetField);
+        console.log("JavaScript Data Type of this cell:", typeof targetField);
+        console.log("Is it a native JavaScript Date Object?:", targetField instanceof Date);
+        if (targetField instanceof Date) {
+          console.log("Default .toString() output:", targetField.toString());
+          console.log("Formatted with en-GB (.toLocaleDateString):", targetField.toLocaleDateString("en-GB"));
         }
+      } else {
+        console.log("WARNING: No row in the entire sheet matched the column names 'Deadline(s)', 'deadline(s)', 'Deadline', or 'deadline'. Check exact casing and spaces in Excel headers!");
+        console.log("Available keys in row 0:", Object.keys(excelData || {}));
       }
-      console.log("-----------------------------------------");
-      // ========================================================
+      console.log("--------------------------------------------------");
 
       console.log("Excel Raw Data Object:", excelData);
       renderDomain();
