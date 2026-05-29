@@ -397,8 +397,8 @@ function renderDomain(data) {
         } else {
           selectedDomains.delete(d);
         }
-        renderSpecificFields();
-        updateCalls();
+        renderSpecificFields(data);
+        updateCalls(data);
       };
 
       label.appendChild(cb);
@@ -408,7 +408,7 @@ function renderDomain(data) {
 }
 
 /* ================= SPECIFIC DISCIPLINES (CATEGORIZED) ================= */
-function renderSpecificFields() {
+function renderSpecificFields(data) {
   const container = document.getElementById("field-container");
   container.innerHTML = "";
   container.className = "space-y-4";
@@ -437,8 +437,8 @@ function renderSpecificFields() {
   ];
 
   let rows = selectedDomains.size
-    ? formattedExcelData.filter(r => selectedDomains.has(r["Scientific Domain"]))
-    : formattedExcelData;
+    ? data.filter(r => selectedDomains.has(r["Scientific Domain"]))
+    : data;
 
   const allFields = new Set();
   rows.forEach(r => {
@@ -730,7 +730,7 @@ function showNoCallsPopup() {
 }
 
 /* ================= UPDATE CALLS INTERFACE PIPELINE ================= */
-function updateCalls() {
+function updateCalls(data) {
   const expiredWrapper = document.getElementById("expired-calls-wrapper");
   const expiredArrow = document.getElementById("expired-arrow");
   if (expiredWrapper && expiredArrow) {
@@ -754,7 +754,7 @@ function updateCalls() {
   let specificTextMatchesFound = false;
 
   // Filter pipeline remains wide open for testing
-  const filtered = formattedExcelData.filter(r => {
+  const filtered = data.filter(r => {
     if (keywordInput && !keywordMatchesMulti(r, keywordInput)) return false;
     specificTextMatchesFound = true;
 
@@ -793,18 +793,13 @@ function updateCalls() {
     }
 
     // Capture column fields strings safely (supports multi-deadlines)
-    let deadlineRawString = "";
-    const lookForField = r["Deadline(s)"];
-    
-    if (lookForField) {
-      if (lookForField instanceof Date) {
-        deadlineRawString = lookForField.toLocaleDateString("en-GB");
-      } else {
-        deadlineRawString = String(lookForField).trim();
-      }
-    } else {
-      deadlineRawString = "Continuous / Open";
-    }
+  // Map individual deadlines into Tailwind UI Badges
+  let deadlineRawString = "Continuous / Open";
+  if (Array.isArray(r["Deadline(s)"]) && r["Deadline(s)"].length > 0) {
+    deadlineRawString = r["Deadline(s)"]
+      .map(d => `<span class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded border border-slate-200">${d}</span>`)
+      .join(" ");
+  }
 
     // NEW ULTRA-COMPACT 2-LINE LAYOUT
     // Row 1: Call ID on the left, Muted Deadline string on the right
@@ -850,9 +845,9 @@ function resetAllFilters() {
   selectedSpecificFields.clear();
   selectedCallButton = null;
 
-  renderDomain(); 
-  renderSpecificFields();
-  updateCalls();
+  renderDomain(excelData); 
+  renderSpecificFields(excelData);
+  updateCalls(excelData);
   
   const moreInfoBtn = document.getElementById("more-info-btn");
   if (moreInfoBtn) moreInfoBtn.classList.add("hidden");
