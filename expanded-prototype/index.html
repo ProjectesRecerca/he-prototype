@@ -329,28 +329,29 @@ function loadExcel() {
     .then(data => {
       const wb = XLSX.read(data, { type: "array" });
       // Change [0] to [1] to target the second sheet regardless of its name
-      const secondSheetName = wb.SheetNames; 
-      // raw: true gets numbers/raw strings, rawFeatures prevents conversion overrides
+      const secondSheetName = wb.SheetNames[1]; 
       excelData = XLSX.utils.sheet_to_json(wb.Sheets[secondSheetName],{ raw: false });
       
       // ========================================================
-      // SAFE DIAGNOSTIC LOGS: INSPECT THE "Deadline(s)" COLUMN
+      // DEBUG DIAGNOSTICS: SEE EXACTLY WHAT JAVASCRIPT IS READING
       // ========================================================
-      console.log("--- COLUMN DATA INSPECTION ---");
-      console.log("Total rows successfully parsed:", excelData.length);
+      console.log("--- EXCEL READ DIAGNOSTICS ---");
+      console.log("Total rows parsed into excelData:", excelData.length);
+      console.log("Full First Row Object Structure:", excelData);
 
-      // Loop through the first few rows safely to print what is inside the column
-      let printedCount = 0;
-      for (let i = 0; i < excelData.length; i++) {
-        const row = excelData[i];
-        // Safely check if this row object has the 'Deadline(s)' column value
-        if (row && row["Deadline(s)"]) {
-          console.log(`Row index [${i}] | Call Title: "${row["Call Title"]}"`);
-          console.log(`  -> Exact text found in 'Deadline(s)' column:`, row["Deadline(s)"]);
-          console.log(`  -> JavaScript data type:`, typeof row["Deadline(s)"]);
-          
-          printedCount++;
-          if (printedCount >= 3) break; // Only print 3 samples so we don't flood the console
+      if (excelData.length > 0) {
+        // Look at the first row's deadline properties dynamically
+        const firstRow = excelData;
+        const lookForField = firstRow["Deadline(s)"] || firstRow["deadline(s)"] || firstRow["Deadline"] || firstRow["deadline"];
+        
+        console.log("Value detected in deadline column:", lookForField);
+        console.log("JavaScript Data Type of this value:", typeof lookForField);
+        console.log("Is this value a native JavaScript Date object?:", lookForField instanceof Date);
+        
+        if (typeof lookForField === "string") {
+          console.log("Character length of the deadline string:", lookForField.length);
+          // Check for hidden spaces or carriage returns
+          console.log("String escaped representation:", JSON.stringify(lookForField));
         }
       }
       console.log("-----------------------------------------");
