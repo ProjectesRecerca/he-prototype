@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -291,9 +292,11 @@
 <script>
 /* ================= GLOBAL CONFIGURATION & STATE ================= */
 let excelData = [];
-const selectedDomains = new Set(); // Fixed: Double space removed
-const selectedSpecificFields = new Set(); // Fixed: Double space removed
+let globalCallsData = []; // Added to hold the globally accessible formatted rows
+const selectedDomains = new Set(); 
+const selectedSpecificFields = new Set(); 
 let selectedCallButton = null;
+let currentSelectedCall = null; 
 
 /* ================= DATE FORMAT ================= */
 function excelDateToString(value) {
@@ -306,7 +309,7 @@ function excelDateToString(value) {
   return date.toLocaleDateString("en-GB");
 }
 
-/* ================= LOG IN &  VALIDATION ================= */
+/* ================= LOG IN & VALIDATION ================= */
 function handleCredentialResponse(response) {
   const payload = JSON.parse(atob(response.credential.split(".")[1]));
   const email = payload.email || "";
@@ -326,59 +329,61 @@ function loadExcel() {
     .then(r => r.arrayBuffer())
     .then(data => {
       const wb = XLSX.read(data, { type: "array" });
-      // Change [0] to [1] to target the second sheet regardless of its name
-      const secondSheetName = wb.SheetNames[1]; 
-      excelData = XLSX.utils.sheet_to_json(wb.Sheets[secondSheetName],{ raw: false });
+      const targetSheetName = wb.SheetNames[1] || wb.SheetNames[0]; 
+      const excelData = XLSX.utils.sheet_to_json(wb.Sheets[targetSheetName], { raw: false, defval: "" });
       
-      // ========================================================
-      // DEBUG DIAGNOSTICS: SEE EXACTLY WHAT JAVASCRIPT IS READING
-      // ========================================================
-      console.log("--- EXCEL READ DIAGNOSTICS ---");
-      console.log("Total rows parsed into excelData:", excelData.length);
-      console.log("Full First Row Object Structure:", excelData);
-
-      if (excelData.length > 0) {
-        // Look at the first row's deadline properties dynamically
-        const firstRow = excelData;
-        const lookForField = firstRow["Deadline(s)"];
-        
-        console.log("Value detected in deadline column:", lookForField);
-        console.log("JavaScript Data Type of this value:", typeof lookForField);
-        console.log("Is this value a native JavaScript Date object?:", lookForField instanceof Date);
-        
-        if (typeof lookForField === "string") {
-          console.log("Character length of the deadline string:", lookForField.length);
-          // Check for hidden spaces or carriage returns
-          console.log("String escaped representation:", JSON.stringify(lookForField));
-        }
+      if (excelData.length === 0) {
+        console.warn("Warning: Parsed spreadsheet data array is empty.");
+        return;
       }
-      console.log("-----------------------------------------");
-      // ========================================================
-      const formattedExcelData = excelData.map(row => {
-        const deadlineRaw = row["Deadline(s)"] || "";
-        const deadlinesArray = deadlineRaw ? deadlineRaw.split(';').map(d => d.trim()) : [];
 
-        // This returns the original row data, but swaps out the messy 
-        // string for our clean, usable array of dates.
+      // Convert internal Excel date serials to DD/MM/YYYY securely
+      const parseExcelSerial = (serial) => {
+        const d = new Date(Math.round((serial - 25569) * 86400 * 1000));
+        if (isNaN(d)) return "";
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const year = d.getFullYear();
+        return `${day}/${month}/${year}`;
+      };
+
+      // Map out clean arrays globally
+      globalCallsData = excelData.map(row => {
+        const deadlineRaw = row["Deadline(s)"];
+        let cleanString = "";
+
+        // Standardize all dates to a plain text string
+        if (typeof deadlineRaw === "number") {
+           cleanString = parseExcelSerial(deadlineRaw);
+        } else if (deadlineRaw) {
+           cleanString = String(deadlineRaw).trim();
+        }
+
+        const deadlinesArray = cleanString 
+            ? cleanString.split(';').map(d => d.trim()).filter(Boolean) 
+            : [];
+        
         return {
           ...row,
           "Deadline(s)": deadlinesArray 
         };
       });
-      console.log("Excel Raw Data Object:", formattedExcelData);
-      renderDomain(formattedExcelData);
-      renderSpecificFields(formattedExcelData);
-      updateCalls(formattedExcelData);
+
+      renderDomain(globalCallsData);
+      renderSpecificFields(globalCallsData);
+      updateCalls(globalCallsData);
     })
     .catch(err => console.error("Error loading Excel:", err));
 }
 
 /* ================= DOMAINS ================= */
 function renderDomain(data) {
+  // Use global data fallback if parameter execution is missing
+  const activeData = data || globalCallsData;
   const c = document.getElementById("domain-container");
   c.innerHTML = "";
 
-  [...new Set(data.map(r => r["Scientific Domain"]).filter(Boolean))]
+  [...new Set(activeData.map(r => r["Scientific Domain"]).filter(Boolean))]
     .sort()
     .forEach(d => {
       const label = document.createElement("label");
@@ -395,8 +400,8 @@ function renderDomain(data) {
         } else {
           selectedDomains.delete(d);
         }
-        renderSpecificFields(data);
-        updateCalls(data);
+        renderSpecificFields(globalCallsData);
+        updateCalls(globalCallsData);
       };
 
       label.appendChild(cb);
@@ -407,36 +412,32 @@ function renderDomain(data) {
 
 /* ================= SPECIFIC DISCIPLINES (CATEGORIZED) ================= */
 function renderSpecificFields(data) {
+  const activeData = data || globalCallsData;
   const container = document.getElementById("field-container");
   container.innerHTML = "";
-  container.className = "space-y-4";
 
   const categories = [
     { 
       label: "Physical Sciences & Engineering", 
-      allowed: ["Math", "Physics", "Chemistry", "Computer Science & AI", "ICT & Web Engineering", "Materials", "Earth Sciences"], 
-      textClass: "text-emerald-700 bg-emerald-50 border-emerald-100", borderActive: "border-emerald-600 bg-emerald-600 text-white"
+      allowed: ["Math", "Physics", "Chemistry", "Computer Science & AI", "ICT & Web Engineering", "Materials", "Earth Sciences"]
     },
     { 
       label: "Life Sciences", 
-      allowed: ["Biomedicine", "Molecular & Cell Biology", "Genetics", "Neurosciences", "Public Health", "Biotechnology"], 
-      textClass: "text-blue-700 bg-blue-50 border-blue-100", borderActive: "border-blue-600 bg-blue-600 text-white"
+      allowed: ["Biomedicine", "Molecular & Cell Biology", "Genetics", "Neurosciences", "Public Health", "Biotechnology"]
     },
     { 
       label: "Social Sciences & Humanities", 
-      allowed: ["Economics", "Business & Markets", "Law", "Regulation & Justice", "Political Science & Public Policy", "Sociology & Social Structures", "Media & Communication", "Language, Linguistics & Translation", "History", "Philosophy & Cultural Studies"], 
-      textClass: "text-indigo-700 bg-indigo-50 border-indigo-100", borderActive: "border-indigo-600 bg-indigo-600 text-white"
+      allowed: ["Economics", "Business & Markets", "Law", "Regulation & Justice", "Political Science & Public Policy", "Sociology & Social Structures", "Media & Communication", "Language, Linguistics & Translation", "History", "Philosophy & Cultural Studies"]
     },
     {
       label: "General",
-      allowed: [],
-      textClass: "text-purple-700 bg-purple-50 border-purple-100", borderActive: "border-purple-600 bg-purple-600 text-white"
+      allowed: []
     }
   ];
 
   let rows = selectedDomains.size
-    ? data.filter(r => selectedDomains.has(r["Scientific Domain"]))
-    : data;
+    ? activeData.filter(r => selectedDomains.has(r["Scientific Domain"]))
+    : activeData;
 
   const allFields = new Set();
   rows.forEach(r => {
@@ -470,8 +471,8 @@ function renderSpecificFields(data) {
         } else {
           catFields.forEach(f => selectedSpecificFields.add(f));
         }
-        renderSpecificFields(); 
-        updateCalls();
+        renderSpecificFields(globalCallsData); 
+        updateCalls(globalCallsData);
       };
 
       headerFlex.appendChild(headerTitle);
@@ -496,7 +497,7 @@ function renderSpecificFields(data) {
           } else {
             selectedSpecificFields.delete(f);
           }
-          updateCalls();
+          updateCalls(globalCallsData);
         };
 
         label.appendChild(cb);
@@ -526,16 +527,9 @@ function keywordMatchesMulti(call, userInput) {
     call["Funding Body"] || "",    
     call["Programme"] || "",       
     call["Subprogramme"] || ""    
-  ]
-  .join(" ")
-  .toLowerCase();
+  ].join(" ").toLowerCase();
 
-  const searches = userInput
-    .toLowerCase()
-    .split(";")
-    .map(s => s.trim())
-    .filter(Boolean);
-
+  const searches = userInput.toLowerCase().split(";").map(s => s.trim()).filter(Boolean);
   return searches.some(term => haystack.includes(term));
 }
 
@@ -543,22 +537,117 @@ function highlightKeywords(text, userInput) {
   if (!text || !userInput) return text || "";
 
   let result = text;
-  const terms = userInput
-    .toLowerCase()
-    .split(";")
-    .map(t => t.trim())
-    .filter(Boolean);
+  const terms = userInput.toLowerCase().split(";").map(t => t.trim()).filter(Boolean);
 
   terms.forEach(term => {
     const safeTerm = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const regex = new RegExp(`(${safeTerm})`, "gi");
-    result = result.replace(
-      regex,
-      `<mark class="bg-yellow-200 px-0.5 rounded text-slate-900">$1</mark>`
-    );
+    result = result.replace(regex, `<mark class="bg-yellow-200 px-0.5 rounded text-slate-900">$1</mark>`);
   });
 
   return result;
+}
+
+/* ================= RESET DETAILS PANEL ================= */
+function resetDetailsPanel() {
+  const detailsContainer = document.getElementById("dynamic-details-container");
+  const summarySection = document.getElementById("summary-section");
+  const moreInfoBtn = document.getElementById("more-info-btn");
+
+  // 1. Restore default placeholder text
+  if (detailsContainer) {
+    detailsContainer.innerHTML = `
+      <div class="p-4 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-center text-slate-400 italic">
+        Select any call card from the center row pipeline to examine the details of the selected call.
+      </div>
+    `;
+  }
+
+  // 2. Hide the summary and buttons
+  if (summarySection) summarySection.classList.add("hidden");
+  if (moreInfoBtn) moreInfoBtn.classList.add("hidden");
+
+  // 3. Remove highlighting from previously selected call buttons (if applicable)
+  if (selectedCallButton) {
+    // Modify these classes based on how you highlight active items in `showCallDetails`
+    selectedCallButton.classList.remove("ring-2", "ring-blue-500", "bg-blue-50/50", "border-blue-300");
+    selectedCallButton = null;
+  }
+}
+
+/* ================= SHOW CALL DETAILS ================= */
+function showCallDetails(r, btn) {
+  if (selectedCallButton) {
+    selectedCallButton.classList.remove("ring-2", "ring-blue-500", "bg-blue-50/50", "border-blue-300");
+  }
+  selectedCallButton = btn;
+  btn.classList.add("ring-2", "ring-blue-500", "bg-blue-50/50", "border-blue-300");
+
+  currentSelectedCall = r;
+  const keywordInput = document.getElementById("keyword-input").value.trim();
+
+  const container = document.getElementById("dynamic-details-container");
+  container.innerHTML = "";
+
+  const fields = [
+    { label: "Call ID", key: "Call ID" },
+    { label: "Funding Body", key: "Funding Body" },
+    { label: "Programme", key: "Programme" },
+    { label: "Subprogramme", key: "Subprogramme" },
+   // { label: "Scientific Domain", key: "Scientific Domain" },
+   // { label: "Specific Disciplines", key: "Specific Disciplines" }
+  ];
+
+  fields.forEach(f => {
+    if (r[f.key]) {
+      const row = document.createElement("div");
+      row.className = "flex flex-col border-b border-slate-50 pb-1.5";
+      row.innerHTML = `
+        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">${f.label}</span>
+        <span class="text-sm text-slate-700 font-medium">${highlightKeywords(r[f.key], keywordInput)}</span>
+      `;
+      container.appendChild(row);
+    }
+  });
+
+  let deadlineDisplayString = "Continuous / Open";
+  if (r._parsedDates && r._parsedDates.length > 0) {
+    deadlineDisplayString = r._parsedDates.map(d => {
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      return `${day}/${month}/${year}`;
+    }).join(" ; ");
+  }
+  
+  const deadlineRow = document.createElement("div");
+  deadlineRow.className = "flex flex-col pb-1.5";
+  deadlineRow.innerHTML = `
+    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Deadline(s)</span>
+    <span class="text-sm font-semibold text-slate-700">${deadlineDisplayString}</span>
+  `;
+  container.appendChild(deadlineRow);
+
+  const summarySection = document.getElementById("summary-section");
+  const detailSummary = document.getElementById("detail-summary");
+  const detailSshKeywords = document.getElementById("detail-ssh-keywords");
+
+  if (r["Summary"]) {
+    detailSummary.innerHTML = highlightKeywords(r["Summary"], keywordInput);
+    summarySection.classList.remove("hidden");
+  } else {
+    detailSummary.innerHTML = "";
+    summarySection.classList.add("hidden");
+  }
+
+  if (r["SSH Keywords"]) {
+    detailSshKeywords.innerHTML = `<strong>SSH Keywords:</strong> ${highlightKeywords(r["SSH Keywords"], keywordInput)}`;
+  } else {
+    detailSshKeywords.innerHTML = "";
+  }
+
+  const moreInfoBtn = document.getElementById("more-info-btn");
+  if (moreInfoBtn) moreInfoBtn.classList.remove("hidden");
 }
 
 function countKeywordMatches(call, userInput) {
@@ -616,119 +705,11 @@ function cleanText(text) {
   return text.replace(/\[\s*\d+(?:,\s*\d+)*\s*\]/g, "");
 }
 
-/* ================= SHOW CALL DETAILS ================= */
-function resetDetailsPanel(message = "Select any call card from the center row pipeline to examine administrative records.") {
-  const container = document.getElementById("dynamic-details-container");
-  if (container) {
-    container.innerHTML = `<div class="p-4 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-center text-slate-400 italic">${message}</div>`;
-  }
-  const summarySect = document.getElementById("summary-section");
-  if (summarySect) summarySect.classList.add("hidden");
-
-  const infoBtn = document.getElementById("more-info-btn");
-  if (infoBtn) infoBtn.classList.add("hidden");
-}
-
-function showCallDetails(r, buttonElement) {
-  const activeClass = ["bg-blue-50/80", "border-blue-400", "ring-1", "ring-blue-400"];
-  
-  if (selectedCallButton === buttonElement) {
-    buttonElement.classList.remove(...activeClass);
-    selectedCallButton = null;
-    resetDetailsPanel();
-    return;
-  }
-
-  if (selectedCallButton) {
-    selectedCallButton.classList.remove(...activeClass);
-  }
-
-  selectedCallButton = buttonElement;
-  selectedCallButton.classList.add(...activeClass);
-  
-  const container = document.getElementById("dynamic-details-container");
-  container.innerHTML = "";
-
-  const fields = [
-    { label: "Call ID", val: r["Call ID"] },
-    { label: "Call Title", val: r["Call Title"] },
-    { label: "Funding Body", val: r["Funding Body"] },
-    { label: "Programme", val: r["Programme"] },
-    { label: "Subprogramme", val: r["Subprogramme"] },
-    { label: "Type", val: r["Type of Action"] },
-    { label: "Opening Date", val: excelDateToString(r["Opening date"]) },
-    { label: "Deadline", val: excelDateToString(r["Deadline(s)"]) }
-  ];
-
-  const keywordInput = document.getElementById("keyword-input").value.trim();
-
-  fields.forEach(field => {
-    if (field.val && String(field.val).trim() !== "" && field.val !== "undefined") {
-      const div = document.createElement("div");
-      div.className = "pb-1.5 border-b border-slate-100 last:border-0";
-      const highlightedVal = highlightKeywords(String(field.val), keywordInput);
-      div.innerHTML = `<span class="text-slate-400 font-semibold uppercase text-[10px] block tracking-wider">${field.label}</span><span class="text-slate-800 text-sm font-medium">${highlightedVal}</span>`;
-      container.appendChild(div);
-    }
-  });
-
-  const summarySect = document.getElementById("summary-section");
-  summarySect.classList.remove("hidden");
-
-  const summaryElem = document.getElementById("detail-summary");
-  summaryElem.innerHTML = r["Summary"] ? highlightKeywords(r["Summary"], keywordInput) : "No summary available.";
-
-  const sshRaw = r["SSH Keywords"] || ""; 
-  const sshText = sshRaw ? `SSH Keywords: ${sshRaw}` : "";
-  document.getElementById("detail-ssh-keywords").innerHTML = highlightKeywords(sshText, keywordInput);
-
-  const moreInfoBtn = document.getElementById("more-info-btn");
-  moreInfoBtn.classList.remove("hidden");
-  moreInfoBtn.onclick = () => openMoreInfoModal(r);
-}
-
-function openMoreInfoModal(call) {
-  const modal = document.getElementById("more-info-modal");
-  const webBtn = document.getElementById("modal-website-btn");
-  modal.classList.remove("hidden");
-
-  const hideModal = () => {
-    modal.classList.add("hidden");
-    webBtn.classList.add("hidden");
-  };
-
-  document.getElementById("close-modal-btn").onclick = hideModal;
-  document.getElementById("contact-us-btn").onclick = () => {
-    hideModal();
-    openMoreInfoEmail(call["Call ID"]);
-  };
-
-  const url = call["Call Website"];
-  if (url && String(url).trim().startsWith("http")) {
-    webBtn.href = url;
-    webBtn.classList.remove("hidden");
-  } else {
-    webBtn.classList.add("hidden");
-  }
-
-  const keywordInput = document.getElementById("keyword-input").value.trim();
-  const rawOutcomes = cleanText(call["Expected Outcomes"] || "");
-  const rawScope = cleanText(call["Scope"] || "");
-
-  document.getElementById("modal-expected-outcomes").innerHTML = highlightKeywords(rawOutcomes, keywordInput) || "Not available";
-  document.getElementById("modal-scope").innerHTML = highlightKeywords(rawScope, keywordInput) || "Not available";
-  document.getElementById("modal-keywords").innerHTML = `<strong>Call Keywords:</strong> ` + highlightKeywords(call["Keywords"] || "No keywords available", keywordInput);
-}
-
-function showNoCallsPopup() {
-  const popup = document.getElementById("no-calls-popup");
-  if (!popup) return;
-  popup.classList.remove("hidden");
-  document.getElementById("close-popup-btn").onclick = () => { popup.classList.add("hidden"); };
-}
 
 /* ================= UPDATE CALLS INTERFACE PIPELINE ================= */
 function updateCalls(data) {
+  const activeData = data || globalCallsData;
+
   const expiredWrapper = document.getElementById("expired-calls-wrapper");
   const expiredArrow = document.getElementById("expired-arrow");
   if (expiredWrapper && expiredArrow) {
@@ -742,86 +723,157 @@ function updateCalls(data) {
   container.innerHTML = "";
   expiredContainer.innerHTML = "";
   selectedCallButton = null;
-  resetDetailsPanel();
+  if (typeof resetDetailsPanel === "function") resetDetailsPanel();
 
   const keywordInput = document.getElementById("keyword-input").value.trim();
-  
   const deadlineRadio = document.querySelector('input[name="deadline-filter"]:checked');
   const deadlineFilterValue = deadlineRadio ? deadlineRadio.value : "all";
 
-  let specificTextMatchesFound = false;
+  // --- 1. SMART CALENDAR ENGINE ---
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
 
-  // Filter pipeline remains wide open for testing
-  const filtered = data.filter(r => {
-    if (keywordInput && !keywordMatchesMulti(r, keywordInput)) return false;
-    specificTextMatchesFound = true;
+  const threeMonthsLimit = new Date(); threeMonthsLimit.setMonth(now.getMonth() + 3);
+  const sixMonthsLimit = new Date(); sixMonthsLimit.setMonth(now.getMonth() + 6);
+  const twelveMonthsLimit = new Date(); twelveMonthsLimit.setMonth(now.getMonth() + 12);
 
-    const isGeneralCall = r["Scientific Domain"] && r["Scientific Domain"].trim().toLowerCase() === "general";
-    if (!isGeneralCall) {
-      if (selectedDomains.size && !selectedDomains.has(r["Scientific Domain"])) return false;
-      if (selectedSpecificFields.size) {
-        if (!r["Specific Disciplines"]) return false;
-        const fields = r["Specific Disciplines"].split(";").map(f => f.trim());
-        if (!fields.some(f => selectedSpecificFields.has(f))) return false;
+  const parseFlexibleDate = (rawStr) => {
+    if (!rawStr) return null;
+    const str = String(rawStr).trim().split(/\s+/)[0]; 
+    let d = null;
+    
+    if (str.includes('/')) {
+      const parts = str.split('/');
+      if (parts.length === 3) {
+        const day = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1;
+        let year = parseInt(parts[2], 10);
+        if (year < 100) year += 2000;
+        d = new Date(year, month, day);
+      }
+    } else if (str.includes('-')) {
+      const parts = str.split('-');
+      if (parts.length === 3) {
+        if (parts[0].length === 4) { 
+           d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+        } else { 
+           d = new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
+        }
       }
     }
-    return true;
+    
+    if (!d || isNaN(d.getTime())) d = new Date(rawStr);
+    return isNaN(d.getTime()) ? null : d;
+  };
+
+  // --- 2. DIVIDE DATA INTO ACTIVE AND EXPIRED ---
+  const activeCalls = [];
+  const expiredCalls = [];
+
+  activeData.forEach(r => {
+    if (keywordInput && !keywordMatchesMulti(r, keywordInput)) return;
+    
+    const isGeneralCall = r["Scientific Domain"] && r["Scientific Domain"].trim().toLowerCase() === "general";
+    if (!isGeneralCall) {
+      if (selectedDomains.size && !selectedDomains.has(r["Scientific Domain"])) return;
+      if (selectedSpecificFields.size) {
+        if (!r["Specific Disciplines"]) return;
+        const fields = r["Specific Disciplines"].split(";").map(f => f.trim());
+        if (!fields.some(f => selectedSpecificFields.has(f))) return;
+      }
+    }
+
+    const datesArray = r["Deadline(s)"] || [];
+    let isExpired = false;
+    let validDates = [];
+
+    if (datesArray.length > 0) {
+      validDates = datesArray.map(parseFlexibleDate).filter(d => d !== null);
+      if (validDates.length > 0) {
+        isExpired = validDates.every(d => d < now);
+      }
+    }
+
+    // Attach parsed dates to the object so we can use them for rendering
+    r._parsedDates = validDates;
+
+    if (!isExpired && deadlineFilterValue !== "all") {
+      if (validDates.length > 0) {
+        const satisfiesRange = validDates.some(targetDate => {
+          if (targetDate < now) return false; 
+          if (deadlineFilterValue === "3m") return targetDate <= threeMonthsLimit;
+          if (deadlineFilterValue === "6m") return targetDate <= sixMonthsLimit;
+          
+          // FIX: Broader string matching for the 6 to 12 months HTML value
+          if (deadlineFilterValue === "6-12m" || deadlineFilterValue === "12m") {
+              return targetDate > sixMonthsLimit && targetDate <= twelveMonthsLimit;
+          }
+          
+          // FIX: Broader string matching for the 1 year+ HTML value
+          if (deadlineFilterValue === "1y" || deadlineFilterValue === "over1y" || deadlineFilterValue === "12m+") {
+              return targetDate > twelveMonthsLimit;
+          }
+          return false;
+        });
+        if (!satisfiesRange) return; 
+      }
+    }
+
+    if (isExpired) {
+      expiredCalls.push(r);
+    } else {
+      activeCalls.push(r);
+    }
   });
 
-  filtered.sort((a, b) => countKeywordMatches(b, keywordInput) - countKeywordMatches(a, keywordInput));
+  // --- 3. RENDER FUNCTION ---
+  activeCalls.sort((a, b) => countKeywordMatches(b, keywordInput) - countKeywordMatches(a, keywordInput));
+  expiredCalls.sort((a, b) => countKeywordMatches(b, keywordInput) - countKeywordMatches(a, keywordInput));
 
-  const renderCall = (r, targetContainer) => {
+  const renderCall = (r, targetContainer, isExpiredBlock) => {
     const score = countKeywordMatches(r, keywordInput);
     const btn = document.createElement("button");
     const isGeneral = r["Scientific Domain"] && r["Scientific Domain"].trim().toLowerCase() === "general";
     
-    // Clean, compact button design
-    btn.className = `w-full text-left p-3 bg-white border border-slate-200/80 rounded-xl transition shadow-sm mb-2 flex flex-col gap-1 focus:outline-none hover:border-slate-300 hover:bg-slate-50/50 text-slate-700`;
+    const bgStyle = isExpiredBlock ? "bg-slate-50 opacity-70 grayscale" : "bg-white hover:bg-slate-50/50 hover:border-slate-300";
 
-    // Process Call ID or fallback space to keep structure intact
-    const callIdHTML = r["Call ID"] 
-      ? `<span class="font-bold text-slate-400 text-[10px] tracking-tight uppercase">${r["Call ID"]}</span>` 
-      : `<span></span>`;
+    btn.className = `w-full text-left p-3 ${bgStyle} border border-slate-200/80 rounded-xl transition shadow-sm mb-2 flex flex-col gap-1 focus:outline-none text-slate-700`;
+
+    const callIdHTML = r["Call ID"] ? `<span class="font-bold text-slate-400 text-[10px] tracking-tight uppercase">${r["Call ID"]}</span>` : `<span></span>`;
     
     let badgeHTML = "";
-    if (keywordInput && score > 0) {
+    if (isExpiredBlock) {
+      badgeHTML = `<span class="text-[10px] bg-red-50 text-red-600 border border-red-100 font-bold px-2 py-0.5 rounded-md whitespace-nowrap">Closed</span>`;
+    } else if (keywordInput && score > 0) {
       badgeHTML = `<span class="text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-100 px-2 py-0.5 rounded-md whitespace-nowrap">Hits: ${score}</span>`;
     } else if (isGeneral) {
       badgeHTML = `<span class="text-[10px] bg-purple-50 text-purple-600 border border-purple-100 font-bold px-2 py-0.5 rounded-md whitespace-nowrap">General</span>`;
     }
 
-    // Capture column fields strings safely (supports multi-deadlines)
-    let deadlineRawString = "";
-    const lookForField = r["Deadline(s)"];
-    
-    if (lookForField) {
-      if (lookForField instanceof Date) {
-        deadlineRawString = lookForField.toLocaleDateString("en-GB");
-      } else {
-        deadlineRawString = String(lookForField).trim();
-      }
-    } else {
-      deadlineRawString = "Continuous / Open";
+    // FIX: Force strictly formatted DD/MM/YYYY using the actual background Date objects
+    let deadlineDisplayString = "Continuous / Open";
+    if (r._parsedDates && r._parsedDates.length > 0) {
+      deadlineDisplayString = r._parsedDates.map(d => {
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const year = d.getFullYear();
+        return `${day}/${month}/${year}`;
+      }).join(" ; ");
     }
 
-    // NEW ULTRA-COMPACT 2-LINE LAYOUT
-    // Row 1: Call ID on the left, Muted Deadline string on the right
-    // Row 2: Call Title on the left, Badge hits on the right
     btn.innerHTML = `
-    <div class="w-full flex justify-between items-center gap-4 border-b border-slate-50 pb-0.5">
-            ${callIdHTML}
-            <span class="text-[10px] text-slate-400 font-medium whitespace-nowrap flex items-center gap-1">
-              <svg class="w-3 h-3 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-              ${deadlineRawString}
-            </span>
-          </div>
+      <div class="w-full flex justify-between items-center gap-4 border-b border-slate-50 pb-0.5">
+        ${callIdHTML}
+        <span class="text-[10px] ${isExpiredBlock ? 'text-red-400' : 'text-slate-400'} font-medium whitespace-nowrap flex items-center gap-1">
+          <svg class="w-3 h-3 ${isExpiredBlock ? 'text-red-300' : 'text-slate-300'}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          ${deadlineDisplayString}
+        </span>
+      </div>
       <div class="w-full flex justify-between items-start gap-4 pt-0.5">
         <div class="text-sm font-semibold text-slate-800 tracking-tight leading-snug">
           ${r["Call Title"] || ""}
         </div>
-        <div class="shrink-0 pt-0.5">
-          ${badgeHTML}
-        </div>
+        <div class="shrink-0 pt-0.5">${badgeHTML}</div>
       </div>
     `;
 
@@ -829,17 +881,16 @@ function updateCalls(data) {
     targetContainer.appendChild(btn);
   };
 
-  filtered.forEach(r => renderCall(r, container));
+  activeCalls.forEach(r => renderCall(r, container, false));
+  expiredCalls.forEach(r => renderCall(r, expiredContainer, true));
 
-  document.getElementById("calls-title").textContent = `Opportunities Available (${filtered.length})`;
-  document.getElementById("expired-calls-title").textContent = `Archive Records (0)`;
+  document.getElementById("calls-title").textContent = `Opportunities Available (${activeCalls.length})`;
+  document.getElementById("expired-calls-title").textContent = `Archive Records (${expiredCalls.length})`;
 }
 
 /* ================= FILTER RESET LOGIC ================= */
 function resetAllFilters() {
-  const keywordInput = document.getElementById("keyword-input");
-  if (keywordInput) keywordInput.value = "";
-  
+  document.getElementById("keyword-input").value = "";
   const defaultRadio = document.querySelector('input[name="deadline-filter"][value="all"]');
   if (defaultRadio) defaultRadio.checked = true;
 
@@ -847,21 +898,74 @@ function resetAllFilters() {
   selectedSpecificFields.clear();
   selectedCallButton = null;
 
-  // This is correct! It uses the global cleaned records:
-  renderDomain(excelData); 
-  renderSpecificFields(excelData);
-  updateCalls(excelData);
+  renderDomain(globalCallsData); 
+  renderSpecificFields(globalCallsData);
+  updateCalls(globalCallsData);
   
-  const moreInfoBtn = document.getElementById("more-info-btn");
-  if (moreInfoBtn) moreInfoBtn.classList.add("hidden");
+  resetDetailsPanel();
 }
 
 window.addEventListener("DOMContentLoaded", () => {
   const sidebarClearBtn = document.getElementById("clear-btn");
   const topClearBtn = document.getElementById("search-clear-btn");
+  const moreInfoBtn = document.getElementById("more-info-btn");
+  const closeModalBtn = document.getElementById("close-modal-btn");
+  const contactUsBtn = document.getElementById("contact-us-btn");
+  const closePopupBtn = document.getElementById("close-popup-btn");
 
   if (sidebarClearBtn) sidebarClearBtn.addEventListener("click", resetAllFilters);
   if (topClearBtn) topClearBtn.addEventListener("click", resetAllFilters);
+
+  if (moreInfoBtn) {
+    moreInfoBtn.addEventListener("click", () => {
+      if (!currentSelectedCall) return;
+      const r = currentSelectedCall;
+      const keywordInput = document.getElementById("keyword-input").value.trim();
+
+      document.getElementById("modal-expected-outcomes").innerHTML = highlightKeywords(r["Expected Outcomes"] || "No specific expected outcomes provided.", keywordInput);
+      document.getElementById("modal-scope").innerHTML = highlightKeywords(r["Scope"] || "No scope definition provided.", keywordInput);
+      
+      const keywordsDiv = document.getElementById("modal-keywords");
+      if (r["Keywords"]) {
+        keywordsDiv.innerHTML = `<strong>Keywords:</strong> ${highlightKeywords(r["Keywords"], keywordInput)}`;
+        keywordsDiv.classList.remove("hidden");
+      } else {
+        keywordsDiv.innerHTML = "";
+        keywordsDiv.classList.add("hidden");
+      }
+
+      const webUrl = r["Link to Call"] || r["Link"] || r["Website"] || r["URL"] || r["Call Website"];
+      const modalWebsiteBtn = document.getElementById("modal-website-btn");
+      if (webUrl && modalWebsiteBtn) {
+        modalWebsiteBtn.href = webUrl;
+        modalWebsiteBtn.classList.remove("hidden");
+      } else if (modalWebsiteBtn) {
+        modalWebsiteBtn.classList.add("hidden");
+      }
+
+      document.getElementById("more-info-modal").classList.remove("hidden");
+    });
+  }
+
+  if (closeModalBtn) {
+    closeModalBtn.addEventListener("click", () => {
+      document.getElementById("more-info-modal").classList.add("hidden");
+    });
+  }
+
+  if (contactUsBtn) {
+    contactUsBtn.addEventListener("click", () => {
+      if (currentSelectedCall && currentSelectedCall["Call ID"]) {
+        openMoreInfoEmail(currentSelectedCall["Call ID"]);
+      }
+    });
+  }
+
+  if (closePopupBtn) {
+    closePopupBtn.addEventListener("click", () => {
+      document.getElementById("no-calls-popup").classList.add("hidden");
+    });
+  }
 });
 
 /* ================= TOGGLE EXPIRED CALLS ================= */
