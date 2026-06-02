@@ -312,53 +312,20 @@ function excelDateToString(value) {
 
 /* ================= LOG IN & VALIDATION ================= */
 function handleCredentialResponse(response) {
-  try {
-    // 1. SAFETY CHECK: If credential is missing or not a real JWT (missing dots), bypass for local testing
-    if (!response || !response.credential || !response.credential.includes(".")) {
-      console.warn("⚠️ Invalid or missing JWT token detected. Bypassing Google Auth for local development.");
-      
-      // Force workspace to open locally without validation
-      document.getElementById("login").style.display = "none";
-      document.getElementById("private").style.display = "block";
-      loadExcel();
-      return; 
-    }
+  const payload = JSON.parse(atob(response.credential.split(".")));
+  const email = payload.email || "";
 
-    // 2. SAFELY DECODE REAL JWT (Production Mode)
-    const base64Url = response.credential.split(".");
-    const base64 = String(base64Url).replace(/-/g, "+").replace(/_/g, "/");
-    
-    const jsonPayload = decodeURIComponent(
-      atob(base64)
-        .split("")
-        .map(c => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-        .join("")
-    );
-    
-    const payload = JSON.parse(jsonPayload);
-    const email = payload.email || "";
-
-    // 3. VALIDATE INSTITUTIONAL EMAIL
-    if (!email.endsWith("@upf.edu")) {
-      alert("Restricted access to institutional personnel");
-      return;
-    }
-
-    // 4. GRANT ACCESS
-    document.getElementById("login").style.display = "none";
-    document.getElementById("private").style.display = "block";
-    loadExcel();
-
-  } catch (error) {
-    console.error("❌ Authentication processing crashed:", error);
-    
-    // Ultimate Fallback: Open the app anyway if the try/catch completely fails during testing
-    document.getElementById("login").style.display = "none";
-    document.getElementById("private").style.display = "block";
-    loadExcel();
+  if (!email.endsWith("@upf.edu")) {
+    alert("Restricted access to institutional personnel");
+    return;
   }
-}
 
+  document.getElementById("login").style.display = "none";
+  document.getElementById("private").style.display = "block";
+  
+  // This correctly triggers the new global data architecture
+  loadExcel(); 
+}
 /* ================= LOAD EXCEL ================= */
 function loadExcel() {
   fetch("./GrantRadar_Calls.xlsx")
