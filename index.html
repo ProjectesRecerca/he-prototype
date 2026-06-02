@@ -294,8 +294,8 @@
 <script>
 /* ================= GLOBAL CONFIGURATION & STATE ================= */
 let excelData = [];
-const selectedDomains = new Set(); // Fixed: Double space removed
-const selectedSpecificFields = new Set(); // Fixed: Double space removed
+const selectedDomains = new Set();
+const selectedSpecificFields = new Set();
 let selectedCallButton = null;
 
 /* ================= DATE FORMAT ================= */
@@ -311,7 +311,7 @@ function excelDateToString(value) {
 
 /* ================= LOG IN &  VALIDATION ================= */
 function handleCredentialResponse(response) {
-  const payload = JSON.parse(atob(response.credential.split(".")[1]));
+  const payload = JSON.parse(atob(response.credential.split(".")));
   const email = payload.email || "";
 
   if (!email.endsWith("@upf.edu")) {
@@ -323,6 +323,7 @@ function handleCredentialResponse(response) {
   document.getElementById("private").style.display = "block";
   loadExcel();
 }
+
 /* ================= LOAD EXCEL ================= */
 function loadExcel() {
   fetch("./GrantRadar_Calls.xlsx")
@@ -332,7 +333,10 @@ function loadExcel() {
       const secondSheetName = wb.SheetNames; 
       const rawRows = XLSX.utils.sheet_to_json(wb.Sheets[secondSheetName], { raw: false });
       
-      // Clean data structure and save directly into the global state variable
+      console.log("--- EXCEL READ DIAGNOSTICS ---");
+      console.log("Total rows parsed from Sheet 2:", rawRows.length);
+
+      // Clean data structure and save directly into the global source of truth
       excelData = rawRows.map(row => {
         const deadlineRaw = row["Deadline(s)"] || "";
         const deadlinesArray = deadlineRaw ? deadlineRaw.split(';').map(d => d.trim()) : [];
@@ -342,9 +346,9 @@ function loadExcel() {
         };
       });
 
-      console.log("Excel Parsed and Sanitized Globally:", excelData);
+      console.log("Global excelData Array Populated Successfully:", excelData);
       
-      // Initialize layout renders globally without passing parameters
+      // Initialize renders globally without passing parameters
       renderDomain();
       renderSpecificFields();
       updateCalls();
@@ -357,7 +361,7 @@ function renderDomain() {
   const c = document.getElementById("domain-container");
   c.innerHTML = "";
 
-  // Reference global excelData directly
+  // Read directly from the global array
   [...new Set(excelData.map(r => r["Scientific Domain"]).filter(Boolean))]
     .sort()
     .forEach(d => {
@@ -394,23 +398,19 @@ function renderSpecificFields() {
   const categories = [
     { 
       label: "Physical Sciences & Engineering", 
-      allowed: ["Math", "Physics", "Chemistry", "Computer Science & AI", "ICT & Web Engineering", "Materials", "Earth Sciences"], 
-      textClass: "text-emerald-700 bg-emerald-50 border-emerald-100", borderActive: "border-emerald-600 bg-emerald-600 text-white"
+      allowed: ["Math", "Physics", "Chemistry", "Computer Science & AI", "ICT & Web Engineering", "Materials", "Earth Sciences"]
     },
     { 
       label: "Life Sciences", 
-      allowed: ["Biomedicine", "Molecular & Cell Biology", "Genetics", "Neurosciences", "Public Health", "Biotechnology"], 
-      textClass: "text-blue-700 bg-blue-50 border-blue-100", borderActive: "border-blue-600 bg-blue-600 text-white"
+      allowed: ["Biomedicine", "Molecular & Cell Biology", "Genetics", "Neurosciences", "Public Health", "Biotechnology"]
     },
     { 
       label: "Social Sciences & Humanities", 
-      allowed: ["Economics", "Business & Markets", "Law", "Regulation & Justice", "Political Science & Public Policy", "Sociology & Social Structures", "Media & Communication", "Language, Linguistics & Translation", "History", "Philosophy & Cultural Studies"], 
-      textClass: "text-indigo-700 bg-indigo-50 border-indigo-100", borderActive: "border-indigo-600 bg-indigo-600 text-white"
+      allowed: ["Economics", "Business & Markets", "Law", "Regulation & Justice", "Political Science & Public Policy", "Sociology & Social Structures", "Media & Communication", "Language, Linguistics & Translation", "History", "Philosophy & Cultural Studies"]
     },
     {
       label: "General",
-      allowed: [],
-      textClass: "text-purple-700 bg-purple-50 border-purple-100", borderActive: "border-purple-600 bg-purple-600 text-white"
+      allowed: []
     }
   ];
 
@@ -491,7 +491,7 @@ function renderSpecificFields() {
   });
 }
 
-/* ================= KEYWORD SEARCH ================= */
+/* ================= KEYWORD SEARCH MODULES ================= */
 function keywordMatchesMulti(call, userInput) {
   if (!userInput) return true;
 
@@ -506,16 +506,9 @@ function keywordMatchesMulti(call, userInput) {
     call["Funding Body"] || "",    
     call["Programme"] || "",       
     call["Subprogramme"] || ""    
-  ]
-  .join(" ")
-  .toLowerCase();
+  ].join(" ").toLowerCase();
 
-  const searches = userInput
-    .toLowerCase()
-    .split(";")
-    .map(s => s.trim())
-    .filter(Boolean);
-
+  const searches = userInput.toLowerCase().split(";").map(s => s.trim()).filter(Boolean);
   return searches.some(term => haystack.includes(term));
 }
 
@@ -523,19 +516,12 @@ function highlightKeywords(text, userInput) {
   if (!text || !userInput) return text || "";
 
   let result = text;
-  const terms = userInput
-    .toLowerCase()
-    .split(";")
-    .map(t => t.trim())
-    .filter(Boolean);
+  const terms = userInput.toLowerCase().split(";").map(t => t.trim()).filter(Boolean);
 
   terms.forEach(term => {
     const safeTerm = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const regex = new RegExp(`(${safeTerm})`, "gi");
-    result = result.replace(
-      regex,
-      `<mark class="bg-yellow-200 px-0.5 rounded text-slate-900">$1</mark>`
-    );
+    result = result.replace(regex, `<mark class="bg-yellow-200 px-0.5 rounded text-slate-900">$1</mark>`);
   });
 
   return result;
@@ -552,15 +538,9 @@ function countKeywordMatches(call, userInput) {
     call["Summary"] || "",
     call["Expected Outcomes"] || "",
     call["Scope"] || ""
-  ]
-    .join(" ")
-    .toLowerCase();
+  ].join(" ").toLowerCase();
 
-  const terms = userInput
-    .toLowerCase()
-    .split(";")
-    .map(t => t.trim())
-    .filter(Boolean);
+  const terms = userInput.toLowerCase().split(";").map(t => t.trim()).filter(Boolean);
 
   let count = 0;
   terms.forEach(term => {
@@ -637,7 +617,10 @@ function showCallDetails(r, buttonElement) {
     { label: "Subprogramme", val: r["Subprogramme"] },
     { label: "Type", val: r["Type of Action"] },
     { label: "Opening Date", val: excelDateToString(r["Opening date"]) },
-    { label: "Deadline", val: excelDateToString(r["Deadline(s)"]) }
+    { 
+      label: "Deadline", 
+      val: Array.isArray(r["Deadline(s)"]) ? r["Deadline(s)"].join("; ") : excelDateToString(r["Deadline(s)"]) 
+    }
   ];
 
   const keywordInput = document.getElementById("keyword-input").value.trim();
@@ -700,14 +683,6 @@ function openMoreInfoModal(call) {
   document.getElementById("modal-keywords").innerHTML = `<strong>Call Keywords:</strong> ` + highlightKeywords(call["Keywords"] || "No keywords available", keywordInput);
 }
 
-function showNoCallsPopup() {
-  const popup = document.getElementById("no-calls-popup");
-  if (!popup) return;
-  popup.classList.remove("hidden");
-  document.getElementById("close-popup-btn").onclick = () => { popup.classList.add("hidden"); };
-}
-
-/* ================= UPDATE CALLS INTERFACE PIPELINE ================= */
 /* ================= UPDATE CALLS INTERFACE PIPELINE ================= */
 function updateCalls() {
   const expiredWrapper = document.getElementById("expired-calls-wrapper");
@@ -726,17 +701,15 @@ function updateCalls() {
   resetDetailsPanel();
 
   const keywordInput = document.getElementById("keyword-input").value.trim();
-  
   const deadlineRadio = document.querySelector('input[name="deadline-filter"]:checked');
   const deadlineFilterValue = deadlineRadio ? deadlineRadio.value : "all";
 
-  // Date threshold helper ranges for processing calendar evaluations
+  // Calendar configuration helpers
   const now = new Date();
   const threeMonthsLimit = new Date(); threeMonthsLimit.setMonth(now.getMonth() + 3);
   const sixMonthsLimit = new Date(); sixMonthsLimit.setMonth(now.getMonth() + 6);
   const twelveMonthsLimit = new Date(); twelveMonthsLimit.setMonth(now.getMonth() + 12);
 
-  // Helper utility function to parse string dates ("DD/MM/YYYY") into valid comparable JS dates
   const parseDDMMYYYY = (str) => {
     if (!str) return null;
     const parts = str.split("/");
@@ -748,19 +721,18 @@ function updateCalls() {
     return isNaN(d.getTime()) ? null : d;
   };
 
-  // Run the unified filter operations directly over global state data
+  // Run filtering seamlessly over the global state
   const filtered = excelData.filter(r => {
     if (keywordInput && !keywordMatchesMulti(r, keywordInput)) return false;
 
-    // --- Dynamic Calendar Deadline Filtering Logic ---
+    // Active Deadline Range Check Engine
     if (deadlineFilterValue !== "all") {
       const datesArray = r["Deadline(s)"] || [];
       if (datesArray.length === 0) return false;
 
-      // Evaluation passes if at least one individual deadline item matches chosen bounds
       const satisfiesRange = datesArray.some(dStr => {
         const targetDate = parseDDMMYYYY(dStr);
-        if (!targetDate) return false; // Skips open-ended strings like "Continuous" for specific brackets
+        if (!targetDate) return false; 
 
         if (deadlineFilterValue === "3m") {
           return targetDate >= now && targetDate <= threeMonthsLimit;
@@ -809,13 +781,9 @@ function updateCalls() {
       badgeHTML = `<span class="text-[10px] bg-purple-50 text-purple-600 border border-purple-100 font-bold px-2 py-0.5 rounded-md whitespace-nowrap">General</span>`;
     }
 
-    // Safely reads the deadlines array for rendering
-    let deadlineRawString = "";
-    if (Array.isArray(r["Deadline(s)"]) && r["Deadline(s)"].length > 0) {
-      deadlineRawString = r["Deadline(s)"].join("; ");
-    } else {
-      deadlineRawString = "Continuous / Open";
-    }
+    let deadlineRawString = Array.isArray(r["Deadline(s)"]) && r["Deadline(s)"].length > 0
+      ? r["Deadline(s)"].join("; ")
+      : "Continuous / Open";
 
     btn.innerHTML = `
       <div class="w-full flex justify-between items-center gap-4 border-b border-slate-50 pb-0.5">
