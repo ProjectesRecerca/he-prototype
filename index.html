@@ -312,7 +312,7 @@ function excelDateToString(value) {
 
 /* ================= LOG IN & VALIDATION ================= */
 function handleCredentialResponse(response) {
-  const payload = JSON.parse(atob(response.credential.split(".")));
+  const payload = JSON.parse(atob(response.credential.split(".")[1]));
   const email = payload.email || "";
 
   if (!email.endsWith("@upf.edu")) {
@@ -322,9 +322,7 @@ function handleCredentialResponse(response) {
 
   document.getElementById("login").style.display = "none";
   document.getElementById("private").style.display = "block";
-  
-  // This correctly triggers the new global data architecture
-  loadExcel(); 
+  loadExcel();
 }
 /* ================= LOAD EXCEL ================= */
 function loadExcel() {
