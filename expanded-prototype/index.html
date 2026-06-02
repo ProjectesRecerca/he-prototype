@@ -1,7 +1,5 @@
 
 
-<!--          data-client_id="871231787095-ug0o6pu89sn0t6i97s0nagakohighot8.apps.googleusercontent.com"
-          -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -535,7 +533,89 @@ function highlightKeywords(text, userInput) {
   return result;
 }
 
-// ... Keep standard helper functions like cleanText, countKeywordMatches, toggleExpiredCalls ...
+/* ================= RESET DETAILS PANEL ================= */
+function resetDetailsPanel() {
+  const detailsContainer = document.getElementById("dynamic-details-container");
+  const summarySection = document.getElementById("summary-section");
+  const moreInfoBtn = document.getElementById("more-info-btn");
+
+  // 1. Restore default placeholder text
+  if (detailsContainer) {
+    detailsContainer.innerHTML = `
+      <div class="p-4 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-center text-slate-400 italic">
+        Select any call card from the center row pipeline to examine the details of the selected call.
+      </div>
+    `;
+  }
+
+  // 2. Hide the summary and buttons
+  if (summarySection) summarySection.classList.add("hidden");
+  if (moreInfoBtn) moreInfoBtn.classList.add("hidden");
+
+  // 3. Remove highlighting from previously selected call buttons (if applicable)
+  if (selectedCallButton) {
+    // Modify these classes based on how you highlight active items in `showCallDetails`
+    selectedCallButton.classList.remove("ring-2", "ring-blue-500", "bg-blue-50/50", "border-blue-300");
+    selectedCallButton = null;
+  }
+}
+
+
+function countKeywordMatches(call, userInput) {
+  if (!userInput) return 0;
+
+  const haystack = [
+    call["Call ID"] || "",
+    call["Call Title"] || "",
+    call["Keywords"] || "",
+    call["SSH Keywords"] || "",
+    call["Summary"] || "",
+    call["Expected Outcomes"] || "",
+    call["Scope"] || ""
+  ]
+    .join(" ")
+    .toLowerCase();
+
+  const terms = userInput
+    .toLowerCase()
+    .split(";")
+    .map(t => t.trim())
+    .filter(Boolean);
+
+  let count = 0;
+  terms.forEach(term => {
+    const matches = haystack.match(new RegExp(term, "g"));
+    if (matches) count += matches.length;
+  });
+
+  return count;
+}
+
+document.getElementById("search-btn").addEventListener("click", () => {
+  updateCalls();
+  scrollToCalls();
+});
+
+document.getElementById("keyword-input").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    updateCalls();
+    scrollToCalls();
+  }
+});
+
+function scrollToCalls() {
+  const callsBlock = document.getElementById("calls-section");
+  if (callsBlock) {
+    callsBlock.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
+
+function cleanText(text) {
+  if (!text) return "";
+  return text.replace(/\[\s*\d+(?:,\s*\d+)*\s*\]/g, "");
+}
+
 
 /* ================= UPDATE CALLS INTERFACE PIPELINE ================= */
 function updateCalls(data) {
