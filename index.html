@@ -619,7 +619,6 @@ function cleanText(text) {
 
 /* ================= UPDATE CALLS INTERFACE PIPELINE ================= */
 function updateCalls(data) {
-  // FIX: Parameter execution safety hook fallback
   const activeData = data || globalCallsData;
 
   const expiredWrapper = document.getElementById("expired-calls-wrapper");
@@ -638,50 +637,127 @@ function updateCalls(data) {
   resetDetailsPanel();
 
   const keywordInput = document.getElementById("keyword-input").value.trim();
+  const deadlineRadio = document.querySelector('input[name="deadline-filter"]:checked');
+  const deadlineFilterValue = deadlineRadio ? deadlineRadio.value : "all";
 
-  // Process data filters using active context reference
-  const filtered = activeData.filter(r => {
-    if (keywordInput && !keywordMatchesMulti(r, keywordInput)) return false;
+  // --- 1. SMART CALENDAR ENGINE ---
+  const now = new Date();
+  now.setHours(0, 0, 0, 0); // Reset time to midnight for accurate day comparison
 
+  const threeMonthsLimit = new Date(); threeMonthsLimit.setMonth(now.getMonth() + 3);
+  const sixMonthsLimit = new Date(); sixMonthsLimit.setMonth(now.getMonth() + 6);
+  const twelveMonthsLimit = new Date(); twelveMonthsLimit.setMonth(now.getMonth() + 12);
+
+  // Flexible parser: Handles both DD/MM/YYYY and YYYY-MM-DD
+  const parseFlexibleDate = (str) => {
+    if (!str) return null;
+    
+    if (str.includes('/')) {
+      const parts = str.split('/');
+      if (parts.length === 3) return new Date(parts[2], parts[1] - 1, parts[0]);
+    } else if (str.includes('-')) {
+      const parts = str.split('-');
+      if (parts.length === 3) return new Date(parts[0], parts[1] - 1, parts[2]);
+    }
+    
+    // Fallback for standard formats
+    const d = new Date(str);
+    return isNaN(d.getTime()) ? null : d;
+  };
+
+  // --- 2. DIVIDE DATA INTO ACTIVE AND EXPIRED ---
+  const activeCalls = [];
+  const expiredCalls = [];
+
+  activeData.forEach(r => {
+    // Check Search & Checkboxes First
+    if (keywordInput && !keywordMatchesMulti(r, keywordInput)) return;
+    
     const isGeneralCall = r["Scientific Domain"] && r["Scientific Domain"].trim().toLowerCase() === "general";
     if (!isGeneralCall) {
-      if (selectedDomains.size && !selectedDomains.has(r["Scientific Domain"])) return false;
+      if (selectedDomains.size && !selectedDomains.has(r["Scientific Domain"])) return;
       if (selectedSpecificFields.size) {
-        if (!r["Specific Disciplines"]) return false;
+        if (!r["Specific Disciplines"]) return;
         const fields = r["Specific Disciplines"].split(";").map(f => f.trim());
-        if (!fields.some(f => selectedSpecificFields.has(f))) return false;
+        if (!fields.some(f => selectedSpecificFields.has(f))) return;
       }
     }
-    return true;
+
+    // Evaluate Deadlines
+    const datesArray = r["Deadline(s)"] || [];
+    let isExpired = false;
+    let validDates = [];
+
+    if (datesArray.length > 0) {
+      validDates = datesArray.map(parseFlexibleDate).filter(d => d !== null);
+      
+      // A call is ONLY expired if ALL its deadlines are strictly in the past
+      if (validDates.length > 0) {
+        isExpired = validDates.every(d => d < now);
+      }
+    }
+
+    // Process Deadline Range Filters (Only for Active Calls)
+    if (!isExpired && deadlineFilterValue !== "all") {
+      if (validDates.length > 0) {
+        const satisfiesRange = validDates.some(targetDate => {
+          if (targetDate < now) return false; // Ignore past dates in multi-deadline calls
+          
+          if (deadlineFilterValue === "3m") return targetDate <= threeMonthsLimit;
+          if (deadlineFilterValue === "6m") return targetDate <= sixMonthsLimit;
+          if (deadlineFilterValue === "6-12m") return targetDate > sixMonthsLimit && targetDate <= twelveMonthsLimit;
+          if (deadlineFilterValue === "1y") return targetDate > twelveMonthsLimit;
+          return false;
+        });
+
+        if (!satisfiesRange) return; // Drop call if it doesn't fit the radio filter
+      }
+      // Note: If validDates is empty, it's a "Continuous/Open" call. We let those pass through regardless of range.
+    }
+
+    // Route the call to the correct bucket
+    if (isExpired) {
+      expiredCalls.push(r);
+    } else {
+      activeCalls.push(r);
+    }
   });
 
-  filtered.sort((a, b) => countKeywordMatches(b, keywordInput) - countKeywordMatches(a, keywordInput));
+  // --- 3. RENDER FUNCTION ---
+  // Sort both arrays by keyword match relevance
+  activeCalls.sort((a, b) => countKeywordMatches(b, keywordInput) - countKeywordMatches(a, keywordInput));
+  expiredCalls.sort((a, b) => countKeywordMatches(b, keywordInput) - countKeywordMatches(a, keywordInput));
 
-  const renderCall = (r, targetContainer) => {
+  const renderCall = (r, targetContainer, isExpiredBlock) => {
     const score = countKeywordMatches(r, keywordInput);
     const btn = document.createElement("button");
     const isGeneral = r["Scientific Domain"] && r["Scientific Domain"].trim().toLowerCase() === "general";
     
-    btn.className = `w-full text-left p-3 bg-white border border-slate-200/80 rounded-xl transition shadow-sm mb-2 flex flex-col gap-1 focus:outline-none hover:border-slate-300 hover:bg-slate-50/50 text-slate-700`;
+    // Style differently if expired
+    const bgStyle = isExpiredBlock ? "bg-slate-50 opacity-70 grayscale" : "bg-white hover:bg-slate-50/50 hover:border-slate-300";
+
+    btn.className = `w-full text-left p-3 ${bgStyle} border border-slate-200/80 rounded-xl transition shadow-sm mb-2 flex flex-col gap-1 focus:outline-none text-slate-700`;
 
     const callIdHTML = r["Call ID"] 
       ? `<span class="font-bold text-slate-400 text-[10px] tracking-tight uppercase">${r["Call ID"]}</span>` 
       : `<span></span>`;
     
     let badgeHTML = "";
-    if (keywordInput && score > 0) {
+    if (isExpiredBlock) {
+      badgeHTML = `<span class="text-[10px] bg-red-50 text-red-600 border border-red-100 font-bold px-2 py-0.5 rounded-md whitespace-nowrap">Closed</span>`;
+    } else if (keywordInput && score > 0) {
       badgeHTML = `<span class="text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-100 px-2 py-0.5 rounded-md whitespace-nowrap">Hits: ${score}</span>`;
     } else if (isGeneral) {
       badgeHTML = `<span class="text-[10px] bg-purple-50 text-purple-600 border border-purple-100 font-bold px-2 py-0.5 rounded-md whitespace-nowrap">General</span>`;
     }
 
-    let deadlineRawString = r["Deadline(s)"] && r["Deadline(s)"].length > 0 ? r["Deadline(s)"].join(", ") : "Continuous / Open";
+    let deadlineRawString = r["Deadline(s)"] && r["Deadline(s)"].length > 0 ? r["Deadline(s)"].join(" ; ") : "Continuous / Open";
 
     btn.innerHTML = `
       <div class="w-full flex justify-between items-center gap-4 border-b border-slate-50 pb-0.5">
         ${callIdHTML}
-        <span class="text-[10px] text-slate-400 font-medium whitespace-nowrap flex items-center gap-1">
-          <svg class="w-3 h-3 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        <span class="text-[10px] ${isExpiredBlock ? 'text-red-400' : 'text-slate-400'} font-medium whitespace-nowrap flex items-center gap-1">
+          <svg class="w-3 h-3 ${isExpiredBlock ? 'text-red-300' : 'text-slate-300'}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
           ${deadlineRawString}
         </span>
       </div>
@@ -697,8 +773,13 @@ function updateCalls(data) {
     targetContainer.appendChild(btn);
   };
 
-  filtered.forEach(r => renderCall(r, container));
-  document.getElementById("calls-title").textContent = `Opportunities Available (${filtered.length})`;
+  // Render both blocks
+  activeCalls.forEach(r => renderCall(r, container, false));
+  expiredCalls.forEach(r => renderCall(r, expiredContainer, true));
+
+  // Update Counters
+  document.getElementById("calls-title").textContent = `Opportunities Available (${activeCalls.length})`;
+  document.getElementById("expired-calls-title").textContent = `Archive Records (${expiredCalls.length})`;
 }
 
 /* ================= FILTER RESET LOGIC ================= */
