@@ -323,7 +323,6 @@ function handleCredentialResponse(response) {
   loadExcel();
 }
 /* ================= LOAD EXCEL ================= */
-/* ================= LOAD EXCEL ================= */
 function loadExcel() {
   fetch("./GrantRadar_Calls.xlsx")
     .then(r => r.arrayBuffer())
@@ -332,7 +331,7 @@ function loadExcel() {
       const secondSheetName = wb.SheetNames; 
       const rawRows = XLSX.utils.sheet_to_json(wb.Sheets[secondSheetName], { raw: false });
       
-      // Map directly to your global source of truth
+      // Sanitize and save data straight into the global state variable
       excelData = rawRows.map(row => {
         const deadlineRaw = row["Deadline(s)"] || "";
         const deadlinesArray = deadlineRaw ? deadlineRaw.split(';').map(d => d.trim()) : [];
@@ -343,6 +342,8 @@ function loadExcel() {
       });
 
       console.log("Excel Parsed and Sanitized Globally:", excelData);
+      
+      // Render components directly using the global scope
       renderDomain();
       renderSpecificFields();
       updateCalls();
@@ -355,6 +356,7 @@ function renderDomain() {
   const c = document.getElementById("domain-container");
   c.innerHTML = "";
 
+  // Read clean rows from global excelData
   [...new Set(excelData.map(r => r["Scientific Domain"]).filter(Boolean))]
     .sort()
     .forEach(d => {
@@ -701,7 +703,6 @@ function showNoCallsPopup() {
 }
 
 /* ================= UPDATE CALLS INTERFACE PIPELINE ================= */
-/* ================= UPDATE CALLS INTERFACE PIPELINE ================= */
 function updateCalls() {
   const expiredWrapper = document.getElementById("expired-calls-wrapper");
   const expiredArrow = document.getElementById("expired-arrow");
@@ -720,7 +721,7 @@ function updateCalls() {
 
   const keywordInput = document.getElementById("keyword-input").value.trim();
 
-  // Clean data-fetching from global context safely
+  // Read directly from the global excelData array
   const filtered = excelData.filter(r => {
     if (keywordInput && !keywordMatchesMulti(r, keywordInput)) return false;
 
@@ -789,6 +790,7 @@ function updateCalls() {
 }
 
 /* ================= FILTER RESET LOGIC ================= */
+/* ================= FILTER RESET LOGIC ================= */
 function resetAllFilters() {
   const keywordInput = document.getElementById("keyword-input");
   if (keywordInput) keywordInput.value = "";
@@ -814,6 +816,13 @@ window.addEventListener("DOMContentLoaded", () => {
 
   if (sidebarClearBtn) sidebarClearBtn.addEventListener("click", resetAllFilters);
   if (topClearBtn) topClearBtn.addEventListener("click", resetAllFilters);
+
+  // LOCAL DEVELOPMENT HOOK: Automatically runs data fetch if login interface is bypassed or hidden
+  const loginModule = document.getElementById("login");
+  if (!loginModule || loginModule.style.display === "none" || window.getComputedStyle(loginModule).display === "none") {
+    console.log("Login module hidden. Executing fallback local data load sequence...");
+    loadExcel();
+  }
 });
 
 /* ================= TOGGLE EXPIRED CALLS ================= */
