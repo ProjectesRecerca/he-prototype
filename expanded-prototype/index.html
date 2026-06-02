@@ -331,23 +331,22 @@ function loadExcel() {
     .then(data => {
       const wb = XLSX.read(data, { type: "array" });
       
-      // FIX: Safe sheet fallback indexing. Fall back to sheet 0 if sheet 1 does not exist.
-      const targetSheetName = wb.SheetNames || wb.SheetNames; 
+      // FIX: Use proper array indexing to get the sheet string name. 
+      // Tries the second sheet [1] first, falls back to the first sheet [0] if it doesn't exist.
+      const targetSheetName = wb.SheetNames[1] || wb.SheetNames[0]; 
       excelData = XLSX.utils.sheet_to_json(wb.Sheets[targetSheetName], { raw: false });
       
       if (excelData.length === 0) {
-        console.warn("Warning: Parsed spreadsheet data array is empty.");
+        console.warn("Warning: Parsed spreadsheet data array is empty. Check your Excel file tabs.");
         return;
       }
 
-      // FIX: structural diagnostics array pointer target
       console.log("Total rows parsed into excelData:", excelData.length);
-      console.log("Value detected in deadline column:", excelData["Deadline(s)"]);
-
+      
       // Map out clean arrays globally
       globalCallsData = excelData.map(row => {
         const deadlineRaw = row["Deadline(s)"] || "";
-        const deadlinesArray = deadlineRaw ? deadlineRaw.split(';').map(d => d.trim()) : [];
+        const deadlinesArray = deadlineRaw ? String(deadlineRaw).split(';').map(d => d.trim()) : [];
         return {
           ...row,
           "Deadline(s)": deadlinesArray 
