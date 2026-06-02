@@ -329,59 +329,36 @@ function loadExcel() {
     .then(r => r.arrayBuffer())
     .then(data => {
       const wb = XLSX.read(data, { type: "array" });
-      // Change [0] to [1] to target the second sheet regardless of its name
-      const secondSheetName = wb.SheetNames[1]; 
-      excelData = XLSX.utils.sheet_to_json(wb.Sheets[secondSheetName],{ raw: false });
+      const secondSheetName = wb.SheetNames; 
+      const rawRows = XLSX.utils.sheet_to_json(wb.Sheets[secondSheetName], { raw: false });
       
-      // ========================================================
-      // DEBUG DIAGNOSTICS: SEE EXACTLY WHAT JAVASCRIPT IS READING
-      // ========================================================
-      console.log("--- EXCEL READ DIAGNOSTICS ---");
-      console.log("Total rows parsed into excelData:", excelData.length);
-      console.log("Full First Row Object Structure:", excelData);
-
-      if (excelData.length > 0) {
-        // Look at the first row's deadline properties dynamically
-        const firstRow = excelData;
-        const lookForField = firstRow["Deadline(s)"];
-        
-        console.log("Value detected in deadline column:", lookForField);
-        console.log("JavaScript Data Type of this value:", typeof lookForField);
-        console.log("Is this value a native JavaScript Date object?:", lookForField instanceof Date);
-        
-        if (typeof lookForField === "string") {
-          console.log("Character length of the deadline string:", lookForField.length);
-          // Check for hidden spaces or carriage returns
-          console.log("String escaped representation:", JSON.stringify(lookForField));
-        }
-      }
-      console.log("-----------------------------------------");
-      // ========================================================
-      const formattedExcelData = excelData.map(row => {
+      // Clean data structure and save directly into the global state variable
+      excelData = rawRows.map(row => {
         const deadlineRaw = row["Deadline(s)"] || "";
         const deadlinesArray = deadlineRaw ? deadlineRaw.split(';').map(d => d.trim()) : [];
-
-        // This returns the original row data, but swaps out the messy 
-        // string for our clean, usable array of dates.
         return {
           ...row,
           "Deadline(s)": deadlinesArray 
         };
       });
-      console.log("Excel Raw Data Object:", formattedExcelData);
-      renderDomain(formattedExcelData);
-      renderSpecificFields(formattedExcelData);
-      updateCalls(formattedExcelData);
+
+      console.log("Excel Parsed and Sanitized Globally:", excelData);
+      
+      // Initialize layout renders globally without passing parameters
+      renderDomain();
+      renderSpecificFields();
+      updateCalls();
     })
     .catch(err => console.error("Error loading Excel:", err));
 }
 
 /* ================= DOMAINS ================= */
-function renderDomain(data) {
+function renderDomain() {
   const c = document.getElementById("domain-container");
   c.innerHTML = "";
 
-  [...new Set(data.map(r => r["Scientific Domain"]).filter(Boolean))]
+  // Reference global excelData directly
+  [...new Set(excelData.map(r => r["Scientific Domain"]).filter(Boolean))]
     .sort()
     .forEach(d => {
       const label = document.createElement("label");
@@ -398,8 +375,8 @@ function renderDomain(data) {
         } else {
           selectedDomains.delete(d);
         }
-        renderSpecificFields(data);
-        updateCalls(data);
+        renderSpecificFields();
+        updateCalls();
       };
 
       label.appendChild(cb);
@@ -409,7 +386,7 @@ function renderDomain(data) {
 }
 
 /* ================= SPECIFIC DISCIPLINES (CATEGORIZED) ================= */
-function renderSpecificFields(data) {
+function renderSpecificFields() {
   const container = document.getElementById("field-container");
   container.innerHTML = "";
   container.className = "space-y-4";
@@ -438,8 +415,8 @@ function renderSpecificFields(data) {
   ];
 
   let rows = selectedDomains.size
-    ? data.filter(r => selectedDomains.has(r["Scientific Domain"]))
-    : data;
+    ? excelData.filter(r => selectedDomains.has(r["Scientific Domain"]))
+    : excelData;
 
   const allFields = new Set();
   rows.forEach(r => {
@@ -731,7 +708,8 @@ function showNoCallsPopup() {
 }
 
 /* ================= UPDATE CALLS INTERFACE PIPELINE ================= */
-function updateCalls(data) {
+/* ================= UPDATE CALLS INTERFACE PIPELINE ================= */
+function updateCalls() {
   const expiredWrapper = document.getElementById("expired-calls-wrapper");
   const expiredArrow = document.getElementById("expired-arrow");
   if (expiredWrapper && expiredArrow) {
@@ -752,12 +730,52 @@ function updateCalls(data) {
   const deadlineRadio = document.querySelector('input[name="deadline-filter"]:checked');
   const deadlineFilterValue = deadlineRadio ? deadlineRadio.value : "all";
 
-  let specificTextMatchesFound = false;
+  // Date threshold helper ranges for processing calendar evaluations
+  const now = new Date();
+  const threeMonthsLimit = new Date(); threeMonthsLimit.setMonth(now.getMonth() + 3);
+  const sixMonthsLimit = new Date(); sixMonthsLimit.setMonth(now.getMonth() + 6);
+  const twelveMonthsLimit = new Date(); twelveMonthsLimit.setMonth(now.getMonth() + 12);
 
-  // Filter pipeline remains wide open for testing
-  const filtered = data.filter(r => {
+  // Helper utility function to parse string dates ("DD/MM/YYYY") into valid comparable JS dates
+  const parseDDMMYYYY = (str) => {
+    if (!str) return null;
+    const parts = str.split("/");
+    if (parts.length !== 3) return null;
+    const day = parseInt(parts, 10);
+    const month = parseInt(parts, 10) - 1;
+    const year = parseInt(parts, 10);
+    const d = new Date(year, month, day);
+    return isNaN(d.getTime()) ? null : d;
+  };
+
+  // Run the unified filter operations directly over global state data
+  const filtered = excelData.filter(r => {
     if (keywordInput && !keywordMatchesMulti(r, keywordInput)) return false;
-    specificTextMatchesFound = true;
+
+    // --- Dynamic Calendar Deadline Filtering Logic ---
+    if (deadlineFilterValue !== "all") {
+      const datesArray = r["Deadline(s)"] || [];
+      if (datesArray.length === 0) return false;
+
+      // Evaluation passes if at least one individual deadline item matches chosen bounds
+      const satisfiesRange = datesArray.some(dStr => {
+        const targetDate = parseDDMMYYYY(dStr);
+        if (!targetDate) return false; // Skips open-ended strings like "Continuous" for specific brackets
+
+        if (deadlineFilterValue === "3m") {
+          return targetDate >= now && targetDate <= threeMonthsLimit;
+        } else if (deadlineFilterValue === "6m") {
+          return targetDate >= now && targetDate <= sixMonthsLimit;
+        } else if (deadlineFilterValue === "6-12m") {
+          return targetDate > sixMonthsLimit && targetDate <= twelveMonthsLimit;
+        } else if (deadlineFilterValue === "1y") {
+          return targetDate > twelveMonthsLimit;
+        }
+        return false;
+      });
+
+      if (!satisfiesRange) return false;
+    }
 
     const isGeneralCall = r["Scientific Domain"] && r["Scientific Domain"].trim().toLowerCase() === "general";
     if (!isGeneralCall) {
@@ -778,10 +796,8 @@ function updateCalls(data) {
     const btn = document.createElement("button");
     const isGeneral = r["Scientific Domain"] && r["Scientific Domain"].trim().toLowerCase() === "general";
     
-    // Clean, compact button design
     btn.className = `w-full text-left p-3 bg-white border border-slate-200/80 rounded-xl transition shadow-sm mb-2 flex flex-col gap-1 focus:outline-none hover:border-slate-300 hover:bg-slate-50/50 text-slate-700`;
 
-    // Process Call ID or fallback space to keep structure intact
     const callIdHTML = r["Call ID"] 
       ? `<span class="font-bold text-slate-400 text-[10px] tracking-tight uppercase">${r["Call ID"]}</span>` 
       : `<span></span>`;
@@ -793,31 +809,22 @@ function updateCalls(data) {
       badgeHTML = `<span class="text-[10px] bg-purple-50 text-purple-600 border border-purple-100 font-bold px-2 py-0.5 rounded-md whitespace-nowrap">General</span>`;
     }
 
-    // Capture column fields strings safely (supports multi-deadlines)
+    // Safely reads the deadlines array for rendering
     let deadlineRawString = "";
-    const lookForField = r["Deadline(s)"];
-    
-    if (lookForField) {
-      if (lookForField instanceof Date) {
-        deadlineRawString = lookForField.toLocaleDateString("en-GB");
-      } else {
-        deadlineRawString = String(lookForField).trim();
-      }
+    if (Array.isArray(r["Deadline(s)"]) && r["Deadline(s)"].length > 0) {
+      deadlineRawString = r["Deadline(s)"].join("; ");
     } else {
       deadlineRawString = "Continuous / Open";
     }
 
-    // NEW ULTRA-COMPACT 2-LINE LAYOUT
-    // Row 1: Call ID on the left, Muted Deadline string on the right
-    // Row 2: Call Title on the left, Badge hits on the right
     btn.innerHTML = `
-    <div class="w-full flex justify-between items-center gap-4 border-b border-slate-50 pb-0.5">
-            ${callIdHTML}
-            <span class="text-[10px] text-slate-400 font-medium whitespace-nowrap flex items-center gap-1">
-              <svg class="w-3 h-3 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-              ${deadlineRawString}
-            </span>
-          </div>
+      <div class="w-full flex justify-between items-center gap-4 border-b border-slate-50 pb-0.5">
+        ${callIdHTML}
+        <span class="text-[10px] text-slate-400 font-medium whitespace-nowrap flex items-center gap-1">
+          <svg class="w-3 h-3 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          ${deadlineRawString}
+        </span>
+      </div>
       <div class="w-full flex justify-between items-start gap-4 pt-0.5">
         <div class="text-sm font-semibold text-slate-800 tracking-tight leading-snug">
           ${r["Call Title"] || ""}
@@ -850,10 +857,9 @@ function resetAllFilters() {
   selectedSpecificFields.clear();
   selectedCallButton = null;
 
-  // This is correct! It uses the global cleaned records:
-  renderDomain(excelData); 
-  renderSpecificFields(excelData);
-  updateCalls(excelData);
+  renderDomain(); 
+  renderSpecificFields();
+  updateCalls();
   
   const moreInfoBtn = document.getElementById("more-info-btn");
   if (moreInfoBtn) moreInfoBtn.classList.add("hidden");
